@@ -1,5 +1,4 @@
 # BARKIT
-> sibisa-be
 
 ## LINK WEBSITE
 

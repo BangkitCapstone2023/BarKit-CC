@@ -1,0 +1,27 @@
+{
+  "name": "barkit-cc",
+  "version": "1.0.0",
+  "description": "Casptone Project Bangkit - Barkit",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BangkitCapstone2023/Barkit-CC.git"
+  },
+  "author": "Barkit Team",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/BangkitCapstone2023/Barkit-CC/issues"
+  },
+  "homepage": "https://github.com/BangkitCapstone2023/Barkit-CC#readme",
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22"
+  }
+}

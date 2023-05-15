@@ -19,7 +19,8 @@
   },
   "homepage": "https://github.com/BangkitCapstone2023/Barkit-CC#readme",
   "dependencies": {
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "firebase-admin": "^11.8.0"
   },
   "devDependencies": {
     "eslint": "^8.40.0",

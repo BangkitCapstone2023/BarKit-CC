@@ -1,7 +1,6 @@
 const admin = require('firebase-admin');
 const firebase = require('firebase/compat/app');
 require('firebase/compat/auth');
-require('firebase/compat/firestore');
 
 // Inisialisasi Firebase client-side app
 const clientConfig = require('../config/firebaseClientConfig.json');
@@ -10,13 +9,11 @@ firebase.initializeApp(clientConfig);
 // Login user menggunakan Firebase Admin SDK
 async function loginUser(email, password) {
   try {
-    const userCredential = await admin.auth().getUserByEmail(email);
-    const { uid } = userCredential;
-
     // Gunakan Firebase JavaScript SDK untuk otentikasi di sisi klien
-    const userAuth = await firebase
+    const userCredential = await firebase
       .auth()
       .signInWithEmailAndPassword(email, password);
+    const { uid } = userCredential.user;
 
     // Generate custom token menggunakan Firebase Admin SDK
     const token = await admin.auth().createCustomToken(uid);
@@ -35,7 +32,7 @@ async function createUser(
   fullName,
   address = '',
   phone = '',
-  gender = ''
+  gender = 'male'
 ) {
   const db = admin.firestore();
 
@@ -48,16 +45,16 @@ async function createUser(
     });
 
     // Simpan data tambahan ke Firestore jika tidak kosong
-    const userDocRef = db.collection('users').doc(userRecord.uid);
+    const userDocRef = db.collection('renters').doc(userRecord.uid);
     const userData = {
       id: userRecord.uid,
       email,
       password,
       username,
       fullName,
-      phone: phone || '',
-      address: address || '',
-      gender: gender || 'male',
+      phone: phone,
+      address: address,
+      gender: gender,
     };
 
     await userDocRef.set(userData);
@@ -68,11 +65,6 @@ async function createUser(
     throw error;
   }
 }
-
-module.exports = {
-  loginUser,
-  createUser,
-};
 
 module.exports = {
   loginUser,

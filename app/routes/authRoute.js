@@ -1,4 +1,5 @@
 const express = require('express');
+const admin = require('firebase-admin');
 const router = express.Router();
 const authHandler = require('../controllers/authHandler');
 
@@ -40,11 +41,23 @@ router.post('/register', async (req, res) => {
     gender: req.body.gender,
   };
 
+  const db = admin.firestore();
+
   try {
     // Validasi data yang wajib diisi (email, password, username, fullName)
     if (!user.email || !user.password || !user.username || !user.fullName) {
       return res.status(400).json({
         error: 'Email, password, username, and fullName are required',
+      });
+    }
+
+    const usernameSnapshot = await db
+      .collection('renters')
+      .where('username', '==', user.username)
+      .get();
+    if (!usernameSnapshot.empty) {
+      return res.status(400).json({
+        error: `Username ${user.username} Already Taken`,
       });
     }
 
@@ -59,7 +72,8 @@ router.post('/register', async (req, res) => {
     );
     res.json(userResponse);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to create user' });
+    console.error('Error creating user:', error);
+    res.status(500).json({ error: error.errorInfo.message });
   }
 });
 

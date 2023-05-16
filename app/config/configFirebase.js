@@ -2,8 +2,8 @@
 const admin = require('firebase-admin');
 const credentials = require('./firebaseAccountKey.json');
 
-function initializeApp() {
-  admin.initializeApp({
+async function initializeApp() {
+  await admin.initializeApp({
     credential: admin.credential.cert(credentials),
   });
 }

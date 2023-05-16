@@ -14,8 +14,13 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(authRouter);
 
-initializeApp();
-
-app.listen(port, () => {
-  console.log(`BarKit App listening on port ${port}`);
-});
+(async () => {
+  try {
+    await initializeApp();
+    app.listen(port, () => {
+      console.log(`BarKit App listening on port ${port}`);
+    });
+  } catch (error) {
+    console.error('Error initializing Firebase:', error);
+  }
+})();

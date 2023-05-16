@@ -3,7 +3,7 @@ const app = express();
 const port = 8080;
 
 const initializeApp = require('./app/config/configFirebase');
-const registerRoute = require('./app/routes/registerRoute');
+const authRouter = require('./app/routes/authRoute');
 
 app.get('/', (req, res) => {
   res.send('Hello World!');
@@ -12,10 +12,10 @@ app.get('/', (req, res) => {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use(registerRoute);
+app.use(authRouter);
 
 initializeApp();
 
 app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`);
+  console.log(`BarKit App listening on port ${port}`);
 });

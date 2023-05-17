@@ -24,7 +24,7 @@ async function loginUser(email, password) {
   }
 }
 
-// Create user menggunakan Firebase Admin SDK
+// Create user using Firebase Admin SDK
 async function createUser(
   email,
   password,
@@ -32,11 +32,26 @@ async function createUser(
   fullName,
   address = '',
   phone = '',
-  gender = 'male'
+  gender = 'male',
+  isLessor = false
 ) {
   const db = admin.firestore();
 
   try {
+    // Validating required fields
+    if (!email || !password || !username || !fullName) {
+      throw new Error('Email, password, username, and fullName are required');
+    }
+
+    // Validating username uniqueness
+    const usernameSnapshot = await db
+      .collection('renters')
+      .where('username', '==', username)
+      .get();
+    if (!usernameSnapshot.empty) {
+      throw new Error(`Username "${username}" is already taken`);
+    }
+
     const userRecord = await admin.auth().createUser({
       email,
       password,
@@ -44,7 +59,7 @@ async function createUser(
       disabled: false,
     });
 
-    // Simpan data tambahan ke Firestore jika tidak kosong
+    // Save additional data to Firestore if not empty
     const userDocRef = db.collection('renters').doc(userRecord.uid);
     const userData = {
       id: userRecord.uid,
@@ -52,20 +67,20 @@ async function createUser(
       password,
       username,
       fullName,
-      phone: phone,
-      address: address,
-      gender: gender,
+      phone,
+      address,
+      gender,
+      isLessor,
     };
 
     await userDocRef.set(userData);
-
+    console.log(`Success Store Renter to firestore ${username}`);
     return userRecord;
   } catch (error) {
     console.error('Error creating user:', error);
     throw error;
   }
 }
-
 module.exports = {
   loginUser,
   createUser,

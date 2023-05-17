@@ -1,5 +1,4 @@
 const express = require('express');
-const admin = require('firebase-admin');
 const router = express.Router();
 const authHandler = require('../controllers/authHandler');
 
@@ -29,8 +28,6 @@ router.post('/login', async (req, res) => {
 
 // Register route
 router.post('/register', async (req, res) => {
-  // console.log(req.body);
-
   const user = {
     email: req.body.email,
     password: req.body.password,
@@ -41,26 +38,7 @@ router.post('/register', async (req, res) => {
     gender: req.body.gender,
   };
 
-  const db = admin.firestore();
-
   try {
-    // Validasi data yang wajib diisi (email, password, username, fullName)
-    if (!user.email || !user.password || !user.username || !user.fullName) {
-      return res.status(400).json({
-        error: 'Email, password, username, and fullName are required',
-      });
-    }
-
-    const usernameSnapshot = await db
-      .collection('renters')
-      .where('username', '==', user.username)
-      .get();
-    if (!usernameSnapshot.empty) {
-      return res.status(400).json({
-        error: `Username ${user.username} Already Taken`,
-      });
-    }
-
     const userResponse = await authHandler.createUser(
       user.email,
       user.password,
@@ -68,12 +46,21 @@ router.post('/register', async (req, res) => {
       user.fullName,
       user.address,
       user.phone,
-      user.gender
+      user.gender,
+      user.isLessor
     );
     res.json(userResponse);
+    console.log(`Success Create User ${user.username}`);
   } catch (error) {
-    console.error('Error creating user:', error);
-    res.status(500).json({ error: error.errorInfo.message });
+    if (
+      error.message === 'Email, password, username, and fullName are required'
+    ) {
+      res.status(400).json({ error: error.message });
+    } else if (error.message.startsWith('Username')) {
+      res.status(400).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: 'Failed to create user' });
+    }
   }
 });
 

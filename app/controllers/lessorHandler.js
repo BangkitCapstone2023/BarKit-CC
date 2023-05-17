@@ -1,6 +1,4 @@
 const admin = require('firebase-admin');
-const firebase = require('firebase/compat/app');
-require('firebase/compat/auth');
 
 // Create lessor using Firebase Admin SDK
 async function createLessor(
@@ -16,20 +14,14 @@ async function createLessor(
   kurirId = []
 ) {
   const db = admin.firestore();
+  const auth = admin.auth();
 
   try {
-    // // Validating username uniqueness
-    // const usernameSnapshot = await db
-    //   .collection('lessors')
-    //   .where('username', '==', username)
-    //   .get();
-    // if (!usernameSnapshot.empty) {
-    //   throw new Error(`Username "${username}" is already taken`);
-    // }
-
     // Save additional data to Firestore if not empty
     const userDocRef = db.collection('lessors').doc();
+    const lessorId = userDocRef.id; // Generate a new lessor ID
     const userData = {
+      lessorId,
       email,
       username,
       fullName,
@@ -44,12 +36,25 @@ async function createLessor(
 
     await userDocRef.set(userData);
     console.log(`Success Store Lessor Data to Firestore ${username}`);
-    return userData;
+
+    // Update isLessor attribute in user document
+    const renterRef = db.collection('renters').doc(renterId);
+    await renterRef.update({ isLessor: true });
+
+    // Get renter data
+    const renterSnapshot = await renterRef.get();
+    const renterData = renterSnapshot.data();
+
+    return {
+      ...userData,
+      renterData,
+    };
   } catch (error) {
     console.error('Error creating lessor:', error);
     throw error;
   }
 }
+
 module.exports = {
-  createLessor, // Add createLessor to exports
+  createLessor,
 };

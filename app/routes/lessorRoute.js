@@ -8,12 +8,12 @@ router.post('/:username/registerLessor', async (req, res) => {
     email: req.body.email,
     username: req.body.username,
     fullName: req.body.fullName,
-    storeFullName: req.body.storeFullName, // Add storeFullName attribute
-    storeAddress: req.body.storeAddress, // Add storeAddress attribute
-    storeEmail: req.body.storeEmail, // Add storeEmail attribute
-    storePhone: req.body.storePhone, // Add storePhone attribute
-    storeStatus: req.body.storeStatus, // Add storeStatus attribute
-    kurirId: req.body.kurirId, // Add kurirId attribute as an array
+    storeFullName: req.body.storeFullName,
+    storeAddress: req.body.storeAddress,
+    storeEmail: req.body.storeEmail,
+    storePhone: req.body.storePhone,
+    storeStatus: req.body.storeStatus,
+    kurirId: req.body.kurirId,
   };
 
   try {
@@ -30,8 +30,8 @@ router.post('/:username/registerLessor', async (req, res) => {
 
     const userData = userSnapshot.docs[0].data();
     const fullName = userData.fullName; // Get the renter fullName
-    const username = userData.username; // Get the renter username
-    const email = userData.email; // Error: Get the renter email
+    const username = userData.username;
+    const email = userData.email;
 
     const renterId = userSnapshot.docs[0].id; // Get the renter ID
 
@@ -39,7 +39,7 @@ router.post('/:username/registerLessor', async (req, res) => {
       email,
       username,
       fullName,
-      renterId, // Add renter ID
+      renterId,
       lessor.storeFullName,
       lessor.storeAddress,
       lessor.storeEmail,

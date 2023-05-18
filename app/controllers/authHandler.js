@@ -1,10 +1,96 @@
 const admin = require('firebase-admin');
 const firebase = require('firebase/compat/app');
 require('firebase/compat/auth');
+const Response = require('../utils/response');
 
 // Inisialisasi Firebase client-side app
 const clientConfig = require('../config/firebaseClientConfig.json');
 firebase.initializeApp(clientConfig);
+
+// Login user menggunakan Firebase Admin SDK
+async function login(req, res) {
+  const user = {
+    email: req.body.email,
+    password: req.body.password,
+  };
+
+  try {
+    const token = await loginUser(user.email, user.password);
+    const userLoginData = {
+      email: user.email,
+      token: token,
+    };
+
+    const response = Response.successResponse(
+      200,
+      'User Success Login',
+      userLoginData
+    );
+
+    res.status(200).json(response);
+  } catch (error) {
+    let errorMessage = '';
+
+    if (error.code === 'auth/wrong-password') {
+      errorMessage = 'Password yang dimasukkan salah';
+    } else if (error.code === 'auth/invalid-email') {
+      errorMessage = 'Email pengguna tidak ditemukan';
+    } else {
+      errorMessage = `Error logging in user: ${error}`;
+    }
+
+    const response = Response.badResponse(401, errorMessage);
+    res.status(401).json(response);
+  }
+}
+
+// Create user using Firebase Admin SDK
+async function register(req, res) {
+  const user = {
+    email: req.body.email,
+    password: req.body.password,
+    username: req.body.username,
+    fullName: req.body.fullName,
+    address: req.body.address,
+    phone: req.body.phone,
+    gender: req.body.gender,
+  };
+
+  try {
+    const userResponse = await createUser(
+      user.email,
+      user.password,
+      user.username,
+      user.fullName,
+      user.address,
+      user.phone,
+      user.gender,
+      user.isLessor
+    );
+    const response = Response.successResponse(
+      201,
+      'User Success Register',
+      userResponse
+    );
+    res.status(201).json(response);
+    console.log(`Success Create User ${user.username}`);
+  } catch (error) {
+    let errorMessage = '';
+
+    if (
+      error.message === 'Email, password, username, and fullName are required'
+    ) {
+      errorMessage = error.message;
+    } else if (error.message.startsWith('Username')) {
+      errorMessage = error.message;
+    } else {
+      errorMessage = error;
+    }
+
+    const response = Response.badResponse(400, errorMessage);
+    res.json(response);
+  }
+}
 
 // Login user menggunakan Firebase Admin SDK
 async function loginUser(email, password) {
@@ -36,7 +122,7 @@ async function createUser(
   isLessor = false
 ) {
   const db = admin.firestore();
-  
+
   try {
     // Validating required fields
     if (!email || !password || !username || !fullName) {
@@ -81,7 +167,8 @@ async function createUser(
     throw error;
   }
 }
+
 module.exports = {
-  loginUser,
-  createUser,
+  login,
+  register,
 };

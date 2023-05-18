@@ -79,19 +79,27 @@ async function addProdukFunction(req, res) {
             throw new Error(`User "${username}" not found`);
           }
 
+          var userData = userSnapshot.docs[0].data();
+          const isLessor = userData.isLessor;
+          if (isLessor !== true) {
+            throw new Error(`User "${username}" is not a lessor`);
+          }
+
           const lessorId = userSnapshot.docs[0].id;
 
+          const productId = uuidv4();
           const productData = {
-            title: title,
-            description: description,
-            price: price,
+            title,
+            description,
+            price,
             imageUrl: publicUrl,
-            category: category,
-            sub_category: sub_category,
-            quantity: quantity,
+            category,
+            sub_category,
+            quantity,
+            username,
             lessor_id: lessorId,
             image_id: imageId,
-            product_id: uuidv4(),
+            product_id: productId,
           };
 
           // Simpan data produk ke koleksi produk di Firestore
@@ -106,9 +114,7 @@ async function addProdukFunction(req, res) {
           });
         } catch (error) {
           console.error('Error saat menambahkan produk:', error);
-          return res
-            .status(500)
-            .send('Terjadi kesalahan saat menambahkan produk.');
+          return res.status(500).send(error.message);
         }
       });
 
@@ -116,7 +122,9 @@ async function addProdukFunction(req, res) {
     });
   } catch (error) {
     console.error('Error saat mengunggah file:', error);
-    return res.status(500).send('Terjadi kesalahan saat mengunggah gambar.');
+    return res
+      .status(500)
+      .send('Terjadi kesalahan saat mengunggah gambar.', error);
   }
 }
 

@@ -1,6 +1,6 @@
 // Firebase Config
 const admin = require('firebase-admin');
-const credentials = require('./firebaseAccountKey.json');
+const credentials = require('./firebaseAccountKey2.json');
 
 async function initializeApp() {
   await admin.initializeApp({

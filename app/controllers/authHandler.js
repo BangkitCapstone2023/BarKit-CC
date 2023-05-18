@@ -4,7 +4,7 @@ require('firebase/compat/auth');
 const Response = require('../utils/response');
 
 // Inisialisasi Firebase client-side app
-const clientConfig = require('../config/firebaseClientConfig.json');
+const clientConfig = require('../config/firebaseClientConfig2.json');
 firebase.initializeApp(clientConfig);
 
 // Login user menggunakan Firebase Admin SDK
@@ -15,9 +15,10 @@ async function login(req, res) {
   };
 
   try {
-    const token = await loginUser(user.email, user.password);
+    const { token, loginTime } = await loginUser(user.email, user.password);
     const userLoginData = {
       email: user.email,
+      loginTime: loginTime,
       token: token,
     };
 
@@ -95,6 +96,8 @@ async function register(req, res) {
 // Login user menggunakan Firebase Admin SDK
 async function loginUser(email, password) {
   try {
+    const timestamp = admin.firestore.Timestamp.now(); // Mendapatkan timestamp saat login
+
     // Gunakan Firebase JavaScript SDK untuk otentikasi di sisi klien
     const userCredential = await firebase
       .auth()
@@ -103,7 +106,11 @@ async function loginUser(email, password) {
 
     // Generate custom token menggunakan Firebase Admin SDK
     const token = await admin.auth().createCustomToken(uid);
-    return token;
+
+    return {
+      token: token,
+      loginTime: timestamp.toDate(), // Mengembalikan waktu login dalam bentuk objek Date
+    };
   } catch (error) {
     console.error('Error logging in user:', error);
     throw error;

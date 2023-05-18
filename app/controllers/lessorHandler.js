@@ -71,7 +71,7 @@ async function registerLessor(req, res) {
     console.log(`Success Create Lessor ${username}`);
   } catch (error) {
     console.log(error);
-    const response = Response.badResponse(500, error);
+    const response = Response.badResponse(500, error.message);
     res.status(500).json(response);
   }
 }

@@ -36,7 +36,7 @@ async function createUser(
   isLessor = false
 ) {
   const db = admin.firestore();
-
+  
   try {
     // Validating required fields
     if (!email || !password || !username || !fullName) {

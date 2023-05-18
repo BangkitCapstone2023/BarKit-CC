@@ -14,14 +14,14 @@ async function createLessor(
   kurirId = []
 ) {
   const db = admin.firestore();
-  const auth = admin.auth();
+  // const auth = admin.auth();
 
   try {
     // Save additional data to Firestore if not empty
     const userDocRef = db.collection('lessors').doc();
     const lessorId = userDocRef.id; // Generate a new lessor ID
     const userData = {
-      lessorId,
+      lessorId, // Add lessor ID
       email,
       username,
       fullName,

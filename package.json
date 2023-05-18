@@ -19,12 +19,11 @@
   },
   "homepage": "https://github.com/BangkitCapstone2023/Barkit-CC#readme",
   "dependencies": {
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "firebase": "^9.22.0",
+    "firebase-admin": "^11.8.0"
   },
   "devDependencies": {
-    "eslint": "^8.40.0",
-    "eslint-config-airbnb-base": "^15.0.0",
-    "eslint-plugin-import": "^2.27.5",
     "nodemon": "^2.0.22"
   }
 }

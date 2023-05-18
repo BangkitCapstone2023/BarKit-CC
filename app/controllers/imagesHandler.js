@@ -20,6 +20,7 @@ async function handleImageUpload(req, res) {
     }
 
     const file = req.file;
+    const { category, sub_category } = req.body;
 
     // Cek ukuran file
     const maxSizeInBytes = 10 * 1024 * 1024; // 10 MB
@@ -28,8 +29,10 @@ async function handleImageUpload(req, res) {
     }
 
     const fileId = uuidv4(); // Membuat UUID sebagai ID gambar
-    const fileName = file.originalname; // Menambahkan UUID pada nama file
-    const blob = storage.bucket(bucketName).file(fileName);
+    const originalFileName = file.originalname;
+    const fileName = originalFileName.replace(/\s+/g, '-'); // Mengganti spasi dengan tanda "-"
+    const filePath = `${category}/${sub_category}/${fileName}`;
+    const blob = storage.bucket(bucketName).file(filePath);
     const blobStream = blob.createWriteStream({
       metadata: {
         contentType: file.mimetype,
@@ -43,10 +46,10 @@ async function handleImageUpload(req, res) {
     });
 
     blobStream.on('finish', () => {
-      const publicUrl = `https://storage.googleapis.com/${bucketName}/${fileName}`;
+      const publicUrl = `https://storage.googleapis.com/${bucketName}/${filePath}`;
       const imageInfo = {
         id: fileId,
-        name: file.originalname,
+        name: originalFileName,
         url: publicUrl,
       };
       return res.status(200).json(imageInfo);

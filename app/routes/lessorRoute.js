@@ -8,8 +8,10 @@ router.post('/:username/registerLessor', lessorHandler.registerLessor);
 
 // Store Feature Routes
 router.get('/barkitAdmin/allLessor', lessorHandler.getAllLessors);
+router.get('/:username/store', produkHandler.getAllProductByLessor);
 router.get('/:username/storeProfile', lessorHandler.getLessorByUsername);
 router.put('/:username/updateStore', lessorHandler.updateLessorData);
+router.put('/:username/:productId', produkHandler.updateProductByProductId);
 router.post('/:username/addProduct', produkHandler.addProdukFunction);
 
 // Get Image Route

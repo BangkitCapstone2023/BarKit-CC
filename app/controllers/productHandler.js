@@ -86,7 +86,11 @@ async function addProdukFunction(req, res) {
             throw new Error(`User "${username}" is not a lessor`);
           }
 
-          const lessorId = userSnapshot.docs[0].id;
+          const lessorSnapshot = await db
+            .collection('lessors')
+            .where('username', '==', username)
+            .get();
+          const lessorId = lessorSnapshot.docs[0].id;
 
           const productId = uuidv4();
           const productData = {
@@ -129,6 +133,51 @@ async function addProdukFunction(req, res) {
   }
 }
 
+async function getAllProductByLessor(req, res) {
+  try {
+    const db = admin.firestore();
+    const lessorUsername = req.params.username;
+
+    // Get the lessor document by username
+    const lessorSnapshot = await db
+      .collection('lessors')
+      .where('username', '==', lessorUsername)
+      .get();
+
+    if (lessorSnapshot.empty) {
+      throw new Error(`Lessor "${lessorUsername}" not found`);
+    }
+
+    const lessorId = lessorSnapshot.docs[0].id;
+
+    // Get all products by lessor ID
+    const productsSnapshot = await db
+      .collection('products')
+      .where('lessor_id', '==', lessorId)
+      .get();
+
+    const productsData = [];
+
+    // Iterate through the products snapshot and collect the data
+    productsSnapshot.forEach((doc) => {
+      const productData = doc.data();
+      productsData.push(productData);
+    });
+
+    const response = {
+      message: 'Success',
+      data: productsData,
+    };
+
+    return res.status(200).json(response);
+  } catch (error) {
+    console.error('Error while getting products by lessor:', error);
+    return res
+      .status(500)
+      .send('An error occurred while getting products by lessor');
+  }
+}
+
 async function getImageByName(req, res) {
   const { name } = req.params;
   const [files] = await storage.bucket(bucketName).getFiles({ prefix: name });
@@ -139,7 +188,7 @@ async function getImageByName(req, res) {
   }
 
   const file = files[0];
-  console.log(file);
+  // console.log(file);
 
   const imageUrl = `https://storage.googleapis.com/${bucketName}/${file.name}`;
 
@@ -166,6 +215,8 @@ module.exports = {
   addProdukFunction,
   getImageByName,
   getAllImages,
+  getAllProductByLessor,
+  updateProductByProductId,
 };
 
 // async function handleImageUpload(req, res) {

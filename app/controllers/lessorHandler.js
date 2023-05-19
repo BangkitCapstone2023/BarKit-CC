@@ -76,6 +76,112 @@ async function registerLessor(req, res) {
   }
 }
 
+async function getAllLessors(req, res) {
+  try {
+    const db = admin.firestore();
+
+    // Get all lessors from Firestore
+    const lessorsSnapshot = await db.collection('lessors').get();
+
+    const lessorsData = [];
+
+    // Iterate through the lessors snapshot and collect the data
+    lessorsSnapshot.forEach((doc) => {
+      const lessorData = doc.data();
+      lessorsData.push(lessorData);
+    });
+
+    const response = {
+      message: 'Success',
+      data: lessorsData,
+    };
+
+    return res.status(200).json(response);
+  } catch (error) {
+    console.error('Error while getting lessors:', error);
+    return res.status(500).send('An error occurred while getting lessor data');
+  }
+}
+
+async function getLessorByUsername(req, res) {
+  try {
+    const db = admin.firestore();
+
+    const username = req.params.username;
+
+    // Check if the lessor exists
+    const lessorSnapshot = await db
+      .collection('lessors')
+      .where('username', '==', username)
+      .get();
+
+    if (lessorSnapshot.empty) {
+      throw new Error(`Lessor "${username}" not found`);
+    }
+
+    const lessorData = lessorSnapshot.docs[0].data();
+
+    const response = {
+      message: 'Success',
+      data: lessorData,
+    };
+
+    return res.status(200).json(response);
+  } catch (error) {
+    console.error('Error while getting lessor:', error);
+    return res.status(500).send('An error occurred while getting lessor data');
+  }
+}
+
+async function updateLessorData(req, res) {
+  try {
+    const db = admin.firestore();
+
+    const username = req.params.username;
+    const { storeFullName, storeAddress, storeEmail, storePhone } = req.body;
+
+    // Check if the lessor exists
+    const lessorSnapshot = await db
+      .collection('lessors')
+      .where('username', '==', username)
+      .get();
+
+    if (lessorSnapshot.empty) {
+      throw new Error(`Lessor "${username}" not found`);
+    }
+
+    const lessorId = lessorSnapshot.docs[0].id;
+
+    // Update the lessor data
+    await db.collection('lessors').doc(lessorId).update({
+      storeFullName,
+      storeAddress,
+      storeEmail,
+      storePhone,
+    });
+
+    const response = {
+      message: 'Success',
+      data: {
+        lessorId,
+        username,
+        storeFullName,
+        storeAddress,
+        storeEmail,
+        storePhone,
+      },
+    };
+
+    return res.status(200).json(response);
+  } catch (error) {
+    console.error('Error while updating lessor:', error);
+    return res.status(500).send('An error occurred while updating lessor data');
+  }
+}
+
 module.exports = {
   registerLessor,
+  getLessorByUsername,
+  getAllLessors,
+  updateLessorData,
 };

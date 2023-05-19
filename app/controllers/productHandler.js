@@ -43,6 +43,7 @@ async function addProdukFunction(req, res) {
         .join('.')}_${username}.${originalFileName.split('.').pop()}`;
       const filePath = `${category}/${sub_category}/${fileName}`;
       const blob = storage.bucket(bucketName).file(filePath);
+
       const blobStream = blob.createWriteStream({
         metadata: {
           contentType: file.mimetype,
@@ -128,9 +129,45 @@ async function addProdukFunction(req, res) {
   }
 }
 
+async function getImageByName(req, res) {
+  const { name } = req.params;
+  const [files] = await storage.bucket(bucketName).getFiles({ prefix: name });
+
+  // Memeriksa keberadaan file
+  if (!files || files.length === 0) {
+    return res.status(404).json({ error: 'Gambar tidak ditemukan.' });
+  }
+
+  const file = files[0];
+  console.log(file);
+
+  const imageUrl = `https://storage.googleapis.com/${bucketName}/${file.name}`;
+
+  return res.status(200).json({ name: file.name, url: imageUrl });
+}
+
+async function getAllImages(req, res) {
+  try {
+    const [files] = await storage.bucket(bucketName).getFiles();
+    const imageUrls = files.map((file) => ({
+      name: file.name,
+      url: `https://storage.googleapis.com/${bucketName}/${file.name}`,
+    }));
+    return res.status(200).json(imageUrls);
+  } catch (err) {
+    console.error('Error saat mendapatkan daftar gambar:', err);
+    return res
+      .status(500)
+      .send('Terjadi kesalahan saat mengambil daftar gambar.');
+  }
+}
+
 module.exports = {
   addProdukFunction,
+  getImageByName,
+  getAllImages,
 };
+
 // async function handleImageUpload(req, res) {
 //   upload.single('image')(req, res, (err) => {
 //     if (err instanceof multer.MulterError) {
@@ -235,38 +272,6 @@ module.exports = {
 //     console.error('Error saat menambahkan produk:', error);
 //     return res.status(500).send('Terjadi kesalahan saat menambahkan produk.');
 //   }
-// }
-
-// async function getAllImages(req, res) {
-//   try {
-//     const [files] = await storage.bucket(bucketName).getFiles();
-//     const imageUrls = files.map((file) => ({
-//       name: file.name,
-//       url: `https://storage.googleapis.com/${bucketName}/${file.name}`,
-//     }));
-//     return res.status(200).json(imageUrls);
-//   } catch (err) {
-//     console.error('Error saat mendapatkan daftar gambar:', err);
-//     return res
-//       .status(500)
-//       .send('Terjadi kesalahan saat mengambil daftar gambar.');
-//   }
-// }
-
-// async function getImageByName(req, res) {
-//   const { name } = req.params;
-//   const [files] = await storage.bucket(bucketName).getFiles({ prefix: name });
-
-//   // Memeriksa keberadaan file
-//   if (!files || files.length === 0) {
-//     return res.status(404).json({ error: 'Gambar tidak ditemukan.' });
-//   }
-
-//   const file = files[0];
-
-//   const imageUrl = `https://storage.googleapis.com/${bucketName}/${file.name}`;
-
-//   return res.status(200).json({ name: file.name, url: imageUrl });
 // }
 
 // module.exports = {

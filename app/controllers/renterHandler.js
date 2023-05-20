@@ -1,7 +1,2 @@
-const express = require('express');
-const router = express.Router();
-// const { getAllRenters } = require('../controllers/generalHandler');
-
-// router.get('/renters', getAllRenters);
-
-module.exports = router;
+const admin = require('firebase-admin');
+const Response = require('../utils/response');

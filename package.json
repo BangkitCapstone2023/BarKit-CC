@@ -19,9 +19,13 @@
   },
   "homepage": "https://github.com/BangkitCapstone2023/Barkit-CC#readme",
   "dependencies": {
+    "@google-cloud/storage": "^6.10.1",
+    "cors": "^2.8.5",
     "express": "^4.18.2",
     "firebase": "^9.22.0",
-    "firebase-admin": "^11.8.0"
+    "firebase-admin": "^11.8.0",
+    "multer": "^1.4.5-lts.1",
+    "uuidv4": "^6.2.13"
   },
   "devDependencies": {
     "nodemon": "^2.0.22"

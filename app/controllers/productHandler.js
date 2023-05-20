@@ -351,7 +351,7 @@ async function getAllProductsByLessor(req, res) {
       .get();
 
     if (lessorSnapshot.empty) {
-      throw new Error(`Lessor "${lessorUsername}" not found`);
+      throw new Error(`Lessor '${lessorUsername}' not found`);
     }
 
     const lessorId = lessorSnapshot.docs[0].id;

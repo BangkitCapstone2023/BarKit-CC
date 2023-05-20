@@ -1,11 +1,10 @@
 const admin = require('firebase-admin');
 const Response = require('../utils/response');
-const { storage, bucketName } = require('../config/configCloudStorage');
+
+const { db } = require('../config/configFirebase');
 
 async function getAllLessors(req, res) {
   try {
-    const db = admin.firestore();
-
     // Get all lessors from Firestore
     const lessorsSnapshot = await db.collection('lessors').get();
 
@@ -138,7 +137,6 @@ async function getImageByName(req, res) {
   const { name } = req.params;
 
   try {
-    const db = admin.firestore();
     // const productSnapshot = await db.collection('products').get();
 
     const productSnapshot = await db
@@ -176,7 +174,7 @@ async function getImageByName(req, res) {
 
 async function getAllImages(req, res) {
   try {
-    const db = admin.firestore(); // Mendapatkan instance Firestore
+    // Mendapatkan instance Firestore
     const productsSnapshot = await db.collection('products').get(); // Mendapatkan snapshot produk dari Firestore
 
     const allImages = [];

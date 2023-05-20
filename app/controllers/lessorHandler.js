@@ -1,6 +1,6 @@
 const admin = require('firebase-admin');
 const Response = require('../utils/response');
-
+const { db } = require('../config/configFirebase');
 // Register Lessor
 async function registerLessor(req, res) {
   const lessor = {
@@ -16,8 +16,6 @@ async function registerLessor(req, res) {
   };
 
   try {
-    const db = admin.firestore();
-
     // Check if the user exists
     const userSnapshot = await db
       .collection('renters')
@@ -89,8 +87,6 @@ async function registerLessor(req, res) {
 
 async function getLessorProfile(req, res) {
   try {
-    const db = admin.firestore();
-
     const username = req.params.username;
 
     // Check if the lessor exists
@@ -126,8 +122,6 @@ async function getLessorProfile(req, res) {
 
 async function updateLessor(req, res) {
   try {
-    const db = admin.firestore();
-
     const username = req.params.username;
     const { storeFullName, storeAddress, storeEmail, storePhone } = req.body;
 

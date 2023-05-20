@@ -208,9 +208,107 @@ async function getAllImages(req, res) {
   }
 }
 
+async function getAllRenters(req, res) {
+  try {
+    // Get all renters from Firestore
+    const renterSnapshot = await db.collection('renters').get();
+
+    const rentersData = [];
+
+    // Iterate through the renters snapshot and collect the data
+    renterSnapshot.forEach((doc) => {
+      const renterData = doc.data();
+      rentersData.push(renterData);
+    });
+
+    const response = Response.successResponse(
+      200,
+      'Success Get All Renters',
+      rentersData
+    );
+
+    return res.status(200).json(response);
+  } catch (error) {
+    console.error('Error while getting all renters:', error);
+    const response = Response.badResponse(
+      500,
+      'An error occurred while getting all renters data',
+      error.message
+    );
+    return res.status(500).send(response);
+  }
+}
+
+async function deleteRenterById(req, res) {
+  const { id } = req.params;
+
+  try {
+    // Get the lessor document
+    const renterSnapshot = await db.collection('renters').doc(id).get();
+
+    if (!renterSnapshot.exists) {
+      throw new Error(`Renter '${id}' not found`);
+    } else {
+      await db.collection('renters').doc(id).delete();
+    }
+
+    const response = Response.successResponse(
+      200,
+      'Renters deleted successfully'
+    );
+
+    res.status(200).json(response);
+  } catch (error) {
+    console.error('Error deleting lessor:', error);
+
+    const response = Response.badResponse(
+      500,
+      'Error deleting lessor',
+      error.message
+    );
+    res.status(500).json(response);
+  }
+}
+
+async function addCategory(req, res) {
+  const { name } = req.body;
+
+  db.collection('categories')
+    .add({ name })
+    .then((docRef) => {
+      res.status(201).json({ category_id: docRef.id, name });
+    })
+    .catch((error) => {
+      console.error('Error creating category', error);
+      res.status(500).json({ error: 'Failed to create category' });
+    });
+}
+
+async function addSubCategory(req, res) {
+  const { categoryId } = req.params;
+  const { name } = req.body;
+
+  const categoryRef = db.collection('categories').doc(categoryId);
+
+  categoryRef
+    .collection('sub_categories')
+    .add({ name })
+    .then((docRef) => {
+      res.status(201).json({ sub_category_id: docRef.id, name });
+    })
+    .catch((error) => {
+      console.error('Error creating subcategory', error);
+      res.status(500).json({ error: 'Failed to create subcategory' });
+    });
+}
+
 module.exports = {
   getImageByName,
   getAllImages,
   getAllLessors,
   deleteLessorById,
+  getAllRenters,
+  deleteRenterById,
+  addCategory,
+  addSubCategory,
 };

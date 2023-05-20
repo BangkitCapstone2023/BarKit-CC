@@ -24,7 +24,7 @@ async function registerLessor(req, res) {
       .where('username', '==', req.params.username)
       .get();
     if (userSnapshot.empty) {
-      throw new Error(`User "${req.params.username}" not found`);
+      throw new Error(`User '${req.params.username}' not found`);
     }
 
     var userData = userSnapshot.docs[0].data();
@@ -70,9 +70,13 @@ async function registerLessor(req, res) {
     res.status(201).json(response);
     console.log(`Success Create Lessor ${username}`);
   } catch (error) {
-    console.log(error);
-    const response = Response.badResponse(500, error.message);
-    res.status(500).json(response);
+    console.error(error);
+    const response = Response.badResponse(
+      400,
+      'An error occurred while register lessor',
+      error.message
+    );
+    return res.status(400).send(response);
   }
 }
 
@@ -91,19 +95,25 @@ async function getAllLessors(req, res) {
       lessorsData.push(lessorData);
     });
 
-    const response = {
-      message: 'Success',
-      data: lessorsData,
-    };
+    const response = Response.successResponse(
+      200,
+      'Success Get All Lessor',
+      lessorsData
+    );
 
     return res.status(200).json(response);
   } catch (error) {
     console.error('Error while getting lessors:', error);
-    return res.status(500).send('An error occurred while getting lessor data');
+    const response = Response.badResponse(
+      500,
+      'An error occurred while getting all lessor data',
+      error.message
+    );
+    return res.status(500).send(response);
   }
 }
 
-async function getLessorByUsername(req, res) {
+async function getLessorProfile(req, res) {
   try {
     const db = admin.firestore();
 
@@ -116,24 +126,31 @@ async function getLessorByUsername(req, res) {
       .get();
 
     if (lessorSnapshot.empty) {
-      throw new Error(`Lessor "${username}" not found`);
+      throw new Error(`Lessor '${username}' not found`);
     }
 
     const lessorData = lessorSnapshot.docs[0].data();
 
-    const response = {
-      message: 'Success',
-      data: lessorData,
-    };
+    const response = Response.successResponse(
+      200,
+      'Success Get Lessor Profile',
+      lessorData
+    );
 
     return res.status(200).json(response);
   } catch (error) {
     console.error('Error while getting lessor:', error);
-    return res.status(500).send('An error occurred while getting lessor data');
+
+    const response = Response.badResponse(
+      500,
+      'An error occurred while getting lessor profile data',
+      error.message
+    );
+    return res.status(500).send(response);
   }
 }
 
-async function updateLessorData(req, res) {
+async function updateLessor(req, res) {
   try {
     const db = admin.firestore();
 
@@ -147,7 +164,7 @@ async function updateLessorData(req, res) {
       .get();
 
     if (lessorSnapshot.empty) {
-      throw new Error(`Lessor "${username}" not found`);
+      throw new Error(`Lessor '${username}'  not found`);
     }
 
     const lessorId = lessorSnapshot.docs[0].id;
@@ -160,28 +177,36 @@ async function updateLessorData(req, res) {
       storePhone,
     });
 
-    const response = {
-      message: 'Success',
-      data: {
-        lessorId,
-        username,
-        storeFullName,
-        storeAddress,
-        storeEmail,
-        storePhone,
-      },
+    const updateData = {
+      lessorId,
+      username,
+      storeFullName,
+      storeAddress,
+      storeEmail,
+      storePhone,
     };
 
+    const response = Response.successResponse(
+      200,
+      'Success Update Lessor Data',
+      updateData
+    );
     return res.status(200).json(response);
   } catch (error) {
     console.error('Error while updating lessor:', error);
-    return res.status(500).send('An error occurred while updating lessor data');
+
+    const response = Response.badResponse(
+      500,
+      'An error occurred while update lessor data',
+      error.message
+    );
+    return res.status(500).send(response);
   }
 }
 
 module.exports = {
   registerLessor,
-  getLessorByUsername,
+  getLessorProfile,
   getAllLessors,
-  updateLessorData,
+  updateLessor,
 };

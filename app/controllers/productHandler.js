@@ -2,11 +2,13 @@ const multer = require('multer');
 const { v4: uuidv4 } = require('uuid');
 const admin = require('firebase-admin');
 
+const Response = require('../utils/response');
+
 const { storage, bucketName } = require('../config/configCloudStorage');
 const multerStorage = multer.memoryStorage();
 const upload = multer({ storage: multerStorage });
 
-async function addProdukFunction(req, res) {
+async function addProduct(req, res) {
   try {
     upload.single('image')(req, res, async (err) => {
       if (err instanceof multer.MulterError) {
@@ -60,11 +62,6 @@ async function addProdukFunction(req, res) {
 
       blobStream.on('finish', async () => {
         const publicUrl = `https://storage.googleapis.com/${bucketName}/${filePath}`;
-        // const imageInfo = {
-        //   id: imageId,
-        //   name: originalFileName,
-        //   url: publicUrl,
-        // };
 
         const { title, description, price, category, sub_category, quantity } =
           req.body;
@@ -113,13 +110,21 @@ async function addProdukFunction(req, res) {
             .doc(productData.product_id)
             .set(productData);
 
-          return res.status(200).json({
-            message: 'Produk berhasil ditambahkan.',
-            data: productData,
-          });
+          const response = Response.successResponse(
+            201,
+            'Success Add Product',
+            productData
+          );
+
+          return res.status(201).json(response);
         } catch (error) {
-          console.error('Error saat menambahkan produk:', error);
-          return res.status(500).send(error.message);
+          console.error('Error :', error);
+          const response = Response.badResponse(
+            500,
+            'An error occurred while add product',
+            error.message
+          );
+          return res.status(500).send(response);
         }
       });
 
@@ -127,13 +132,179 @@ async function addProdukFunction(req, res) {
     });
   } catch (error) {
     console.error('Error saat mengunggah file:', error);
-    return res
-      .status(500)
-      .send('Terjadi kesalahan saat mengunggah gambar.', error);
+    const response = Response.badResponse(
+      500,
+      'An error occurred while upload images',
+      error.message
+    );
+    return res.status(500).send(response);
   }
 }
 
-async function getAllProductByLessor(req, res) {
+async function updateProductByProductId(req, res) {
+  try {
+    upload.single('image')(req, res, async (err) => {
+      if (err instanceof multer.MulterError) {
+        console.error('Error saat mengunggah file:', err);
+        return res
+          .status(500)
+          .send('Terjadi kesalahan saat mengunggah gambar.');
+      } else if (err) {
+        console.error('Error saat mengunggah file:', err);
+        return res
+          .status(500)
+          .send('Terjadi kesalahan saat mengunggah gambar.');
+      }
+
+      const file = req.file;
+      const { title, description, price, quantity } = req.body;
+      const productId = req.params.productId;
+      const username = req.params.username;
+
+      // Cek apakah item ID dan username valid
+      if (!productId || !username) {
+        const response = Response.badResponse(
+          400,
+          'Product atau username not valid'
+        );
+        return res.status(400).send(response);
+      }
+
+      const db = admin.firestore();
+
+      // Periksa apakah item dengan ID dan username tersebut ada
+      const itemRef = db.collection('products').doc(productId);
+      const itemDoc = await itemRef.get();
+
+      if (!itemDoc.exists) {
+        const response = Response.badResponse(404, 'Item not Found');
+        return res.status(404).send(response);
+      }
+
+      const itemData = itemDoc.data();
+      const imageUrl = itemData.imageUrl;
+
+      // Jika ada file gambar yang diunggah, lakukan update gambar
+      if (file) {
+        // Cek ukuran file
+        const maxSizeInBytes = 10 * 1024 * 1024; // 10 MB
+        if (file.size > maxSizeInBytes) {
+          const response = Response.badResponse(
+            400,
+            'image Size is more than 10MB'
+          );
+          return res.status(400).send(response);
+        }
+
+        const bucket = storage.bucket(bucketName);
+        const originalFileName = file.originalname;
+        const { category, sub_category } = itemData;
+
+        let fileName = `${originalFileName
+          .split('.')
+          .slice(0, -1)
+          .join('.')}_${username}.${originalFileName.split('.').pop()}`;
+
+        // Jika nama file sebelumnya sama dengan nama file yang baru diunggah
+        if (imageUrl && imageUrl.split('/').pop() === fileName) {
+          // Generate nama baru dengan menambahkan versi increment
+          let version = 1;
+          const fileNameWithoutExtension = fileName
+            .split('.')
+            .slice(0, -1)
+            .join('.');
+          const fileExtension = fileName.split('.').pop();
+
+          while (true) {
+            const newFileName = `${fileNameWithoutExtension}_newVersion}.${fileExtension}`;
+            const newFilePath = `${category}/${sub_category}/${newFileName}`;
+            const fileExists = await bucket.file(newFilePath).exists();
+
+            if (!fileExists[0]) {
+              fileName = newFileName;
+              break;
+            }
+          }
+        }
+
+        const filePath = `${category}/${sub_category}/${fileName}`;
+
+        const blob = bucket.file(filePath);
+        const blobStream = blob.createWriteStream({
+          metadata: {
+            contentType: file.mimetype,
+          },
+          predefinedAcl: 'publicRead', // Membuat gambar otomatis public
+        });
+
+        blobStream.on('error', (error) => {
+          console.error('Error saat mengunggah file:', error);
+          const response = Response.badResponse(
+            500,
+            'An error occurred while upload images ',
+            error.message
+          );
+          return res.status(500).send(response);
+        });
+
+        blobStream.on('finish', async () => {
+          const publicUrl = `https://storage.googleapis.com/${bucketName}/${filePath}`;
+
+          // Update data produk dengan data yang diberikan
+          const updateData = {
+            title: title || itemData.title,
+            description: description || itemData.description,
+            price: price || itemData.price,
+            quantity: quantity || itemData.quantity,
+            imageUrl: publicUrl,
+          };
+
+          if (imageUrl && imageUrl !== publicUrl) {
+            // Hapus gambar lama dari Firebase Storage
+            const oldImagePath = imageUrl.split(`/${bucketName}/`)[1];
+            await bucket.file(oldImagePath).delete();
+          }
+
+          await itemRef.update(updateData);
+
+          const response = Response.successResponse(
+            200,
+            'Success update product data',
+            updateData
+          );
+
+          return res.status(200).json(response);
+        });
+
+        blobStream.end(file.buffer);
+      } else {
+        // Jika tidak ada file gambar yang diunggah, hanya lakukan update data produk
+        const updateData = {
+          title: title || itemData.title,
+          description: description || itemData.description,
+          price: price || itemData.price,
+          quantity: quantity || itemData.quantity,
+          imageUrl: imageUrl, // Tetap gunakan gambar lama jika tidak ada pembaruan gambar
+        };
+
+        await itemRef.update(updateData);
+
+        const response = Response.successResponse(
+          200,
+          'Success Update Product Data without change images',
+          updateData
+        );
+
+        return res.status(200).json(response);
+      }
+    });
+  } catch (error) {
+    console.error('Error saat mengupdate produk:', error);
+    return res.status(500).send('Terjadi kesalahan saat mengupdate produk.');
+  }
+}
+
+async function getAllProductsByLessor(req, res) {
   try {
     const db = admin.firestore();
     const lessorUsername = req.params.username;
@@ -164,17 +335,22 @@ async function getAllProductByLessor(req, res) {
       productsData.push(productData);
     });
 
-    const response = {
-      message: 'Success',
-      data: productsData,
-    };
+    const response = Response.successResponse(
+      200,
+      'Success Get Product',
+      productsData
+    );
 
     return res.status(200).json(response);
   } catch (error) {
     console.error('Error while getting products by lessor:', error);
-    return res
-      .status(500)
-      .send('An error occurred while getting products by lessor');
+
+    const response = Response.badResponse(
+      500,
+      'An error occurred while getting  products by lessor',
+      error.message
+    );
+    return res.status(500).send(response);
   }
 }
 
@@ -184,7 +360,12 @@ async function getImageByName(req, res) {
 
   // Memeriksa keberadaan file
   if (!files || files.length === 0) {
-    return res.status(404).json({ error: 'Gambar tidak ditemukan.' });
+    const response = Response.badResponse(
+      404,
+      'image not fount',
+      error.message
+    );
+    return res.status(404).send(response);
   }
 
   const file = files[0];
@@ -192,30 +373,46 @@ async function getImageByName(req, res) {
 
   const imageUrl = `https://storage.googleapis.com/${bucketName}/${file.name}`;
 
-  return res.status(200).json({ name: file.name, url: imageUrl });
+  const imageData = { name: file.name, url: imageUrl };
+  const response = Response.successResponse(
+    200,
+    'Success Get Image',
+    imageData
+  );
+
+  return res.status(200).json(response);
 }
 
 async function getAllImages(req, res) {
   try {
     const [files] = await storage.bucket(bucketName).getFiles();
-    const imageUrls = files.map((file) => ({
+    const allImages = files.map((file) => ({
       name: file.name,
       url: `https://storage.googleapis.com/${bucketName}/${file.name}`,
     }));
-    return res.status(200).json(imageUrls);
-  } catch (err) {
-    console.error('Error saat mendapatkan daftar gambar:', err);
-    return res
-      .status(500)
-      .send('Terjadi kesalahan saat mengambil daftar gambar.');
+    const response = Response.successResponse(
+      200,
+      'Success Get All Images ',
+      allImages
+    );
+
+    return res.status(200).json(response);
+  } catch (error) {
+    console.error('Error saat mendapatkan daftar gambar:', error);
+    const response = Response.badResponse(
+      500,
+      'Error when get all images',
+      error.message
+    );
+    return res.status(500).send(response);
   }
 }
 
 module.exports = {
-  addProdukFunction,
+  addProduct,
   getImageByName,
   getAllImages,
-  getAllProductByLessor,
+  getAllProductsByLessor,
   updateProductByProductId,
 };
 
@@ -274,7 +471,7 @@ module.exports = {
 // }
 
 // // Fungsi untuk menambahkan produk
-// async function addProdukFunction(req, res) {
+// async function addProduct(req, res) {
 //   const {
 //     title,
 //     description,
@@ -329,7 +526,7 @@ module.exports = {
 //   handleImageUpload,
 //   getAllImages,
 //   getImageByName,
-//   addProdukFunction,
+//   addProduct,
 // };
 
 // async function getImageById(req, res) {

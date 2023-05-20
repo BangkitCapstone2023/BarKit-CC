@@ -1,7 +1,8 @@
-function badResponse(statusCode, message) {
+function badResponse(statusCode, message, error = null) {
   return {
-    error_code: statusCode,
+    status: statusCode,
     message: message,
+    error: error,
   };
 }
 

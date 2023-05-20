@@ -4,8 +4,8 @@ const {
   getAllProductsByLessor,
   updateProductByProductId,
   addProduct,
-  getAllImages,
-  getImageByName,
+  // getAllImages,
+  // getImageByName,
 } = require('../controllers/productHandler');
 
 const {
@@ -28,8 +28,8 @@ router.put('/lessors/:username/products/:productId', updateProductByProductId);
 router.post('/lessors/:username/products', addProduct);
 
 //! Get Image Route
-router.get('/images', getAllImages);
-router.get('/images/:name', getImageByName);
+// router.get('/images', getAllImages);
+// router.get('/images/:name', getImageByName);
 // router.get('/images/:name/download', addProductHandler.downloadImage);
 
 module.exports = router;

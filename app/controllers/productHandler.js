@@ -344,23 +344,43 @@ async function getAllProductsByLessor(req, res) {
 
     const productsData = [];
 
-    // Iterate through the products snapshot and collect the data
     productsSnapshot.forEach((doc) => {
       const productData = doc.data();
 
-      // Convert created_at field to Timestamp object
-      const createdAt = new admin.firestore.Timestamp(
-        productData.created_at._seconds,
+      // Check if created_at field exists
+      if (
+        productData.created_at &&
+        productData.created_at._seconds &&
         productData.created_at._nanoseconds
-      ).toDate();
-      productData.created_at = createdAt;
+      ) {
+        // Convert created_at field to Timestamp object
+        const createdAt = new admin.firestore.Timestamp(
+          productData.created_at._seconds,
+          productData.created_at._nanoseconds
+        ).toDate();
 
-      // Convert update_at field to Timestamp object
-      const updatedAt = new admin.firestore.Timestamp(
-        productData.update_at._seconds,
+        // Set create_at field as ISO string without milliseconds
+        productData.create_at = createdAt.toISOString().replace(/\.\d+Z$/, 'Z');
+
+        // Remove created_at field with nanoseconds
+        delete productData.created_at;
+      }
+
+      // Check if update_at field exists
+      if (
+        productData.update_at &&
+        productData.update_at._seconds &&
         productData.update_at._nanoseconds
-      ).toDate();
-      productData.update_at = updatedAt;
+      ) {
+        // Convert update_at field to Timestamp object
+        const updatedAt = new admin.firestore.Timestamp(
+          productData.update_at._seconds,
+          productData.update_at._nanoseconds
+        ).toDate();
+
+        // Set update_at field as ISO string without milliseconds
+        productData.update_at = updatedAt.toISOString().replace(/\.\d+Z$/, 'Z');
+      }
 
       productsData.push(productData);
     });
@@ -384,64 +404,8 @@ async function getAllProductsByLessor(req, res) {
   }
 }
 
-async function getImageByName(req, res) {
-  const { name } = req.params;
-  const [files] = await storage.bucket(bucketName).getFiles({ prefix: name });
-
-  // Memeriksa keberadaan file
-  if (!files || files.length === 0) {
-    const response = Response.badResponse(
-      404,
-      'image not fount',
-      error.message
-    );
-    return res.status(404).send(response);
-  }
-
-  const file = files[0];
-  // console.log(file);
-
-  const imageUrl = `https://storage.googleapis.com/${bucketName}/${file.name}`;
-
-  const imageData = { name: file.name, url: imageUrl };
-  const response = Response.successResponse(
-    200,
-    'Success Get Image',
-    imageData
-  );
-
-  return res.status(200).json(response);
-}
-
-async function getAllImages(req, res) {
-  try {
-    const [files] = await storage.bucket(bucketName).getFiles();
-    const allImages = files.map((file) => ({
-      name: file.name,
-      url: `https://storage.googleapis.com/${bucketName}/${file.name}`,
-    }));
-    const response = Response.successResponse(
-      200,
-      'Success Get All Images ',
-      allImages
-    );
-
-    return res.status(200).json(response);
-  } catch (error) {
-    console.error('Error saat mendapatkan daftar gambar:', error);
-    const response = Response.badResponse(
-      500,
-      'Error when get all images',
-      error.message
-    );
-    return res.status(500).send(response);
-  }
-}
-
 module.exports = {
   addProduct,
-  getImageByName,
-  getAllImages,
   getAllProductsByLessor,
   updateProductByProductId,
 };

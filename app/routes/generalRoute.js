@@ -4,7 +4,7 @@ const router = express.Router();
 const {
   getAllImages,
   getImageByName,
-} = require('../controllers/productHandler');
+} = require('../controllers/generalHandler');
 
 router.get('/images', getAllImages);
 router.get('/images/:name', getImageByName);

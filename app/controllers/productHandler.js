@@ -210,15 +210,7 @@ async function updateProductById(req, res) {
       }
 
       const itemData = itemDoc.data();
-      console.log(title);
-      console.log(itemData.title);
-      if (title === itemData.title) {
-        return res
-          .status(400)
-          .send(
-            `Product '${title}' already exists for the lessor, plese use another title`
-          );
-      }
+
       const imageUrl = itemData.imageUrl;
 
       // Jika ada file gambar yang diunggah, lakukan update gambar

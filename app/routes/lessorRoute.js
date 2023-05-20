@@ -9,7 +9,6 @@ const {
 
 const {
   registerLessor,
-  getAllLessors,
   getLessorProfile,
   updateLessor,
 } = require('../controllers/lessorHandler');
@@ -18,7 +17,6 @@ const {
 router.post('/lessors/:username/register', registerLessor);
 
 //! Store Feature Routes
-router.get('/lessors', getAllLessors);
 router.get('/lessors/:username/profile', getLessorProfile);
 router.put('/lessors/:username', updateLessor);
 

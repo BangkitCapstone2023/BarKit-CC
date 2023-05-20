@@ -5,7 +5,10 @@ const {
   getAllImages,
   getImageByName,
   deleteLessorById,
+  getAllLessors,
 } = require('../controllers/generalHandler');
+
+router.get('/lessors', getAllLessors);
 
 router.delete('/lessors/:lessorId', deleteLessorById);
 

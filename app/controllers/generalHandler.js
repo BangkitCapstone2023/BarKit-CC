@@ -2,6 +2,39 @@ const admin = require('firebase-admin');
 const Response = require('../utils/response');
 const { storage, bucketName } = require('../config/configCloudStorage');
 
+async function getAllLessors(req, res) {
+  try {
+    const db = admin.firestore();
+
+    // Get all lessors from Firestore
+    const lessorsSnapshot = await db.collection('lessors').get();
+
+    const lessorsData = [];
+
+    // Iterate through the lessors snapshot and collect the data
+    lessorsSnapshot.forEach((doc) => {
+      const lessorData = doc.data();
+      lessorsData.push(lessorData);
+    });
+
+    const response = Response.successResponse(
+      200,
+      'Success Get All Lessor',
+      lessorsData
+    );
+
+    return res.status(200).json(response);
+  } catch (error) {
+    console.error('Error while getting lessors:', error);
+    const response = Response.badResponse(
+      500,
+      'An error occurred while getting all lessor data',
+      error.message
+    );
+    return res.status(500).send(response);
+  }
+}
+
 async function deleteLessorById(req, res) {
   const db = admin.firestore();
   const { lessorId } = req.params;
@@ -129,5 +162,6 @@ async function getAllImages(req, res) {
 module.exports = {
   getImageByName,
   getAllImages,
+  getAllLessors,
   deleteLessorById,
 };

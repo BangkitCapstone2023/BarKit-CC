@@ -169,11 +169,177 @@ const getSubCategoriesByName = async (req, res) => {
   }
 };
 
+async function getProductsBySubCategory(req, res) {
+  try {
+    const { name } = req.params;
+
+    console.log(name);
+    const productsSnapshot = await db
+      .collection('products')
+      .where('sub_category', '==', name)
+      .get();
+
+    const products = [];
+
+    productsSnapshot.forEach((doc) => {
+      const { title, category, sub_category, quantity, price } = doc.data();
+      products.push({ title, category, sub_category, quantity, price });
+    });
+
+    const response = {
+      status: 200,
+      message: 'Products retrieved successfully',
+      data: products,
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error('Error while getting products by subcategory:', error);
+
+    const response = {
+      status: 500,
+      message: 'An error occurred while getting products by subcategory',
+      error: error.message,
+    };
+
+    res.status(500).json(response);
+  }
+}
+
+async function getProductById(req, res) {
+  try {
+    const { productId } = req.params;
+
+    const productDoc = await db.collection('products').doc(productId).get();
+
+    if (!productDoc.exists) {
+      const response = {
+        status: 404,
+        message: 'Product not found',
+      };
+      return res.status(404).json(response);
+    }
+
+    const productData = productDoc.data();
+
+    const response = {
+      status: 200,
+      message: 'Product details retrieved successfully',
+      data: productData,
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error('Error while getting product details:', error);
+
+    const response = {
+      status: 500,
+      message: 'An error occurred while getting product details',
+      error: error.message,
+    };
+
+    res.status(500).json(response);
+  }
+}
+
+async function getUserProfile(req, res) {
+  try {
+    const { username } = req.params;
+
+    // Mencari data profil renter berdasarkan username
+    const profileQuery = await db
+      .collection('renters')
+      .where('username', '==', username)
+      .limit(1)
+      .get();
+
+    if (profileQuery.empty) {
+      const response = {
+        status: 404,
+        message: 'Profile not found',
+      };
+      return res.status(404).json(response);
+    }
+
+    const profileDoc = profileQuery.docs[0];
+    const profileData = profileDoc.data();
+
+    const response = {
+      status: 200,
+      message: 'Profile retrieved successfully',
+      data: profileData,
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error('Error while getting user profile:', error);
+
+    const response = {
+      status: 500,
+      message: 'An error occurred while getting user profile',
+      error: error.message,
+    };
+
+    res.status(500).json(response);
+  }
+}
+async function updateProfile(req, res) {
+  try {
+    const { username } = req.params;
+    const { name, address, phone, gender } = req.body;
+
+    // Cari data profile renter berdasarkan username
+    const profileSnapshot = await db
+      .collection('renters')
+      .where('username', '==', username)
+      .get();
+
+    if (profileSnapshot.empty) {
+      const response = {
+        status: 404,
+        message: 'Profile not found',
+      };
+      return res.status(404).json(response);
+    }
+
+    const profileRef = profileSnapshot.docs[0].ref;
+
+    // Perbarui data profile renter pada database
+    await profileRef.update({
+      name,
+      address,
+      phone,
+      gender,
+    });
+
+    const response = {
+      status: 200,
+      message: 'Profile updated successfully',
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error('Error while updating user profile:', error);
+
+    const response = {
+      status: 500,
+      message: 'An error occurred while updating user profile',
+      error: error.message,
+    };
+
+    res.status(500).json(response);
+  }
+}
+
 module.exports = {
   getDashboardData,
   searchProduct,
   getAllCategories,
   getSubCategoriesByName,
+  getProductsBySubCategory,
+  getProductById,
+  getUserProfile,
+  updateProfile,
 };
 
 // const searchProduct = async (req, res) => {

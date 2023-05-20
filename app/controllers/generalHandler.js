@@ -40,33 +40,37 @@ async function deleteLessorById(req, res) {
   const { lessorId } = req.params;
 
   try {
-    // Delete the lessor document
-    const lessorSnapshot = await db
-      .collection('lessors')
-      .where('lessorId', '==', lessorId)
-      .get();
+    // Get the lessor document
+    const lessorSnapshot = await db.collection('lessors').doc(lessorId).get();
 
-    if (lessorSnapshot.empty) {
-      throw new Error(`User '${lessorId}' not found or not a lessors`);
+    if (!lessorSnapshot.exists) {
+      throw new Error(`Lessor '${lessorId}' not found`);
     }
-    var lessorData = lessorSnapshot.docs[0].data();
 
-    const userSnapshot = await db
-      .collection('renters')
-      .where('username', '==', lessorData.username)
-      .get();
-
-    const renterId = userSnapshot.docs[0].id; // Get the renter ID
-
-    const renterRef = db.collection('renters').doc(renterId);
-    await renterRef.update({ isLessor: false });
+    // Get the lessor's username
+    const lessorData = lessorSnapshot.data();
+    const lessorUsername = lessorData.username;
 
     const lessorRef = db.collection('lessors').doc(lessorId);
     await lessorRef.delete();
 
+    // Delete all products uploaded by the lessor
+    const productsSnapshot = await db
+      .collection('products')
+      .where('username', '==', lessorUsername)
+      .get();
+
+    const batch = db.batch();
+
+    productsSnapshot.forEach((doc) => {
+      batch.delete(doc.ref);
+    });
+
+    await batch.commit();
+
     const response = Response.successResponse(
       200,
-      'Lessor deleted successfully'
+      'Lessor and associated products deleted successfully'
     );
 
     res.status(200).json(response);
@@ -81,6 +85,53 @@ async function deleteLessorById(req, res) {
     res.status(500).json(response);
   }
 }
+
+// async function deleteLessorById(req, res) {
+//   const db = admin.firestore();
+//   const { lessorId } = req.params;
+
+//   try {
+//     // Delete the lessor document
+//     const lessorSnapshot = await db
+//       .collection('lessors')
+//       .where('lessorId', '==', lessorId)
+//       .get();
+
+//     if (lessorSnapshot.empty) {
+//       throw new Error(`User '${lessorId}' not found or not a lessors`);
+//     }
+//     var lessorData = lessorSnapshot.docs[0].data();
+
+//     const userSnapshot = await db
+//       .collection('renters')
+//       .where('username', '==', lessorData.username)
+//       .get();
+
+//     const renterId = userSnapshot.docs[0].id; // Get the renter ID
+
+//     const renterRef = db.collection('renters').doc(renterId);
+//     await renterRef.update({ isLessor: false });
+
+//     const lessorRef = db.collection('lessors').doc(lessorId);
+//     await lessorRef.delete();
+
+//     const response = Response.successResponse(
+//       200,
+//       'Lessor deleted successfully'
+//     );
+
+//     res.status(200).json(response);
+//   } catch (error) {
+//     console.error('Error deleting lessor:', error);
+
+//     const response = Response.badResponse(
+//       500,
+//       'Error deleting lessor',
+//       error.message
+//     );
+//     res.status(500).json(response);
+//   }
+// }
 
 // ! Error
 async function getImageByName(req, res) {

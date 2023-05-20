@@ -2,8 +2,9 @@ const express = require('express');
 const router = express.Router();
 const {
   getAllProductsByLessor,
-  updateProductByProductId,
+  updateProductById,
   addProduct,
+  deleteProductById,
 } = require('../controllers/productHandler');
 
 const {
@@ -11,7 +12,7 @@ const {
   getAllLessors,
   getLessorProfile,
   updateLessor,
-  deleteLessor,
+  deleteLessorById,
 } = require('../controllers/lessorHandler');
 
 //! Register Lessor Route
@@ -21,10 +22,11 @@ router.post('/lessors/:username/register', registerLessor);
 router.get('/lessors', getAllLessors);
 router.get('/lessors/:username/profile', getLessorProfile);
 router.put('/lessors/:username', updateLessor);
-router.delete('/lessors/:lessorId', deleteLessor);
+router.delete('/lessors/:lessorId', deleteLessorById);
 
 router.get('/lessors/:username/products', getAllProductsByLessor);
-router.put('/lessors/:username/products/:productId', updateProductByProductId);
+router.put('/lessors/:username/products/:productId', updateProductById);
 router.post('/lessors/:username/products', addProduct);
+router.delete('/lessors/:username/products/:productId', deleteProductById);
 
 module.exports = router;

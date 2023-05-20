@@ -204,7 +204,7 @@ async function updateLessor(req, res) {
   }
 }
 
-async function deleteLessor(req, res) {
+async function deleteLessorById(req, res) {
   const db = admin.firestore();
   const { lessorId } = req.params;
 
@@ -255,5 +255,5 @@ module.exports = {
   getLessorProfile,
   getAllLessors,
   updateLessor,
-  deleteLessor,
+  deleteLessorById,
 };

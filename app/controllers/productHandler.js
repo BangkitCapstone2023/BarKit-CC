@@ -149,7 +149,7 @@ async function addProduct(req, res) {
   }
 }
 
-async function updateProductByProductId(req, res) {
+async function updateProductById(req, res) {
   try {
     upload.single('image')(req, res, async (err) => {
       if (err instanceof multer.MulterError) {
@@ -404,10 +404,60 @@ async function getAllProductsByLessor(req, res) {
   }
 }
 
+async function deleteProductById(req, res) {
+  const { productId } = req.params;
+  const { username } = req.params;
+
+  const db = admin.firestore();
+  try {
+    // Cek apakah produk dengan ID yang diberikan ada di database
+    const productRef = db.collection('products').doc(productId);
+    const productDoc = await productRef.get();
+
+    if (!productDoc.exists) {
+      const response = {
+        status: 404,
+        message: 'Product not found',
+      };
+      return res.status(404).json(response);
+    }
+
+    const productData = productDoc.data();
+
+    // Cek apakah lessor yang menghapus produk adalah lessor yang mengunggah produk
+    if (productData.username !== username) {
+      const response = {
+        status: 403,
+        message:
+          'Access denied. Only the lessor who uploaded the product can delete it.',
+      };
+      return res.status(403).json(response);
+    }
+
+    // Hapus produk dari database
+    await productRef.delete();
+
+    const response = {
+      status: 200,
+      message: 'Product deleted successfully',
+    };
+    return res.status(200).json(response);
+  } catch (error) {
+    console.error('Error deleting product:', error);
+    const response = {
+      status: 500,
+      message: 'Error deleting product',
+      error: error.message,
+    };
+    return res.status(500).json(response);
+  }
+}
+
 module.exports = {
   addProduct,
   getAllProductsByLessor,
-  updateProductByProductId,
+  updateProductById,
+  deleteProductById,
 };
 
 // async function handleImageUpload(req, res) {

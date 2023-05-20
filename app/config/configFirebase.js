@@ -1,12 +1,11 @@
+// Firebase Config
 const admin = require('firebase-admin');
 const credentials = require('./firebaseAccountKey2.json');
 
-// Inisialisasi aplikasi Firebase
-admin.initializeApp({
-  credential: admin.credential.cert(credentials),
-  databaseURL: 'https://kirbattesting.firebaseio.com',
-});
+async function initializeApp() {
+  await admin.initializeApp({
+    credential: admin.credential.cert(credentials),
+  });
+}
 
-const db = admin.firestore();
-
-module.exports = { db };
+module.exports = initializeApp;

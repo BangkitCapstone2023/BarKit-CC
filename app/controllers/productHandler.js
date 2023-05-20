@@ -8,8 +8,6 @@ const { storage, bucketName } = require('../config/configCloudStorage');
 const multerStorage = multer.memoryStorage();
 const upload = multer({ storage: multerStorage });
 
-const { db } = require('../config/configFirebase');
-
 async function addProduct(req, res) {
   try {
     upload.single('image')(req, res, async (err) => {
@@ -25,6 +23,7 @@ async function addProduct(req, res) {
           .send('Terjadi kesalahan saat mengunggah gambar.');
       }
 
+      const db = admin.firestore();
       const username = req.params.username;
 
       const userSnapshot = await db
@@ -199,6 +198,8 @@ async function updateProductById(req, res) {
         return res.status(400).send(response);
       }
 
+      const db = admin.firestore();
+
       // Periksa apakah item dengan ID dan username tersebut ada
       const itemRef = db.collection('products').doc(productId);
       const itemDoc = await itemRef.get();
@@ -342,6 +343,7 @@ async function updateProductById(req, res) {
 
 async function getAllProductsByLessor(req, res) {
   try {
+    const db = admin.firestore();
     const lessorUsername = req.params.username;
 
     // Get the lessor document by username
@@ -428,6 +430,7 @@ async function deleteProductById(req, res) {
   const { productId } = req.params;
   const { username } = req.params;
 
+  const db = admin.firestore();
   try {
     // Cek apakah produk dengan ID yang diberikan ada di database
     const productRef = db.collection('products').doc(productId);
@@ -546,7 +549,7 @@ module.exports = {
 //   } = req.body;
 
 //   try {
-//
+//     const db = admin.firestore();
 
 //     const userSnapshot = await db
 //       .collection('renters')

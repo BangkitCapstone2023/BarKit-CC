@@ -210,9 +210,76 @@ async function getAllImages(req, res) {
   }
 }
 
+async function getAllRenters(req, res) {
+  try {
+    const db = admin.firestore();
+
+    // Get all renters from Firestore
+    const renterSnapshot = await db.collection('renters').get();
+
+    const rentersData = [];
+
+    // Iterate through the renters snapshot and collect the data
+    renterSnapshot.forEach((doc) => {
+      const renterData = doc.data();
+      rentersData.push(renterData);
+    });
+
+    const response = Response.successResponse(
+      200,
+      'Success Get All Renters',
+      rentersData
+    );
+
+    return res.status(200).json(response);
+  } catch (error) {
+    console.error('Error while getting all renters:', error);
+    const response = Response.badResponse(
+      500,
+      'An error occurred while getting all renters data',
+      error.message
+    );
+    return res.status(500).send(response);
+  }
+}
+
+async function deleteRenterById(req, res) {
+  const db = admin.firestore();
+  const { id } = req.params;
+
+  try {
+    // Get the lessor document
+    const renterSnapshot = await db.collection('renters').doc(id).get();
+
+    if (!renterSnapshot.exists) {
+      throw new Error(`Renter '${id}' not found`);
+    } else {
+      await db.collection('renters').doc(id).delete();
+    }
+
+    const response = Response.successResponse(
+      200,
+      'Renters deleted successfully'
+    );
+
+    res.status(200).json(response);
+  } catch (error) {
+    console.error('Error deleting lessor:', error);
+
+    const response = Response.badResponse(
+      500,
+      'Error deleting lessor',
+      error.message
+    );
+    res.status(500).json(response);
+  }
+}
+
 module.exports = {
   getImageByName,
   getAllImages,
   getAllLessors,
   deleteLessorById,
+  getAllRenters,
+  deleteRenterById,
 };

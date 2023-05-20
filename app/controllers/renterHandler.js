@@ -115,7 +115,66 @@ const searchProduct = async (req, res) => {
   }
 };
 
-module.exports = { getDashboardData, searchProduct };
+// Mendapatkan semua kategori
+const getAllCategories = async (req, res) => {
+  try {
+    const snapshot = await db.collection('categories').get();
+    const categories = [];
+
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      categories.push({ id: doc.id, name: data.name });
+    });
+
+    res.status(200).json(categories);
+  } catch (error) {
+    console.error('Error getting categories', error);
+    res.status(500).json({ error: 'Failed to get categories' });
+  }
+};
+
+// Mendapatkan subkategori berdasarkan ID kategori
+const getSubCategoriesByName = async (req, res) => {
+  const { name } = req.params;
+
+  try {
+    const snapshot = await db
+      .collection('categories')
+      .where('name', '==', name)
+      .get();
+
+    if (snapshot.empty) {
+      res.status(404).json({ error: 'Category not found' });
+      return;
+    }
+
+    const categoryId = snapshot.docs[0].id;
+    const subCategoriesSnapshot = await db
+      .collection('categories')
+      .doc(categoryId)
+      .collection('sub_categories')
+      .get();
+
+    const subCategories = [];
+
+    subCategoriesSnapshot.forEach((doc) => {
+      const data = doc.data();
+      subCategories.push({ id: doc.id, name: data.name });
+    });
+
+    res.status(200).json(subCategories);
+  } catch (error) {
+    console.error('Error getting subcategories', error);
+    res.status(500).json({ error: 'Failed to get subcategories' });
+  }
+};
+
+module.exports = {
+  getDashboardData,
+  searchProduct,
+  getAllCategories,
+  getSubCategoriesByName,
+};
 
 // const searchProduct = async (req, res) => {
 //   try {

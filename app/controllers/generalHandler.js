@@ -300,48 +300,6 @@ async function addSubCategory(req, res) {
     });
 }
 
-// Mendapatkan semua kategori
-const getAllCategories = async (req, res) => {
-  try {
-    const snapshot = await db.collection('categories').get();
-    const categories = [];
-
-    snapshot.forEach((doc) => {
-      const data = doc.data();
-      categories.push({ id: doc.id, name: data.name });
-    });
-
-    res.status(200).json(categories);
-  } catch (error) {
-    console.error('Error getting categories', error);
-    res.status(500).json({ error: 'Failed to get categories' });
-  }
-};
-
-// Mendapatkan subkategori berdasarkan ID kategori
-const getSubCategoriesByCategoryId = async (req, res) => {
-  const { categoryId } = req.params;
-
-  try {
-    const snapshot = await db
-      .collection('categories')
-      .doc(categoryId)
-      .collection('sub_categories')
-      .get();
-    const subCategories = [];
-
-    snapshot.forEach((doc) => {
-      const data = doc.data();
-      subCategories.push({ id: doc.id, name: data.name });
-    });
-
-    res.status(200).json(subCategories);
-  } catch (error) {
-    console.error('Error getting subcategories', error);
-    res.status(500).json({ error: 'Failed to get subcategories' });
-  }
-};
-
 module.exports = {
   getImageByName,
   getAllImages,
@@ -351,6 +309,4 @@ module.exports = {
   deleteRenterById,
   addCategory,
   addSubCategory,
-  getAllCategories,
-  getSubCategoriesByCategoryId,
 };

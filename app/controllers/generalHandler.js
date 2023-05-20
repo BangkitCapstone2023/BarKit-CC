@@ -1,5 +1,6 @@
 const admin = require('firebase-admin');
 const Response = require('../utils/response');
+
 const { db } = require('../config/configFirebase');
 
 async function getAllLessors(req, res) {
@@ -34,6 +35,7 @@ async function getAllLessors(req, res) {
 }
 
 async function deleteLessorById(req, res) {
+  const db = admin.firestore();
   const { lessorId } = req.params;
 
   try {
@@ -84,7 +86,7 @@ async function deleteLessorById(req, res) {
 }
 
 // async function deleteLessorById(req, res) {
-//
+//   const db = admin.firestore();
 //   const { lessorId } = req.params;
 
 //   try {

@@ -4,7 +4,9 @@ const port = 8080;
 
 const { db } = require('./app/config/configFirebase');
 const authRouter = require('./app/routes/authRoute');
+const lessorRouter = require('./app/routes/lessorRoute');
 const generalRouter = require('./app/routes/generalRoute');
+
 const renterRouter = require('./app/routes/renterRoute');
 
 // app.get('/', (req, res) => {
@@ -15,6 +17,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use(authRouter);
+app.use(lessorRouter);
 app.use(generalRouter);
 app.use(renterRouter);
 

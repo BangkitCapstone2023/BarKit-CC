@@ -8,7 +8,6 @@ const clientConfig = require('../config/firebaseClientConfig2.json');
 firebase.initializeApp(clientConfig);
 
 const { db } = require('../config/configFirebase');
-
 // Login user menggunakan Firebase Admin SDK
 async function login(req, res) {
   const user = {

@@ -11,6 +11,7 @@ const {
   getAllLessors,
   getLessorProfile,
   updateLessor,
+  deleteLessor,
 } = require('../controllers/lessorHandler');
 
 //! Register Lessor Route
@@ -20,6 +21,7 @@ router.post('/lessors/:username/register', registerLessor);
 router.get('/lessors', getAllLessors);
 router.get('/lessors/:username/profile', getLessorProfile);
 router.put('/lessors/:username', updateLessor);
+router.delete('/lessors/:username', deleteLessor);
 
 router.get('/lessors/:username/products', getAllProductsByLessor);
 router.put('/lessors/:username/products/:productId', updateProductByProductId);

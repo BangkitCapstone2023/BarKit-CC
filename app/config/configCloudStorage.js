@@ -1,7 +1,7 @@
 const { Storage } = require('@google-cloud/storage');
 const path = require('path');
 
-const serviceKey = path.join(__dirname, 'cloudStorageKey.json');
+const serviceKey = path.join(__dirname, 'cloudStorageKey2.json');
 const storage = new Storage({
   projectId: 'barkit-c23pr544',
   keyFilename: serviceKey,

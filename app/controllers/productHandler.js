@@ -1,7 +1,13 @@
 const multer = require('multer');
+const moment = require('moment');
 const { v4: uuidv4 } = require('uuid');
 const admin = require('firebase-admin');
-const TimeStamp = admin.firestore.Timestamp.now();
+
+const timestamp = admin.firestore.Timestamp.now();
+const date = timestamp.toDate();
+
+const formattedTimestamp = moment(date).format('YYYY-MM-DD HH:mm:ss');
+
 const Response = require('../utils/response');
 
 const { storage, bucketName } = require('../config/configCloudStorage');
@@ -123,7 +129,7 @@ async function addProduct(req, res) {
             lessor_id: lessorId,
             image_id: imageId,
             product_id: productId,
-            created_at: TimeStamp,
+            create_at: formattedTimestamp,
           };
 
           // Simpan data produk ke koleksi produk di Firestore
@@ -132,12 +138,9 @@ async function addProduct(req, res) {
             .doc(productData.product_id)
             .set(productData);
 
-          const createdAt = productData.created_at.toDate();
-
           // Include the converted Date object in the response
           const responseData = {
-            ...productData,
-            created_at: createdAt,
+            productData,
           };
           const response = Response.successResponse(
             200,
@@ -286,7 +289,7 @@ async function updateProductById(req, res) {
             price: price || itemData.price,
             quantity: quantity || itemData.quantity,
             imageUrl: publicUrl,
-            update_at: TimeStamp,
+            update_at: formattedTimestamp,
           };
 
           if (imageUrl && imageUrl !== publicUrl) {
@@ -297,11 +300,8 @@ async function updateProductById(req, res) {
 
           await itemRef.update(updateData);
 
-          const updateAt = updateData.update_at.toDate();
-
           const responseData = {
-            ...updateData,
-            update_at: updateAt,
+            updateData,
           };
           const response = Response.successResponse(
             200,
@@ -366,42 +366,6 @@ async function getAllProductsByLessor(req, res) {
 
     productsSnapshot.forEach((doc) => {
       const productData = doc.data();
-
-      // Check if created_at field exists
-      if (
-        productData.created_at &&
-        productData.created_at._seconds &&
-        productData.created_at._nanoseconds
-      ) {
-        // Convert created_at field to Timestamp object
-        const createdAt = new admin.firestore.Timestamp(
-          productData.created_at._seconds,
-          productData.created_at._nanoseconds
-        ).toDate();
-
-        // Set create_at field as ISO string without milliseconds
-        productData.create_at = createdAt.toISOString().replace(/\.\d+Z$/, 'Z');
-
-        // Remove created_at field with nanoseconds
-        delete productData.created_at;
-      }
-
-      // Check if update_at field exists
-      if (
-        productData.update_at &&
-        productData.update_at._seconds &&
-        productData.update_at._nanoseconds
-      ) {
-        // Convert update_at field to Timestamp object
-        const updatedAt = new admin.firestore.Timestamp(
-          productData.update_at._seconds,
-          productData.update_at._nanoseconds
-        ).toDate();
-
-        // Set update_at field as ISO string without milliseconds
-        productData.update_at = updatedAt.toISOString().replace(/\.\d+Z$/, 'Z');
-      }
-
       productsData.push(productData);
     });
 
@@ -417,7 +381,7 @@ async function getAllProductsByLessor(req, res) {
 
     const response = Response.badResponse(
       500,
-      'An error occurred while getting  products by lessor',
+      'An error occurred while getting products by lessor',
       error.message
     );
     return res.status(500).send(response);

@@ -5,12 +5,25 @@ const {
   getAllImages,
   getImageByName,
   deleteLessorById,
+  deleteRenterById,
   getAllLessors,
+  getAllRenters,
+  addCategory,
+  addSubCategory,
+  getAllCategories,
+  getSubCategoriesByCategoryId,
 } = require('../controllers/generalHandler');
 
-router.get('/lessors', getAllLessors);
+router.get('/renters', getAllRenters);
+router.delete('/renters/:id', deleteRenterById);
 
+router.get('/lessors', getAllLessors);
 router.delete('/lessors/:lessorId', deleteLessorById);
+
+router.post('/category', addCategory);
+router.post('/category/:categoryId/subcategory', addSubCategory);
+router.get('/category', getAllCategories);
+router.get('/category/:categoryId/subcategory', getSubCategoriesByCategoryId);
 
 router.get('/images', getAllImages);
 router.get('/images/:name', getImageByName);

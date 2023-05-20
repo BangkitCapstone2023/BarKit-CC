@@ -204,56 +204,9 @@ async function updateLessor(req, res) {
   }
 }
 
-async function deleteLessorById(req, res) {
-  const db = admin.firestore();
-  const { lessorId } = req.params;
-
-  try {
-    // Delete the lessor document
-    const lessorSnapshot = await db
-      .collection('lessors')
-      .where('lessorId', '==', lessorId)
-      .get();
-
-    if (lessorSnapshot.empty) {
-      throw new Error(`User '${lessorId}' not found or not a lessors`);
-    }
-    var lessorData = lessorSnapshot.docs[0].data();
-
-    const userSnapshot = await db
-      .collection('renters')
-      .where('username', '==', lessorData.username)
-      .get();
-
-    const renterId = userSnapshot.docs[0].id; // Get the renter ID
-
-    const renterRef = db.collection('renters').doc(renterId);
-    await renterRef.update({ isLessor: false });
-
-    const lessorRef = db.collection('lessors').doc(lessorId);
-    await lessorRef.delete();
-
-    const response = Response.successResponse(
-      200,
-      'Lessor deleted successfully'
-    );
-
-    res.status(200).json(response);
-  } catch (error) {
-    console.error('Error deleting lessor:', error);
-
-    const response = Response.badResponse(
-      500,
-      'Error deleting lessor',
-      error.message
-    );
-    res.status(500).json(response);
-  }
-}
 module.exports = {
   registerLessor,
   getLessorProfile,
   getAllLessors,
   updateLessor,
-  deleteLessorById,
 };

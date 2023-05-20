@@ -4,7 +4,10 @@ const router = express.Router();
 const {
   getAllImages,
   getImageByName,
+  deleteLessorById,
 } = require('../controllers/generalHandler');
+
+router.delete('/lessors/:lessorId', deleteLessorById);
 
 router.get('/images', getAllImages);
 router.get('/images/:name', getImageByName);

@@ -89,7 +89,27 @@ async function addProduct(req, res) {
             .get();
           const lessorId = lessorSnapshot.docs[0].id;
 
+          const existingProductSnapshot = await db
+            .collection('products')
+            .where('title', '==', title)
+            .where('lessor_id', '==', lessorId)
+            .get();
+          if (!existingProductSnapshot.empty) {
+            throw new Error(
+              `Product '${title}' already exists for the lessor, plese use another title`
+            );
+          }
+
           const productId = uuidv4();
+
+          if (price < 1) {
+            throw new Error(`Price not valid`);
+          }
+
+          if (quantity < 1) {
+            throw new Error(`Quantity not valid`);
+          }
+
           const productData = {
             title,
             description,

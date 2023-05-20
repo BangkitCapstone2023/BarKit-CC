@@ -34,6 +34,13 @@ async function registerLessor(req, res) {
 
     const renterId = userSnapshot.docs[0].id; // Get the renter ID
 
+    const lessorSnapshot = await db
+      .collection('lessors')
+      .where('renterId', '==', renterId)
+      .get();
+    if (!lessorSnapshot.empty) {
+      throw new Error(`User '${req.params.username}' is already a lessor`);
+    }
     // Save additional data to Firestore if not empty
     const userDocRef = db.collection('lessors').doc();
     const lessorId = userDocRef.id; // Generate a new lessor ID

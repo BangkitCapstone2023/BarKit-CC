@@ -1,11 +1,13 @@
 const express = require('express');
 const router = express.Router();
 
-const imageHandler = require('../controllers/imagesHandler');
+const {
+  getAllImages,
+  getImageByName,
+} = require('../controllers/productHandler');
 
-router.post('/upload', imageHandler.handleImageUpload);
-router.get('/images', imageHandler.getAllImages);
-router.get('/images/:name', imageHandler.getImageByName);
+router.get('/images', getAllImages);
+router.get('/images/:name', getImageByName);
 // router.get('/images/:name/download', addProductHandler.downloadImage);
 
 module.exports = router;

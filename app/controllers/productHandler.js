@@ -1,7 +1,7 @@
 const multer = require('multer');
 const { v4: uuidv4 } = require('uuid');
 const admin = require('firebase-admin');
-
+const TimeStamp = admin.firestore.Timestamp.now();
 const Response = require('../utils/response');
 
 const { storage, bucketName } = require('../config/configCloudStorage');
@@ -102,6 +102,7 @@ async function addProduct(req, res) {
             lessor_id: lessorId,
             image_id: imageId,
             product_id: productId,
+            created_at: TimeStamp,
           };
 
           // Simpan data produk ke koleksi produk di Firestore
@@ -110,13 +111,20 @@ async function addProduct(req, res) {
             .doc(productData.product_id)
             .set(productData);
 
+          const createdAt = productData.created_at.toDate();
+
+          // Include the converted Date object in the response
+          const responseData = {
+            ...productData,
+            created_at: createdAt,
+          };
           const response = Response.successResponse(
-            201,
-            'Success Add Product',
-            productData
+            200,
+            'Success update product data',
+            responseData
           );
 
-          return res.status(201).json(response);
+          return res.status(200).json(response);
         } catch (error) {
           console.error('Error :', error);
           const response = Response.badResponse(
@@ -257,6 +265,7 @@ async function updateProductByProductId(req, res) {
             price: price || itemData.price,
             quantity: quantity || itemData.quantity,
             imageUrl: publicUrl,
+            update_at: TimeStamp,
           };
 
           if (imageUrl && imageUrl !== publicUrl) {
@@ -267,10 +276,16 @@ async function updateProductByProductId(req, res) {
 
           await itemRef.update(updateData);
 
+          const updateAt = updateData.update_at.toDate();
+
+          const responseData = {
+            ...updateData,
+            update_at: updateAt,
+          };
           const response = Response.successResponse(
             200,
             'Success update product data',
-            updateData
+            responseData
           );
 
           return res.status(200).json(response);
@@ -332,6 +347,21 @@ async function getAllProductsByLessor(req, res) {
     // Iterate through the products snapshot and collect the data
     productsSnapshot.forEach((doc) => {
       const productData = doc.data();
+
+      // Convert created_at field to Timestamp object
+      const createdAt = new admin.firestore.Timestamp(
+        productData.created_at._seconds,
+        productData.created_at._nanoseconds
+      ).toDate();
+      productData.created_at = createdAt;
+
+      // Convert update_at field to Timestamp object
+      const updatedAt = new admin.firestore.Timestamp(
+        productData.update_at._seconds,
+        productData.update_at._nanoseconds
+      ).toDate();
+      productData.update_at = updatedAt;
+
       productsData.push(productData);
     });
 

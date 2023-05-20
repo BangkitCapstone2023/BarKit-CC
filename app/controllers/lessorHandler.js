@@ -24,7 +24,7 @@ async function registerLessor(req, res) {
       .where('username', '==', req.params.username)
       .get();
     if (userSnapshot.empty) {
-      throw new Error(`User "${req.params.username}" not found`);
+      throw new Error(`User '${req.params.username}' not found`);
     }
 
     var userData = userSnapshot.docs[0].data();
@@ -34,6 +34,13 @@ async function registerLessor(req, res) {
 
     const renterId = userSnapshot.docs[0].id; // Get the renter ID
 
+    const lessorSnapshot = await db
+      .collection('lessors')
+      .where('renterId', '==', renterId)
+      .get();
+    if (!lessorSnapshot.empty) {
+      throw new Error(`User '${req.params.username}' is already a lessor`);
+    }
     // Save additional data to Firestore if not empty
     const userDocRef = db.collection('lessors').doc();
     const lessorId = userDocRef.id; // Generate a new lessor ID
@@ -70,12 +77,109 @@ async function registerLessor(req, res) {
     res.status(201).json(response);
     console.log(`Success Create Lessor ${username}`);
   } catch (error) {
-    console.log(error);
-    const response = Response.badResponse(500, error.message);
-    res.status(500).json(response);
+    console.error(error);
+    const response = Response.badResponse(
+      400,
+      'An error occurred while register lessor',
+      error.message
+    );
+    return res.status(400).send(response);
+  }
+}
+
+async function getLessorProfile(req, res) {
+  try {
+    const db = admin.firestore();
+
+    const username = req.params.username;
+
+    // Check if the lessor exists
+    const lessorSnapshot = await db
+      .collection('lessors')
+      .where('username', '==', username)
+      .get();
+
+    if (lessorSnapshot.empty) {
+      throw new Error(`Lessor '${username}' not found`);
+    }
+
+    const lessorData = lessorSnapshot.docs[0].data();
+
+    const response = Response.successResponse(
+      200,
+      'Success Get Lessor Profile',
+      lessorData
+    );
+
+    return res.status(200).json(response);
+  } catch (error) {
+    console.error('Error while getting lessor:', error);
+
+    const response = Response.badResponse(
+      500,
+      'An error occurred while getting lessor profile data',
+      error.message
+    );
+    return res.status(500).send(response);
+  }
+}
+
+async function updateLessor(req, res) {
+  try {
+    const db = admin.firestore();
+
+    const username = req.params.username;
+    const { storeFullName, storeAddress, storeEmail, storePhone } = req.body;
+
+    // Check if the lessor exists
+    const lessorSnapshot = await db
+      .collection('lessors')
+      .where('username', '==', username)
+      .get();
+
+    if (lessorSnapshot.empty) {
+      throw new Error(`Lessor '${username}'  not found`);
+    }
+
+    const lessorId = lessorSnapshot.docs[0].id;
+
+    // Update the lessor data
+    await db.collection('lessors').doc(lessorId).update({
+      storeFullName,
+      storeAddress,
+      storeEmail,
+      storePhone,
+    });
+
+    const updateData = {
+      lessorId,
+      username,
+      storeFullName,
+      storeAddress,
+      storeEmail,
+      storePhone,
+    };
+
+    const response = Response.successResponse(
+      200,
+      'Success Update Lessor Data',
+      updateData
+    );
+    return res.status(200).json(response);
+  } catch (error) {
+    console.error('Error while updating lessor:', error);
+
+    const response = Response.badResponse(
+      500,
+      'An error occurred while update lessor data',
+      error.message
+    );
+    return res.status(500).send(response);
   }
 }
 
 module.exports = {
   registerLessor,
+  getLessorProfile,
+  updateLessor,
 };

@@ -5,6 +5,8 @@ const port = 8080;
 const initializeApp = require('./app/config/configFirebase');
 const authRouter = require('./app/routes/authRoute');
 const lessorRouter = require('./app/routes/lessorRoute');
+const generalRouter = require('./app/routes/generalRoute');
+const renterRouter = require('./app/routes/renterRoute');
 app.get('/', (req, res) => {
   res.send('Hello World!');
 });
@@ -14,8 +16,8 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(authRouter);
 app.use(lessorRouter);
-
-(async () => {
+app.use(generalRouter);
+app.use(renterRouter)(async () => {
   try {
     await initializeApp();
     app.listen(port, () => {

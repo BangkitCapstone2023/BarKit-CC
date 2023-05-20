@@ -23,12 +23,24 @@ async function addProduct(req, res) {
           .send('Terjadi kesalahan saat mengunggah gambar.');
       }
 
+      const db = admin.firestore();
+      const username = req.params.username;
+
+      const userSnapshot = await db
+        .collection('renters')
+        .where('username', '==', username)
+        .get();
+      if (userSnapshot.empty) {
+        return res.status(400).send(`User '${username}' not found`);
+      }
+
       if (!req.file) {
         return res.status(400).send('Tidak ada file yang diunggah.');
       }
 
       const file = req.file;
-      const { category, sub_category } = req.body;
+      const { title, description, price, category, sub_category, quantity } =
+        req.body;
 
       // Cek ukuran file
       const maxSizeInBytes = 10 * 1024 * 1024; // 10 MB
@@ -38,11 +50,12 @@ async function addProduct(req, res) {
 
       const imageId = uuidv4(); // Membuat UUID sebagai ID gambar
       const originalFileName = file.originalname;
-      const username = req.params.username;
       const fileName = `${originalFileName
         .split('.')
         .slice(0, -1)
-        .join('.')}_${username}.${originalFileName.split('.').pop()}`;
+        .join('.')}_${username}_${title}.${originalFileName
+        .split('.')
+        .pop()}`.replace(/\s+/g, '_');
       const filePath = `${category}/${sub_category}/${fileName}`;
       const blob = storage.bucket(bucketName).file(filePath);
 
@@ -63,20 +76,7 @@ async function addProduct(req, res) {
       blobStream.on('finish', async () => {
         const publicUrl = `https://storage.googleapis.com/${bucketName}/${filePath}`;
 
-        const { title, description, price, category, sub_category, quantity } =
-          req.body;
-
         try {
-          const db = admin.firestore();
-
-          const userSnapshot = await db
-            .collection('renters')
-            .where('username', '==', username)
-            .get();
-          if (userSnapshot.empty) {
-            throw new Error(`User "${username}" not found`);
-          }
-
           var userData = userSnapshot.docs[0].data();
           const isLessor = userData.isLessor;
           if (isLessor !== true) {
@@ -210,6 +210,15 @@ async function updateProductById(req, res) {
       }
 
       const itemData = itemDoc.data();
+      console.log(title);
+      console.log(itemData.title);
+      if (title === itemData.title) {
+        return res
+          .status(400)
+          .send(
+            `Product '${title}' already exists for the lessor, plese use another title`
+          );
+      }
       const imageUrl = itemData.imageUrl;
 
       // Jika ada file gambar yang diunggah, lakukan update gambar
@@ -231,12 +240,13 @@ async function updateProductById(req, res) {
         let fileName = `${originalFileName
           .split('.')
           .slice(0, -1)
-          .join('.')}_${username}.${originalFileName.split('.').pop()}`;
+          .join('.')}_${username}_${title}.${originalFileName
+          .split('.')
+          .pop()}`.replace(/\s+/g, '_');
 
         // Jika nama file sebelumnya sama dengan nama file yang baru diunggah
         if (imageUrl && imageUrl.split('/').pop() === fileName) {
           // Generate nama baru dengan menambahkan versi increment
-          let version = 1;
           const fileNameWithoutExtension = fileName
             .split('.')
             .slice(0, -1)
@@ -244,7 +254,7 @@ async function updateProductById(req, res) {
           const fileExtension = fileName.split('.').pop();
 
           while (true) {
-            const newFileName = `${fileNameWithoutExtension}_newVersion}.${fileExtension}`;
+            const newFileName = `${fileNameWithoutExtension}_newVersion.${fileExtension}`;
             const newFilePath = `${category}/${sub_category}/${newFileName}`;
             const fileExists = await bucket.file(newFilePath).exists();
 

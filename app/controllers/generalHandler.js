@@ -271,7 +271,7 @@ async function deleteRenterById(req, res) {
 async function addCategory(req, res) {
   const { name } = req.body;
 
-  db.collection('category')
+  db.collection('categories')
     .add({ name })
     .then((docRef) => {
       res.status(201).json({ category_id: docRef.id, name });
@@ -286,10 +286,10 @@ async function addSubCategory(req, res) {
   const { categoryId } = req.params;
   const { name } = req.body;
 
-  const categoryRef = db.collection('category').doc(categoryId);
+  const categoryRef = db.collection('categories').doc(categoryId);
 
   categoryRef
-    .collection('sub_category')
+    .collection('sub_categories')
     .add({ name })
     .then((docRef) => {
       res.status(201).json({ sub_category_id: docRef.id, name });
@@ -303,7 +303,7 @@ async function addSubCategory(req, res) {
 // Mendapatkan semua kategori
 const getAllCategories = async (req, res) => {
   try {
-    const snapshot = await db.collection('category').get();
+    const snapshot = await db.collection('categories').get();
     const categories = [];
 
     snapshot.forEach((doc) => {
@@ -324,9 +324,9 @@ const getSubCategoriesByCategoryId = async (req, res) => {
 
   try {
     const snapshot = await db
-      .collection('category')
+      .collection('categories')
       .doc(categoryId)
-      .collection('sub_category')
+      .collection('sub_categories')
       .get();
     const subCategories = [];
 

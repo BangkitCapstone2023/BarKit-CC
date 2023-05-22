@@ -45,7 +45,7 @@ const login = async (req, res) => {
     } else {
       errorMessage = `Error logging in user: ${error}`;
     }
-    const response = badResponse(401, errorMessage, error.message);
+    const response = badResponse(401, errorMessage);
     res.status(401).json(response);
   }
 };
@@ -94,7 +94,11 @@ const register = async (req, res) => {
     res.status(201).json(response);
     console.log(`Success Create User ${username}`);
   } catch (error) {
-    const response = badResponse(400, error.message, error.message);
+    const response = badResponse(
+      500,
+      'Error While Creating User',
+      error.message
+    );
     res.json(response);
   }
 };
@@ -118,7 +122,8 @@ const createUser = async (
       const errorMessage = missingFields
         .map((field) => `${field} is required`)
         .join('. ');
-      throw new Error(errorMessage);
+      const response = badResponse(400, errorMessage);
+      return res.status(400, response);
     }
 
     // Validating username uniqueness
@@ -127,7 +132,11 @@ const createUser = async (
       .where('username', '==', username)
       .get();
     if (!usernameSnapshot.empty) {
-      throw new Error(`Username '${username}' is already taken`);
+      const response = badResponse(
+        409,
+        `Username '${username}' is already taken`
+      );
+      return res.status(409).json(response);
     }
 
     const userRecord = await admin.auth().createUser({ email, password });
@@ -150,7 +159,7 @@ const createUser = async (
     console.log(`Success Store Renter to Firestore ${username}`);
     return responseData;
   } catch (error) {
-    console.error('Error creating user:', error.message);
+    console.error('Error creating user', error.message);
     throw error;
   }
 };

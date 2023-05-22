@@ -61,7 +61,7 @@ const registerLessor = async (req, res) => {
 
     if (!lessorSnapshot.empty) {
       const response = badResponse(
-        404,
+        409,
         `User '${req.params.username}' is already a lessor`
       );
       return res.status(404).json(response);
@@ -102,8 +102,12 @@ const registerLessor = async (req, res) => {
     console.log(`Success Create Lessor ${username}`);
   } catch (error) {
     console.error(error);
-    const response = badResponse(500, error.message, error);
-    return res.status(500).send(response);
+    const response = badResponse(
+      500,
+      'Error while create lessor',
+      error.message
+    );
+    return res.status(500).json(response);
   }
 };
 
@@ -134,8 +138,12 @@ const getLessorProfile = async (req, res) => {
   } catch (error) {
     console.error('Error while getting lessor:', error);
 
-    const response = badResponse(500, error.message);
-    return res.status(500).send(response);
+    const response = badResponse(
+      500,
+      'Error while getting lessor',
+      error.message
+    );
+    return res.status(500).json(response);
   }
 };
 
@@ -186,8 +194,12 @@ const updateLessor = async (req, res) => {
   } catch (error) {
     console.error('Error while updating lessor:', error);
 
-    const response = badResponse(500, error.message);
-    return res.status(500).send(response);
+    const response = badResponse(
+      500,
+      'Error while updating lessor:',
+      error.message
+    );
+    return res.status(500).json(response);
   }
 };
 
@@ -232,7 +244,11 @@ const getOrdersByLessor = async (req, res) => {
   } catch (error) {
     console.error('Error while getting lessor orders:', error);
 
-    const response = badResponse(500, error.message);
+    const response = badResponse(
+      500,
+      'Error while getting lessor orders',
+      error.message
+    );
 
     return res.status(500).json(response);
   }
@@ -279,7 +295,11 @@ const getLessorOrderById = async (req, res) => {
   } catch (error) {
     console.error('Error while getting order:', error);
 
-    const response = badResponse(500, error.message);
+    const response = badResponse(
+      500,
+      'Error while getting order',
+      error.message
+    );
     return res.status(500).json(response);
   }
 };
@@ -340,7 +360,11 @@ const updateOrderStatusAndNotes = async (req, res) => {
   } catch (error) {
     console.error('Error while updating order status and notes:', error);
 
-    const response = badResponse(500, error.message);
+    const response = badResponse(
+      500,
+      'Error while updating order status and notes',
+      error.message
+    );
 
     return res.status(500).json(response);
   }
@@ -399,8 +423,12 @@ const shippedOrder = async (req, res) => {
   } catch (error) {
     console.error('Error while confirming order shipment:', error);
 
-    const response = badResponse(500, error.message, error);
-    return res.status(500).send(response);
+    const response = badResponse(
+      500,
+      'Error while confirming order shipment:',
+      error.message
+    );
+    return res.status(500).json(response);
   }
 };
 
@@ -435,7 +463,7 @@ const cancelOrder = async (req, res) => {
     // Pastikan orderan masih dalam status 'pending'
     if (orderData.status !== 'shipped') {
       const response = badResponse(
-        403,
+        409,
         'Status cannot be modified because already shipped'
       );
       return res.status(403).json(response);
@@ -463,8 +491,12 @@ const cancelOrder = async (req, res) => {
   } catch (error) {
     console.error('Error while confirming order shipment:', error);
 
-    const response = badResponse(500, error.message, error);
-    return res.status(500).send(response);
+    const response = badResponse(
+      500,
+      'Error while confirming order shipment',
+      error.message
+    );
+    return res.status(500).json(response);
   }
 };
 

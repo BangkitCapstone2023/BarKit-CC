@@ -508,6 +508,7 @@ const updateOrder = async (req, res) => {
       end_rent_date: end_rent_date || orderData.end_rent_date,
     });
 
+
     // Mengambil data terbaru dari order setelah pembaruan
     const updatedOrderDoc = await orderRef.get();
     const updatedOrderData = updatedOrderDoc.data();
@@ -540,7 +541,7 @@ const getDetailOrdersByRenter = async (req, res) => {
     const orderRef = db.collection('orders').doc(orderId);
     const orderDoc = await orderRef.get();
 
-    if (!orderDoc.exists) {
+    if (!orderDoc.exists) {<<<<<<< dev
       const response = badResponse(404, 'Order not found');
 
       res.status(404).json(response);

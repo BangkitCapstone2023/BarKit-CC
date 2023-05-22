@@ -13,7 +13,9 @@ import {
   getOrdersByRenter,
   getDetailOrdersByRenter,
   updateOrder,
+
 } from '../controllers/renterHandler.js';
+
 
 router.get('/', getDashboardData);
 router.get('/search', searchProduct);

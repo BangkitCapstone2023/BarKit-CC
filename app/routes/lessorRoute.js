@@ -1,28 +1,42 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const {
+import {
   getAllProductsByLessor,
   updateProductById,
   addProduct,
   deleteProductById,
-} = require('../controllers/productHandler');
+} from '../controllers/productHandler.js';
 
-const {
+import {
   registerLessor,
   getLessorProfile,
   updateLessor,
-} = require('../controllers/lessorHandler');
+  getOrdersByLessor,
+  getLessorOrderById,
+  updateOrderStatusAndNotes,
+  shippedOrder,
+  cancelOrder,
+} from '../controllers/lessorHandler.js';
 
-//! Register Lessor Route
+//! Lessor Register Route
 router.post('/lessors/:username/register', registerLessor);
 
-//! Store Feature Routes
+//! Lessor Profiles Routes
 router.get('/lessors/:username/profile', getLessorProfile);
 router.put('/lessors/:username', updateLessor);
 
+//! Lessor Products Routes
 router.get('/lessors/:username/products', getAllProductsByLessor);
 router.put('/lessors/:username/products/:productId', updateProductById);
 router.post('/lessors/:username/products', addProduct);
 router.delete('/lessors/:username/products/:productId', deleteProductById);
 
-module.exports = router;
+//! Lessor Orders Routes
+router.get('/lessors/:username/orders', getOrdersByLessor);
+router.get('/lessors/:username/orders/:orderId', getLessorOrderById);
+router.put(
+  '/lessors/:username/orders/:orderId/confirm',
+  updateOrderStatusAndNotes
+);
+
+export default router;

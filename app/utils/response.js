@@ -21,7 +21,4 @@ function successResponse(statusCode, message, data) {
   }
 }
 
-module.exports = {
-  badResponse,
-  successResponse,
-};
+export { badResponse, successResponse };

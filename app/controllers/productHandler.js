@@ -1,20 +1,18 @@
-const multer = require('multer');
-const moment = require('moment');
-const { v4: uuidv4 } = require('uuid');
-const admin = require('firebase-admin');
+import multer from 'multer';
+import moment from 'moment';
+import { v4 as uuidv4 } from 'uuid';
+import admin from 'firebase-admin';
 
-const timestamp = admin.firestore.Timestamp.now();
-const date = timestamp.toDate();
+import { badResponse, successResponse } from '../utils/response.js';
+import { storage, bucketName } from '../config/configCloudStorage.js';
+import { db } from '../config/configFirebase.js';
 
-const formattedTimestamp = moment(date).format('YYYY-MM-DD HH:mm:ss');
-
-const Response = require('../utils/response');
-
-const { storage, bucketName } = require('../config/configCloudStorage');
 const multerStorage = multer.memoryStorage();
 const upload = multer({ storage: multerStorage });
 
-const { db } = require('../config/configFirebase');
+const timestamp = admin.firestore.Timestamp.now();
+const date = timestamp.toDate();
+const formattedTimestamp = moment(date).format('YYYY-MM-DD HH:mm:ss');
 
 async function addProduct(req, res) {
   try {
@@ -142,7 +140,7 @@ async function addProduct(req, res) {
           const responseData = {
             productData,
           };
-          const response = Response.successResponse(
+          const response = successResponse(
             200,
             'Success update product data',
             responseData
@@ -151,7 +149,7 @@ async function addProduct(req, res) {
           return res.status(200).json(response);
         } catch (error) {
           console.error('Error :', error);
-          const response = Response.badResponse(
+          const response = badResponse(
             500,
             'An error occurred while add product',
             error.message
@@ -164,7 +162,7 @@ async function addProduct(req, res) {
     });
   } catch (error) {
     console.error('Error saat mengunggah file:', error);
-    const response = Response.badResponse(
+    const response = badResponse(
       500,
       'An error occurred while upload images',
       error.message
@@ -195,10 +193,7 @@ async function updateProductById(req, res) {
 
       // Cek apakah item ID dan username valid
       if (!productId || !username) {
-        const response = Response.badResponse(
-          400,
-          'Product atau username not valid'
-        );
+        const response = badResponse(400, 'Product atau username not valid');
         return res.status(400).send(response);
       }
 
@@ -207,7 +202,7 @@ async function updateProductById(req, res) {
       const itemDoc = await itemRef.get();
 
       if (!itemDoc.exists) {
-        const response = Response.badResponse(404, 'Item not Found');
+        const response = badResponse(404, 'Item not Found');
         return res.status(404).send(response);
       }
 
@@ -220,10 +215,7 @@ async function updateProductById(req, res) {
         // Cek ukuran file
         const maxSizeInBytes = 10 * 1024 * 1024; // 10 MB
         if (file.size > maxSizeInBytes) {
-          const response = Response.badResponse(
-            400,
-            'image Size is more than 10MB'
-          );
+          const response = badResponse(400, 'image Size is more than 10MB');
           return res.status(400).send(response);
         }
 
@@ -271,7 +263,7 @@ async function updateProductById(req, res) {
 
         blobStream.on('error', (error) => {
           console.error('Error saat mengunggah file:', error);
-          const response = Response.badResponse(
+          const response = badResponse(
             500,
             'An error occurred while upload images ',
             error.message
@@ -303,7 +295,7 @@ async function updateProductById(req, res) {
           const responseData = {
             updateData,
           };
-          const response = Response.successResponse(
+          const response = successResponse(
             200,
             'Success update product data',
             responseData
@@ -325,7 +317,7 @@ async function updateProductById(req, res) {
 
         await itemRef.update(updateData);
 
-        const response = Response.successResponse(
+        const response = successResponse(
           200,
           'Success Update Product Data without change images',
           updateData
@@ -369,17 +361,13 @@ async function getAllProductsByLessor(req, res) {
       productsData.push(productData);
     });
 
-    const response = Response.successResponse(
-      200,
-      'Success Get Product',
-      productsData
-    );
+    const response = successResponse(200, 'Success Get Product', productsData);
 
     return res.status(200).json(response);
   } catch (error) {
     console.error('Error while getting products by lessor:', error);
 
-    const response = Response.badResponse(
+    const response = badResponse(
       500,
       'An error occurred while getting products by lessor',
       error.message
@@ -436,7 +424,7 @@ async function deleteProductById(req, res) {
   }
 }
 
-module.exports = {
+export {
   addProduct,
   getAllProductsByLessor,
   updateProductById,

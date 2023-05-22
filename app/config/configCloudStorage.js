@@ -1,11 +1,17 @@
-const { Storage } = require('@google-cloud/storage');
-const path = require('path');
+import { Storage } from '@google-cloud/storage';
 
-const serviceKey = path.join(__dirname, 'cloudStorageKey.json');
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const serviceKey = join(__dirname, 'cloudStorageKey2.json');
 const storage = new Storage({
   projectId: 'barkit-c23pr544',
   keyFilename: serviceKey,
 });
 const bucketName = 'barkit-images';
 
-module.exports = { storage, bucketName };
+export { storage, bucketName };

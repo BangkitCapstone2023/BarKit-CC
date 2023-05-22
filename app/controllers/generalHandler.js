@@ -353,9 +353,7 @@ const getOrderById = async (req, res) => {
   }
 };
 
-
 export {
- renter-feature
   getImageByName,
   getAllImages,
   getAllLessors,

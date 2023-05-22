@@ -1,34 +1,37 @@
-const admin = require('firebase-admin');
-const firebase = require('firebase/compat/app');
-require('firebase/compat/auth');
-const Response = require('../utils/response');
+import admin from 'firebase-admin';
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/auth';
+import { badResponse, successResponse } from '../utils/response.js';
+import { db } from '../config/configFirebase.js';
 
 // Inisialisasi Firebase client-side app
-const clientConfig = require('../config/firebaseClientConfig2.json');
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import { readFileSync } from 'fs';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const clientConfigPath = join(
+  __dirname,
+  '../config/firebaseClientConfig2.json'
+);
+const clientConfig = JSON.parse(readFileSync(clientConfigPath, 'utf8'));
 firebase.initializeApp(clientConfig);
 
-const { db } = require('../config/configFirebase');
-// Login user menggunakan Firebase Admin SDK
-async function login(req, res) {
-  const user = {
-    email: req.body.email,
-    password: req.body.password,
-  };
+// Login Renters
+const login = async (req, res) => {
+  const { email, password } = req.body;
 
   try {
-    const { token, loginTime } = await loginUser(user.email, user.password);
+    const { token, loginTime } = await loginUser(email, password);
     const userLoginData = {
-      email: user.email,
-      loginTime: loginTime,
-      token: token,
+      email,
+      loginTime,
+      token,
     };
 
-    const response = Response.successResponse(
-      200,
-      'User Success Login',
-      userLoginData
-    );
-
+    const response = successResponse(200, 'User Success Login', userLoginData);
     res.status(200).json(response);
   } catch (error) {
     let errorMessage = '';
@@ -36,103 +39,89 @@ async function login(req, res) {
     if (error.code === 'auth/wrong-password') {
       errorMessage = 'Password yang dimasukkan salah';
     } else if (error.code === 'auth/invalid-email') {
-      errorMessage = 'Email pengguna tidak ditemukan';
+      errorMessage = 'Email pengguna tidak valid';
+    } else if (error.code === 'auth/user-not-found') {
+      errorMessage = 'User tidak ditemukan';
     } else {
       errorMessage = `Error logging in user: ${error}`;
     }
-
-    const response = Response.badResponse(401, errorMessage);
+    const response = badResponse(401, errorMessage);
     res.status(401).json(response);
   }
-}
+};
 
-// Create user using Firebase Admin SDK
-async function register(req, res) {
-  const user = {
-    email: req.body.email,
-    password: req.body.password,
-    username: req.body.username,
-    fullName: req.body.fullName,
-    address: req.body.address,
-    phone: req.body.phone,
-    gender: req.body.gender,
-  };
-
-  try {
-    const userResponse = await createUser(
-      user.email,
-      user.password,
-      user.username,
-      user.fullName,
-      user.address,
-      user.phone,
-      user.gender,
-      user.isLessor
-    );
-    const response = Response.successResponse(
-      201,
-      'User Success Register',
-      userResponse
-    );
-    res.status(201).json(response);
-    console.log(`Success Create User ${user.username}`);
-  } catch (error) {
-    let errorMessage = '';
-
-    if (
-      error.message === 'Email, password, username, and fullName are required'
-    ) {
-      errorMessage = error.message;
-    } else if (error.message.startsWith('Username')) {
-      errorMessage = error.message;
-    } else {
-      errorMessage = error;
-    }
-
-    const response = Response.badResponse(400, errorMessage);
-    res.json(response);
-  }
-}
-
-// Login user menggunakan Firebase Admin SDK
-async function loginUser(email, password) {
+const loginUser = async (email, password) => {
   try {
     const timestamp = admin.firestore.Timestamp.now(); // Mendapatkan timestamp saat login
 
-    // Gunakan Firebase JavaScript SDK untuk otentikasi di sisi klien
     const userCredential = await firebase
       .auth()
       .signInWithEmailAndPassword(email, password);
     const { uid } = userCredential.user;
 
-    // Generate custom token menggunakan Firebase Admin SDK
     const token = await admin.auth().createCustomToken(uid);
 
     return {
-      token: token,
-      loginTime: timestamp.toDate(), // Mengembalikan waktu login dalam bentuk objek Date
+      token,
+      loginTime: timestamp.toDate(),
     };
   } catch (error) {
     console.error('Error logging in user:', error);
     throw error;
   }
-}
+};
 
-// Create user using Firebase Admin SDK
-async function createUser(
+// Create Renters
+const register = async (req, res) => {
+  const { email, password, username, fullName, address, phone, gender } =
+    req.body;
+
+  try {
+    const userResponse = await createUser(
+      email,
+      password,
+      username,
+      fullName,
+      address,
+      phone,
+      gender
+    );
+    const response = successResponse(
+      201,
+      'User Success Register',
+      userResponse
+    );
+    res.status(201).json(response);
+    console.log(`Success Create User ${username}`);
+  } catch (error) {
+    const response = badResponse(
+      500,
+      'Error While Creating User',
+      error.message
+    );
+    res.json(response);
+  }
+};
+const createUser = async (
   email,
   password,
   username,
   fullName,
   address = '',
   phone = '',
-  gender = 'male',
-  isLessor = false
-) {
+  gender = 'male'
+) => {
   try {
     // Validating required fields
-    if (!email || !password || !username || !fullName) {
-      throw new Error('Email, password, username, and fullName are required');
+    const requiredFields = ['email', 'password', 'username', 'fullName'];
+    const missingFields = requiredFields.filter(
+      (field) => !email || !password || !username || !fullName
+    );
+    if (missingFields.length > 0) {
+      const errorMessage = missingFields
+        .map((field) => `${field} is required`)
+        .join('. ');
+      throw new Error(errorMessage);
     }
 
     // Validating username uniqueness
@@ -141,17 +130,11 @@ async function createUser(
       .where('username', '==', username)
       .get();
     if (!usernameSnapshot.empty) {
-      throw new Error(`Username "${username}" is already taken`);
+      throw new Error(`Username '${username}' is already taken`);
     }
 
-    const userRecord = await admin.auth().createUser({
-      email,
-      password,
-      emailVerified: false,
-      disabled: false,
-    });
+    const userRecord = await admin.auth().createUser({ email, password });
 
-    // Save additional data to Firestore if not empty
     const userDocRef = db.collection('renters').doc(userRecord.uid);
     const userData = {
       id: userRecord.uid,
@@ -162,19 +145,17 @@ async function createUser(
       phone,
       address,
       gender,
-      isLessor,
     };
 
+    const responseData = { ...userData, userRecord };
+
     await userDocRef.set(userData);
-    console.log(`Success Store Renter to firestore ${username}`);
-    return userRecord;
+    console.log(`Success Store Renter to Firestore ${username}`);
+    return responseData;
   } catch (error) {
-    console.error('Error creating user:', error);
+    console.error('Error creating user', error.message);
     throw error;
   }
-}
-
-module.exports = {
-  login,
-  register,
 };
+
+export { login, register };

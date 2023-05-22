@@ -1,9 +1,14 @@
 function badResponse(statusCode, message, error = null) {
-  return {
+  const response = {
     status: statusCode,
     message: message,
-    error: error,
   };
+
+  if (error) {
+    response.error = error;
+  }
+
+  return response;
 }
 
 function successResponse(statusCode, message, data) {
@@ -21,7 +26,4 @@ function successResponse(statusCode, message, data) {
   }
 }
 
-module.exports = {
-  badResponse,
-  successResponse,
-};
+export { badResponse, successResponse };

@@ -1,8 +1,8 @@
-const admin = require('firebase-admin');
-const Response = require('../utils/response');
-const { db } = require('../config/configFirebase');
+import { badResponse, successResponse } from '../utils/response.js';
+import { db } from '../config/configFirebase.js';
+
 // Register Lessor
-async function registerLessor(req, res) {
+const registerLessor = async (req, res) => {
   const lessor = {
     email: req.body.email,
     username: req.body.username,
@@ -16,34 +16,63 @@ async function registerLessor(req, res) {
   };
 
   try {
-    // Check if the user exists
+    const requiredFields = [
+      'storeFullName',
+      'storeAddress',
+      'storeEmail',
+      'storePhone',
+    ];
+    const missingFields = requiredFields.filter((field) => !lessor[field]);
+    if (missingFields.length > 0) {
+      const errorMessage = missingFields
+        .map((field) => `${field} is required`)
+        .join('. ');
+
+      const response = badResponse(404, errorMessage);
+      return res.status(404).json(response);
+    }
+
+    // Check if the renter exists
     const userSnapshot = await db
       .collection('renters')
       .where('username', '==', req.params.username)
       .get();
     if (userSnapshot.empty) {
-      throw new Error(`User '${req.params.username}' not found`);
+      const response = badResponse(
+        404,
+        `User '${req.params.username}' not found`
+      );
+      return res.status(404).json(response);
     }
 
-    var userData = userSnapshot.docs[0].data();
-    const fullName = userData.fullName; // Get the renter fullName
-    const username = userData.username;
-    const email = userData.email;
+    // Get Renter Data
+    let userData;
+    userSnapshot.forEach((doc) => {
+      userData = doc.data();
+    });
+    const { fullName, username, email } = userData;
 
-    const renterId = userSnapshot.docs[0].id; // Get the renter ID
+    const renterId = userSnapshot.docs[0].id;
 
     const lessorSnapshot = await db
       .collection('lessors')
       .where('renterId', '==', renterId)
       .get();
+
     if (!lessorSnapshot.empty) {
-      throw new Error(`User '${req.params.username}' is already a lessor`);
+      const response = badResponse(
+        409,
+        `User '${req.params.username}' is already a lessor`
+      );
+      return res.status(404).json(response);
     }
+
     // Save additional data to Firestore if not empty
-    const userDocRef = db.collection('lessors').doc();
-    const lessorId = userDocRef.id; // Generate a new lessor ID
-    var userData = {
-      lessorId, // Add lessor ID
+    const lessorDocRef = db.collection('lessors').doc();
+    // Generate a new lessor ID
+    const lessorId = lessorDocRef.id;
+    const lessorData = {
+      lessorId,
       email,
       username,
       fullName,
@@ -56,36 +85,33 @@ async function registerLessor(req, res) {
       kurirId: lessor.kurirId || '',
     };
 
-    await userDocRef.set(userData);
+    await lessorDocRef.set(lessorData);
     console.log(`Success Store Lessor Data to Firestore ${username}`);
 
     // Update isLessor attribute in user document
     const renterRef = db.collection('renters').doc(renterId);
     await renterRef.update({ isLessor: true });
 
-    // // Get renter data
-    // const renterSnapshot = await renterRef.get();
-    // const renterData = renterSnapshot.data();
-
-    const response = Response.successResponse(
+    const responseData = { ...lessorData, renter: userData };
+    const response = successResponse(
       201,
       `Success Create Lessor ${username}`,
-      userData
+      responseData
     );
     res.status(201).json(response);
     console.log(`Success Create Lessor ${username}`);
   } catch (error) {
     console.error(error);
-    const response = Response.badResponse(
-      400,
-      'An error occurred while register lessor',
+    const response = badResponse(
+      500,
+      'Error while create lessor',
       error.message
     );
-    return res.status(400).send(response);
+    return res.status(500).json(response);
   }
-}
+};
 
-async function getLessorProfile(req, res) {
+const getLessorProfile = async (req, res) => {
   try {
     const username = req.params.username;
 
@@ -96,12 +122,13 @@ async function getLessorProfile(req, res) {
       .get();
 
     if (lessorSnapshot.empty) {
-      throw new Error(`Lessor '${username}' not found`);
+      const response = badResponse(404, `Lessor '${username}' not found`);
+      return res.status(404).json(response);
     }
 
     const lessorData = lessorSnapshot.docs[0].data();
 
-    const response = Response.successResponse(
+    const response = successResponse(
       200,
       'Success Get Lessor Profile',
       lessorData
@@ -111,19 +138,20 @@ async function getLessorProfile(req, res) {
   } catch (error) {
     console.error('Error while getting lessor:', error);
 
-    const response = Response.badResponse(
+    const response = badResponse(
       500,
-      'An error occurred while getting lessor profile data',
+      'Error while getting lessor',
       error.message
     );
-    return res.status(500).send(response);
+    return res.status(500).json(response);
   }
-}
+};
 
-async function updateLessor(req, res) {
+const updateLessor = async (req, res) => {
   try {
     const username = req.params.username;
-    const { storeFullName, storeAddress, storeEmail, storePhone } = req.body;
+    const { storeFullName, storeAddress, storeEmail, storePhone, kurir } =
+      req.body;
 
     // Check if the lessor exists
     const lessorSnapshot = await db
@@ -132,17 +160,19 @@ async function updateLessor(req, res) {
       .get();
 
     if (lessorSnapshot.empty) {
-      throw new Error(`Lessor '${username}'  not found`);
+      const response = badResponse(404, `Lessor '${username}' not found`);
+      return res.status(404).json(response);
     }
 
     const lessorId = lessorSnapshot.docs[0].id;
 
-    // Update the lessor data
+    // Update  lessor data
     await db.collection('lessors').doc(lessorId).update({
       storeFullName,
       storeAddress,
       storeEmail,
       storePhone,
+      kurir,
     });
 
     const updateData = {
@@ -152,9 +182,10 @@ async function updateLessor(req, res) {
       storeAddress,
       storeEmail,
       storePhone,
+      kurir,
     };
 
-    const response = Response.successResponse(
+    const response = successResponse(
       200,
       'Success Update Lessor Data',
       updateData
@@ -163,17 +194,326 @@ async function updateLessor(req, res) {
   } catch (error) {
     console.error('Error while updating lessor:', error);
 
-    const response = Response.badResponse(
+    const response = badResponse(
       500,
-      'An error occurred while update lessor data',
+      'Error while updating lessor:',
       error.message
     );
-    return res.status(500).send(response);
+    return res.status(500).json(response);
   }
-}
+};
 
-module.exports = {
+const getOrdersByLessor = async (req, res) => {
+  try {
+    const { username } = req.params;
+
+    // Check if lessor is exits
+    const lessorSnapshot = await db
+      .collection('lessors')
+      .where('username', '==', username)
+      .get();
+
+    if (lessorSnapshot.empty) {
+      const response = badResponse(404, `Lessor '${username}' not found`);
+      return res.status(404).json(response);
+    }
+
+    const lessorId = lessorSnapshot.docs[0].id;
+
+    // Mencari orderan berdasarkan lessor_id
+    const orderSnapshot = await db
+      .collection('orders')
+      .where('lessor_id', '==', lessorId)
+      .get();
+
+    const orders = [];
+
+    // Mengambil setiap orderan yang dimilik lessor
+    orderSnapshot.forEach((doc) => {
+      const orderData = doc.data();
+      orders.push({ order_id: doc.id, ...orderData });
+    });
+
+    const response = successResponse(
+      200,
+      'Orders retrieved successfully',
+      orders
+    );
+
+    return res.status(200).json(response);
+  } catch (error) {
+    console.error('Error while getting lessor orders:', error);
+
+    const response = badResponse(
+      500,
+      'Error while getting lessor orders',
+      error.message
+    );
+
+    return res.status(500).json(response);
+  }
+};
+
+const getLessorOrderById = async (req, res) => {
+  try {
+    const { username, orderId } = req.params;
+
+    // Check if lessor is exits
+    const lessorSnapshot = await db
+      .collection('lessors')
+      .where('username', '==', username)
+      .get();
+
+    if (lessorSnapshot.empty) {
+      const response = badResponse(404, `Lessor '${username}' not found`);
+      return res.status(404).json(response);
+    }
+
+    const lessorId = lessorSnapshot.docs[0].id;
+
+    // Mencari order berdasarkan lessor_id dan order_id
+    const orderSnapshot = await db
+      .collection('orders')
+      .where('lessor_id', '==', lessorId)
+      .where('order_id', '==', orderId)
+      .get();
+
+    if (orderSnapshot.empty) {
+      const response = badResponse(404, 'Order not found');
+      return res.status(404).json(response);
+    }
+
+    const orderData = orderSnapshot.docs[0].data();
+
+    const response = successResponse(
+      200,
+      'Order retrieved successfully',
+      orderData
+    );
+
+    return res.status(200).json(response);
+  } catch (error) {
+    console.error('Error while getting order:', error);
+
+    const response = badResponse(
+      500,
+      'Error while getting order',
+      error.message
+    );
+    return res.status(500).json(response);
+  }
+};
+
+// Mengubah status order dan menambahkan catatan (optional)
+const updateOrderStatusAndNotes = async (req, res) => {
+  try {
+    const { username, orderId } = req.params;
+    const { status, notes } = req.body;
+
+    const lessorSnapshot = await db
+      .collection('lessors')
+      .where('username', '==', username)
+      .get();
+
+    if (lessorSnapshot.empty) {
+      const response = badResponse(404, `Lessor '${username}' not found`);
+      return res.status(404).json(response);
+    }
+
+    const lessorId = lessorSnapshot.docs[0].id;
+
+    const orderRef = db.collection('orders').doc(orderId);
+    const orderDoc = await orderRef.get();
+
+    if (!orderDoc.exists) {
+      const response = badResponse(404, 'Order not found');
+      return res.status(404).json(response);
+    }
+
+    const orderData = orderDoc.data();
+
+    // Pastikan lessor_id pada orderan sesuai dengan lessor yang mengirim permintaan
+    if (orderData.lessor_id !== lessorId) {
+      const response = badResponse(
+        403,
+        'Not allowed to modify antoher lessor order'
+      );
+      return res.status(403).json(response);
+    }
+
+    // Update status orderan sesuai permintaan
+    const allowedStatus = ['pending', 'process', 'cancelled', 'shipped'];
+    if (!allowedStatus.includes(status)) {
+      const response = badResponse(404, 'Invalid status value');
+      return res.status(404).json(response);
+    }
+
+    // Persiapan data yang akan diupdate
+    const updateData = { status };
+    if (notes) {
+      updateData.notes = notes;
+    }
+
+    await orderRef.update(updateData);
+    const updatedOrderDoc = await orderRef.get();
+    const updatedOrderData = updatedOrderDoc.data();
+
+    const response = successResponse(
+      200,
+      'Success Update Status Order',
+      updatedOrderData
+    );
+    return res.status(200).json(response);
+  } catch (error) {
+    console.error('Error while updating order status and notes:', error);
+
+    const response = badResponse(
+      500,
+      'Error while updating order status and notes',
+      error.message
+    );
+
+    return res.status(500).json(response);
+  }
+};
+
+// Konfirmasi pengiriman orderan
+const shippedOrder = async (req, res) => {
+  try {
+    const { username, orderId } = req.params;
+    const { confirm, notes } = req.body;
+
+    const lessorSnapshot = await db
+      .collection('lessors')
+      .where('username', '==', username)
+      .get();
+
+    if (lessorSnapshot.empty) {
+      const response = badResponse(404, `Lessor '${username}' not found`);
+      return res.status(404).json(response);
+    }
+
+    const lessorId = lessorSnapshot.docs[0].id;
+
+    const orderRef = db.collection('orders').doc(orderId);
+    const orderDoc = await orderRef.get();
+
+    if (!orderDoc.exists) {
+      const response = badResponse(404, 'Order not found');
+      return res.status(404).json(response);
+    }
+
+    const orderData = orderDoc.data();
+
+    // Pastikan orderan masih dalam status 'pending'
+    if (orderData.status !== 'pending') {
+      const response = badResponse(403, 'Order cannot be modified');
+      return res.status(403).json(response);
+    }
+
+    if (confirm) {
+      // Update status orderan menjadi 'shipped' dan tambahkan catatan opsional
+      const updatedData = { status: 'shipped' };
+      if (notes !== undefined) {
+        updatedData.notes = notes;
+      }
+
+      await orderRef.update(updatedData);
+
+      const response = successResponse(200, 'Order shipment confirmed');
+
+      return res.status(200).json(response);
+    } else {
+      const response = badResponse(404, 'Order shipment confirmation declined');
+      return res.status(404).json(response);
+    }
+  } catch (error) {
+    console.error('Error while confirming order shipment:', error);
+
+    const response = badResponse(
+      500,
+      'Error while confirming order shipment:',
+      error.message
+    );
+    return res.status(500).json(response);
+  }
+};
+
+// Konfirmasi pengiriman orderan
+const cancelOrder = async (req, res) => {
+  try {
+    const { username, orderId } = req.params;
+    const { confirm, notes } = req.body;
+
+    const lessorSnapshot = await db
+      .collection('lessors')
+      .where('username', '==', username)
+      .get();
+
+    if (lessorSnapshot.empty) {
+      const response = badResponse(404, `Lessor '${username}' not found`);
+      return res.status(404).json(response);
+    }
+
+    const lessorId = lessorSnapshot.docs[0].id;
+
+    const orderRef = db.collection('orders').doc(orderId);
+    const orderDoc = await orderRef.get();
+
+    if (!orderDoc.exists) {
+      const response = badResponse(404, 'Order not found');
+      return res.status(404).json(response);
+    }
+
+    const orderData = orderDoc.data();
+
+    // Pastikan orderan masih dalam status 'pending'
+    if (orderData.status !== 'shipped') {
+      const response = badResponse(
+        409,
+        'Status cannot be modified because already shipped'
+      );
+      return res.status(403).json(response);
+    }
+
+    if (confirm) {
+      // Update status orderan menjadi 'shipped' dan tambahkan catatan opsional
+      const updatedData = { status: 'cancelled' };
+      if (notes !== undefined) {
+        updatedData.notes = notes;
+      }
+
+      await orderRef.update(updatedData);
+
+      const response = successResponse(200, 'Order Canclled');
+      return res.status(200).json(response);
+    } else {
+      const response = badResponse(
+        404,
+        'Order cancelled confirmation declined'
+      );
+
+      return res.status(404).json(response);
+    }
+  } catch (error) {
+    console.error('Error while confirming order shipment:', error);
+
+    const response = badResponse(
+      500,
+      'Error while confirming order shipment',
+      error.message
+    );
+    return res.status(500).json(response);
+  }
+};
+
+export {
   registerLessor,
   getLessorProfile,
   updateLessor,
+  getOrdersByLessor,
+  getLessorOrderById,
+  updateOrderStatusAndNotes,
+  shippedOrder,
+  cancelOrder,
 };

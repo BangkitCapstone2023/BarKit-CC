@@ -1,6 +1,6 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const {
+import {
   getDashboardData,
   searchProduct,
   getAllCategories,
@@ -9,7 +9,7 @@ const {
   getProductById,
   getUserProfile,
   updateProfile,
-} = require('../controllers/renterHandler');
+} from '../controllers/renterHandler.js';
 
 router.get('/', getDashboardData);
 router.get('/search', searchProduct);
@@ -23,4 +23,4 @@ router.get('/category/:name', getSubCategoriesByName);
 router.get('/subcategory/:name/products', getProductsBySubCategory);
 router.get('/products/:productId', getProductById);
 
-module.exports = router;
+export default router;

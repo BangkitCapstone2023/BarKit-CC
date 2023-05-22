@@ -1,6 +1,6 @@
-const admin = require('firebase-admin');
-const { db } = require('../config/configFirebase');
-const Response = require('../utils/response');
+import { badResponse, successResponse } from '../utils/response.js';
+import { db } from '../config/configFirebase.js';
+import Fuse from 'fuse.js';
 
 const getDashboardData = async (req, res) => {
   try {
@@ -35,7 +35,7 @@ const getDashboardData = async (req, res) => {
       categories,
     };
 
-    const response = Response.successResponse(
+    const response = successResponse(
       200,
       'Dashboard data retrieved successfully',
       responseData
@@ -44,7 +44,7 @@ const getDashboardData = async (req, res) => {
     return res.json(response);
   } catch (error) {
     console.error('Error:', error);
-    const response = Response.badResponse(
+    const response = badResponse(
       500,
       'An error occurred while fetching dashboard data',
       error.message
@@ -58,8 +58,6 @@ function getRandomElements(arr, count) {
   const shuffled = arr.sort(() => 0.5 - Math.random());
   return shuffled.slice(0, count);
 }
-
-const Fuse = require('fuse.js');
 
 const searchProduct = async (req, res) => {
   try {
@@ -96,7 +94,7 @@ const searchProduct = async (req, res) => {
       return { title, category, sub_category, price };
     });
 
-    const response = Response.successResponse(
+    const response = successResponse(
       200,
       'Product search successful',
       formattedResults
@@ -106,7 +104,7 @@ const searchProduct = async (req, res) => {
   } catch (error) {
     console.error('Error while searching products:', error);
 
-    const response = Response.badResponse(
+    const response = badResponse(
       500,
       'An error occurred while searching products',
       error.message
@@ -331,7 +329,7 @@ async function updateProfile(req, res) {
   }
 }
 
-module.exports = {
+export {
   getDashboardData,
   searchProduct,
   getAllCategories,
@@ -364,7 +362,7 @@ module.exports = {
 //       products.push({ title, category, sub_category, price });
 //     });
 
-//     const response = Response.successResponse(
+//     const response = successResponse(
 //       200,
 //       'Product search successful',
 //       products
@@ -374,7 +372,7 @@ module.exports = {
 //   } catch (error) {
 //     console.error('Error while searching products:', error);
 
-//     const response = Response.badResponse(
+//     const response = badResponse(
 //       500,
 //       'An error occurred while searching products',
 //       error.message

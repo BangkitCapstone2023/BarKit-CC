@@ -1,7 +1,7 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
 
-const {
+import {
   getAllImages,
   getImageByName,
   deleteLessorById,
@@ -9,7 +9,7 @@ const {
   getAllRenters,
   addCategory,
   addSubCategory,
-} = require('../controllers/generalHandler');
+} from '../controllers/generalHandler.js';
 
 router.get('/lessors', getAllLessors);
 
@@ -21,4 +21,4 @@ router.get('/images', getAllImages);
 router.get('/images/:name', getImageByName);
 // router.get('/images/:name/download', addProductHandler.downloadImage);
 
-module.exports = router;
+export default router;

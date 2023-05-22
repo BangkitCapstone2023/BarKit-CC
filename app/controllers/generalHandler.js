@@ -1,7 +1,6 @@
-const admin = require('firebase-admin');
-const Response = require('../utils/response');
-
-const { db } = require('../config/configFirebase');
+import admin from 'firebase-admin';
+import { badResponse, successResponse } from '../utils/response.js';
+import { db } from '../config/configFirebase.js';
 
 async function getAllLessors(req, res) {
   try {
@@ -16,7 +15,7 @@ async function getAllLessors(req, res) {
       lessorsData.push(lessorData);
     });
 
-    const response = Response.successResponse(
+    const response = successResponse(
       200,
       'Success Get All Lessor',
       lessorsData
@@ -25,7 +24,7 @@ async function getAllLessors(req, res) {
     return res.status(200).json(response);
   } catch (error) {
     console.error('Error while getting lessors:', error);
-    const response = Response.badResponse(
+    const response = badResponse(
       500,
       'An error occurred while getting all lessor data',
       error.message
@@ -67,7 +66,7 @@ async function deleteLessorById(req, res) {
 
     await batch.commit();
 
-    const response = Response.successResponse(
+    const response = successResponse(
       200,
       'Lessor and associated products deleted successfully'
     );
@@ -76,11 +75,7 @@ async function deleteLessorById(req, res) {
   } catch (error) {
     console.error('Error deleting lessor:', error);
 
-    const response = Response.badResponse(
-      500,
-      'Error deleting lessor',
-      error.message
-    );
+    const response = badResponse(500, 'Error deleting lessor', error.message);
     res.status(500).json(response);
   }
 }
@@ -114,7 +109,7 @@ async function deleteLessorById(req, res) {
 //     const lessorRef = db.collection('lessors').doc(lessorId);
 //     await lessorRef.delete();
 
-//     const response = Response.successResponse(
+//     const response = successResponse(
 //       200,
 //       'Lessor deleted successfully'
 //     );
@@ -123,7 +118,7 @@ async function deleteLessorById(req, res) {
 //   } catch (error) {
 //     console.error('Error deleting lessor:', error);
 
-//     const response = Response.badResponse(
+//     const response = badResponse(
 //       500,
 //       'Error deleting lessor',
 //       error.message
@@ -145,7 +140,7 @@ async function getImageByName(req, res) {
       .get();
     console.log(productSnapshot);
     if (productSnapshot.empty) {
-      const response = Response.badResponse(404, `Image ${name} not found`);
+      const response = badResponse(404, `Image ${name} not found`);
       return res.status(404).send(response);
     }
 
@@ -154,16 +149,12 @@ async function getImageByName(req, res) {
     const image_id = productData.image_id;
 
     const imageData = { image_id, name, imageUrl };
-    const response = Response.successResponse(
-      200,
-      'Success Get Image',
-      imageData
-    );
+    const response = successResponse(200, 'Success Get Image', imageData);
 
     return res.status(200).json(response);
   } catch (error) {
     console.error('Error while retrieving image:', error);
-    const response = Response.badResponse(
+    const response = badResponse(
       500,
       'Error when getting image',
       error.message
@@ -190,16 +181,12 @@ async function getAllImages(req, res) {
       }
     });
 
-    const response = Response.successResponse(
-      200,
-      'Success Get All Images',
-      allImages
-    );
+    const response = successResponse(200, 'Success Get All Images', allImages);
 
     return res.status(200).json(response);
   } catch (error) {
     console.error('Error saat mendapatkan daftar gambar:', error);
-    const response = Response.badResponse(
+    const response = badResponse(
       500,
       'Error when get all images',
       error.message
@@ -221,7 +208,7 @@ async function getAllRenters(req, res) {
       rentersData.push(renterData);
     });
 
-    const response = Response.successResponse(
+    const response = successResponse(
       200,
       'Success Get All Renters',
       rentersData
@@ -230,7 +217,7 @@ async function getAllRenters(req, res) {
     return res.status(200).json(response);
   } catch (error) {
     console.error('Error while getting all renters:', error);
-    const response = Response.badResponse(
+    const response = badResponse(
       500,
       'An error occurred while getting all renters data',
       error.message
@@ -252,20 +239,13 @@ async function deleteRenterById(req, res) {
       await db.collection('renters').doc(id).delete();
     }
 
-    const response = Response.successResponse(
-      200,
-      'Renters deleted successfully'
-    );
+    const response = successResponse(200, 'Renters deleted successfully');
 
     res.status(200).json(response);
   } catch (error) {
     console.error('Error deleting lessor:', error);
 
-    const response = Response.badResponse(
-      500,
-      'Error deleting lessor',
-      error.message
-    );
+    const response = badResponse(500, 'Error deleting lessor', error.message);
     res.status(500).json(response);
   }
 }
@@ -302,7 +282,7 @@ async function addSubCategory(req, res) {
     });
 }
 
-module.exports = {
+export {
   getImageByName,
   getAllImages,
   getAllLessors,

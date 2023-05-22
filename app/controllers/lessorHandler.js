@@ -1,8 +1,8 @@
-const admin = require('firebase-admin');
-const Response = require('../utils/response');
-const { db } = require('../config/configFirebase');
+import { badResponse, successResponse } from '../utils/response.js';
+import { db } from '../config/configFirebase.js';
+
 // Register Lessor
-async function registerLessor(req, res) {
+const registerLessor = async (req, res) => {
   const lessor = {
     email: req.body.email,
     username: req.body.username,
@@ -67,7 +67,7 @@ async function registerLessor(req, res) {
     // const renterSnapshot = await renterRef.get();
     // const renterData = renterSnapshot.data();
 
-    const response = Response.successResponse(
+    const response = successResponse(
       201,
       `Success Create Lessor ${username}`,
       userData
@@ -76,16 +76,16 @@ async function registerLessor(req, res) {
     console.log(`Success Create Lessor ${username}`);
   } catch (error) {
     console.error(error);
-    const response = Response.badResponse(
+    const response = badResponse(
       400,
       'An error occurred while register lessor',
       error.message
     );
     return res.status(400).send(response);
   }
-}
+};
 
-async function getLessorProfile(req, res) {
+const getLessorProfile = async (req, res) => {
   try {
     const username = req.params.username;
 
@@ -101,7 +101,7 @@ async function getLessorProfile(req, res) {
 
     const lessorData = lessorSnapshot.docs[0].data();
 
-    const response = Response.successResponse(
+    const response = successResponse(
       200,
       'Success Get Lessor Profile',
       lessorData
@@ -111,16 +111,16 @@ async function getLessorProfile(req, res) {
   } catch (error) {
     console.error('Error while getting lessor:', error);
 
-    const response = Response.badResponse(
+    const response = badResponse(
       500,
       'An error occurred while getting lessor profile data',
       error.message
     );
     return res.status(500).send(response);
   }
-}
+};
 
-async function updateLessor(req, res) {
+const updateLessor = async (req, res) => {
   try {
     const username = req.params.username;
     const { storeFullName, storeAddress, storeEmail, storePhone } = req.body;
@@ -154,7 +154,7 @@ async function updateLessor(req, res) {
       storePhone,
     };
 
-    const response = Response.successResponse(
+    const response = successResponse(
       200,
       'Success Update Lessor Data',
       updateData
@@ -163,14 +163,14 @@ async function updateLessor(req, res) {
   } catch (error) {
     console.error('Error while updating lessor:', error);
 
-    const response = Response.badResponse(
+    const response = badResponse(
       500,
       'An error occurred while update lessor data',
       error.message
     );
     return res.status(500).send(response);
   }
-}
+};
 
 const getOrdersByLessor = async (req, res) => {
   try {
@@ -502,12 +502,13 @@ const cancelOrder = async (req, res) => {
   }
 };
 
-module.exports = {
+export {
   registerLessor,
   getLessorProfile,
   updateLessor,
   getOrdersByLessor,
   getLessorOrderById,
-  shippedOrder,
   updateOrderStatusAndNotes,
+  shippedOrder,
+  cancelOrder,
 };

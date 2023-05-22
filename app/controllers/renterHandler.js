@@ -596,9 +596,7 @@ const getDetailOrdersByRenter = async (req, res) => {
   }
 };
 
-
-export { 
-renter-feature
+export {
   getDashboardData,
   searchProduct,
   getAllCategories,

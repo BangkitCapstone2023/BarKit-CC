@@ -355,8 +355,15 @@ const updateOrderStatusAndNotes = async (req, res) => {
     }
 
     await orderRef.update(updateData);
+    const updatedOrderDoc = await orderRef.get();
+    const updatedOrderData = updatedOrderDoc.data();
 
-    return res.json(response);
+    const response = successResponse(
+      200,
+      'Success Update Status Order',
+      updatedOrderData
+    );
+    return res.status(200).json(response);
   } catch (error) {
     console.error('Error while updating order status and notes:', error);
 
@@ -415,7 +422,7 @@ const shippedOrder = async (req, res) => {
 
       const response = successResponse(200, 'Order shipment confirmed');
 
-      return res.json(response);
+      return res.status(200).json(response);
     } else {
       const response = badResponse(404, 'Order shipment confirmation declined');
       return res.status(404).json(response);
@@ -486,7 +493,7 @@ const cancelOrder = async (req, res) => {
         'Order cancelled confirmation declined'
       );
 
-      return res.json(response);
+      return res.status(404).json(response);
     }
   } catch (error) {
     console.error('Error while confirming order shipment:', error);

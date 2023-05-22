@@ -231,6 +231,15 @@ const updateProductById = async (req, res) => {
 
       const itemData = itemDoc.data();
 
+      // Pastikan lessor_id pada product sesuai dengan lessor yang mengirim permintaan
+      if (itemData.username !== username) {
+        const response = badResponse(
+          403,
+          'Not allowed to modify antoher lessor product'
+        );
+        return res.status(403).json(response);
+      }
+
       const imageUrl = itemData.imageUrl;
 
       // Jika ada file gambar yang diunggah, lakukan update gambar
@@ -314,9 +323,11 @@ const updateProductById = async (req, res) => {
           }
 
           await itemRef.update(updateData);
+          const updatedItemDoc = await itemRef.get();
+          const updatedItemData = updatedItemDoc.data();
 
           const responseData = {
-            updateData,
+            updateData: updatedItemData,
           };
           const response = successResponse(
             200,
@@ -339,10 +350,16 @@ const updateProductById = async (req, res) => {
 
         await itemRef.update(updateData);
 
+        const updatedItemDoc = await itemRef.get();
+        const updatedItemData = updatedItemDoc.data();
+
+        const responseData = {
+          updateData: updatedItemData,
+        };
         const response = successResponse(
           200,
-          'Success Update Product Data without change images',
-          updateData
+          'Success update product data',
+          responseData
         );
         return res.status(200).json(response);
       }

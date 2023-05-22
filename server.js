@@ -1,13 +1,11 @@
-const express = require('express');
+import express from 'express';
+import authRouter from './app/routes/authRoute.js';
+import lessorRouter from './app/routes/lessorRoute.js';
+import generalRouter from './app/routes/generalRoute.js';
+import renterRouter from './app/routes/renterRoute.js';
+
 const app = express();
 const port = 8080;
-
-const { db } = require('./app/config/configFirebase');
-const authRouter = require('./app/routes/authRoute');
-const lessorRouter = require('./app/routes/lessorRoute');
-const generalRouter = require('./app/routes/generalRoute');
-
-const renterRouter = require('./app/routes/renterRoute');
 
 // app.get('/', (req, res) => {
 //   res.send('Hello World!');

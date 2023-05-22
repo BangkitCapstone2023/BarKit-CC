@@ -1,6 +1,6 @@
-const admin = require('firebase-admin');
-const { db } = require('../config/configFirebase');
-const Response = require('../utils/response');
+import { badResponse, successResponse } from '../utils/response.js';
+import { db } from '../config/configFirebase.js';
+import Fuse from 'fuse.js';
 
 const getDashboardData = async (req, res) => {
   try {
@@ -35,7 +35,7 @@ const getDashboardData = async (req, res) => {
       categories,
     };
 
-    const response = Response.successResponse(
+    const response = successResponse(
       200,
       'Dashboard data retrieved successfully',
       responseData
@@ -44,7 +44,7 @@ const getDashboardData = async (req, res) => {
     return res.json(response);
   } catch (error) {
     console.error('Error:', error);
-    const response = Response.badResponse(
+    const response = badResponse(
       500,
       'An error occurred while fetching dashboard data',
       error.message
@@ -58,8 +58,6 @@ function getRandomElements(arr, count) {
   const shuffled = arr.sort(() => 0.5 - Math.random());
   return shuffled.slice(0, count);
 }
-
-const Fuse = require('fuse.js');
 
 const searchProduct = async (req, res) => {
   try {
@@ -96,7 +94,7 @@ const searchProduct = async (req, res) => {
       return { title, category, sub_category, price };
     });
 
-    const response = Response.successResponse(
+    const response = successResponse(
       200,
       'Product search successful',
       formattedResults
@@ -106,7 +104,7 @@ const searchProduct = async (req, res) => {
   } catch (error) {
     console.error('Error while searching products:', error);
 
-    const response = Response.badResponse(
+    const response = badResponse(
       500,
       'An error occurred while searching products',
       error.message
@@ -331,7 +329,274 @@ async function updateProfile(req, res) {
   }
 }
 
-module.exports = {
+const createOrder = async (req, res) => {
+  try {
+    const { username, productId } = req.params;
+    const {
+      delivery_address,
+      start_rent_date,
+      end_rent_date,
+      payment_use,
+      quantity_order,
+      kurir,
+    } = req.body;
+
+    // Get renter_id from renters collection based on username
+    const renterDoc = await db
+      .collection('renters')
+      .where('username', '==', username)
+      .get();
+    if (renterDoc.empty) {
+      const response = {
+        status: 404,
+        message: 'Renter not found',
+      };
+      return res.status(404).json(response);
+    }
+
+    const renterData = renterDoc.docs[0].data();
+    const renter_id = renterData.id;
+
+    // Get item_ids from products collection based on productId
+    const productDoc = await db.collection('products').doc(productId).get();
+    if (!productDoc.exists) {
+      const response = {
+        status: 404,
+        message: 'Product not found',
+      };
+      return res.status(404).json(response);
+    }
+    const productData = productDoc.data();
+    const lessor_id = productData.lessor_id;
+    const product_id = productId;
+
+    const lessorDoc = await db.collection('lessors').doc(lessor_id).get();
+
+    const lessorData = lessorDoc.data();
+
+    // Create a new order document in the orders collection
+    const orderRef = db.collection('orders').doc(); // Generate a new document reference
+
+    const newOrder = {
+      order_id: orderRef.id,
+      renter_id,
+      lessor_id,
+      product_id,
+      delivery_address,
+      start_rent_date,
+      end_rent_date,
+      quantity_order,
+      payment_use,
+      kurir,
+      status: 'pending',
+    };
+
+    const responseData = {
+      ...newOrder,
+      lessor: lessorData,
+      renter: renterData,
+      product: productData,
+    };
+
+    // Insert the new order into the orders collection in the database
+    await orderRef.set(newOrder); // Save the new order document
+
+    const response = successResponse(
+      200,
+      'Order Created successfully',
+      responseData
+    );
+
+    res.json(response);
+  } catch (error) {
+    console.error('Error while creating the order:', error);
+
+    const response = {
+      status: 500,
+      message: 'An error occurred while creating the order',
+      error: error.message,
+    };
+
+    res.status(500).json(response);
+  }
+};
+
+const getOrdersByRenter = async (req, res) => {
+  try {
+    const { username } = req.params;
+
+    const renterDoc = await db
+      .collection('renters')
+      .where('username', '==', username)
+      .get();
+
+    if (renterDoc.empty) {
+      const response = {
+        status: 404,
+        message: 'Renter not found',
+      };
+      return res.status(404).json(response);
+    }
+
+    const renterId = renterDoc.docs[0].id;
+
+    // Mengambil seluruh order berdasarkan renter_id
+    const orderRenter = await db
+      .collection('orders')
+      .where('renter_id', '==', renterId)
+      .get();
+
+    if (orderRenter.empty) {
+      const response = {
+        status: 404,
+        message: 'Renter is dont have order yet',
+      };
+      return res.status(404).json(response);
+    }
+    const orders = [];
+
+    orderRenter.forEach((doc) => {
+      const orderData = doc.data();
+      orders.push({
+        order_id: doc.id,
+        delivery_address: orderData.delivery_address,
+        start_rent_date: orderData.start_rent_date,
+        end_rent_date: orderData.end_rent_date,
+        quantity_order: orderData.quantity_order,
+        payment_use: orderData.payment_use,
+        kurir: orderData.kurir,
+        status: orderData.status,
+      });
+    });
+
+    const response = {
+      status: 200,
+      message: 'Orders retrieved successfully',
+      data: orders,
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error('Error while getting orders by renter:', error);
+
+    const response = {
+      status: 500,
+      message: 'An error occurred while getting orders by renter',
+      error: error.message,
+    };
+
+    res.status(500).json(response);
+  }
+};
+
+const updateOrder = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    console.log(orderId);
+    const { delivery_address, kurir, start_rent_date, end_rent_date } =
+      req.body;
+
+    // Mengambil data order berdasarkan orderId
+    const orderRef = db.collection('orders').doc(orderId);
+    const orderDoc = await orderRef.get();
+
+    if (!orderDoc.exists) {
+      const response = {
+        status: 404,
+        message: 'Order not found',
+      };
+      return res.status(404).json(response);
+    }
+
+    const orderData = orderDoc.data();
+
+    // Cek apakah status order masih pending
+    if (orderData.status !== 'pending') {
+      const response = {
+        status: 403,
+        message: 'Order cannot be edited as it is not in pending status',
+      };
+      return res.status(403).json(response);
+    }
+
+    // Update data order dengan atribut yang dapat diubah
+    await orderRef.update({
+      delivery_address: delivery_address || orderData.delivery_address,
+      kurir: kurir || orderData.kurir,
+      start_rent_date: start_rent_date || orderData.start_rent_date,
+      end_rent_date: end_rent_date || orderData.end_rent_date,
+    });
+
+    const response = {
+      status: 200,
+      message: 'Order updated successfully',
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error('Error while editing the order:', error);
+
+    const response = {
+      status: 500,
+      message: 'An error occurred while editing the order',
+      error: error.message,
+    };
+
+    res.status(500).json(response);
+  }
+};
+
+const getDetailOrdersByRenter = async (req, res) => {
+  try {
+    const { username, orderId } = req.params;
+
+    // Mencari data order berdasarkan orderId dan renterId
+    const orderRef = db.collection('orders').doc(orderId);
+    const orderDoc = await orderRef.get();
+
+    if (!orderDoc.exists) {
+      const response = {
+        status: 404,
+        message: 'Order not found',
+      };
+      return res.status(404).json(response);
+    }
+
+    const orderData = orderDoc.data();
+    const renterRef = db.collection('renters').doc(orderData.renter_id);
+    const renterDoc = await renterRef.get();
+    const renterData = renterDoc.data();
+
+    // Memastikan order tersebut dimiliki oleh renter yang sesuai
+    if (orderData.renter_id !== renterData.id) {
+      const response = {
+        status: 403,
+        message: 'Access denied. Order does not belong to the renter',
+      };
+      return res.status(403).json(response);
+    }
+
+    const response = {
+      status: 200,
+      message: 'Order retrieved successfully',
+      data: orderData,
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error('Error while getting the order:', error);
+
+    const response = {
+      status: 500,
+      message: 'An error occurred while getting the order',
+      error: error.message,
+    };
+
+    res.status(500).json(response);
+  }
+};
+
+export {
   getDashboardData,
   searchProduct,
   getAllCategories,
@@ -340,6 +605,10 @@ module.exports = {
   getProductById,
   getUserProfile,
   updateProfile,
+  createOrder,
+  getOrdersByRenter,
+  getDetailOrdersByRenter,
+  updateOrder,
 };
 
 // const searchProduct = async (req, res) => {
@@ -364,7 +633,7 @@ module.exports = {
 //       products.push({ title, category, sub_category, price });
 //     });
 
-//     const response = Response.successResponse(
+//     const response = successResponse(
 //       200,
 //       'Product search successful',
 //       products
@@ -374,7 +643,7 @@ module.exports = {
 //   } catch (error) {
 //     console.error('Error while searching products:', error);
 
-//     const response = Response.badResponse(
+//     const response = badResponse(
 //       500,
 //       'An error occurred while searching products',
 //       error.message

@@ -1,13 +1,25 @@
-const admin = require('firebase-admin');
-const firebase = require('firebase/compat/app');
-require('firebase/compat/auth');
-const Response = require('../utils/response');
+import admin from 'firebase-admin';
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/auth';
+import { badResponse, successResponse } from '../utils/response.js';
 
 // Inisialisasi Firebase client-side app
-const clientConfig = require('../config/firebaseClientConfig2.json');
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import { readFileSync } from 'fs';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const clientConfigPath = join(
+  __dirname,
+  '../config/firebaseClientConfig2.json'
+);
+const clientConfig = JSON.parse(readFileSync(clientConfigPath, 'utf8'));
 firebase.initializeApp(clientConfig);
 
-const { db } = require('../config/configFirebase');
+import { db } from '../config/configFirebase.js';
+
 // Login user menggunakan Firebase Admin SDK
 async function login(req, res) {
   const user = {
@@ -23,11 +35,7 @@ async function login(req, res) {
       token: token,
     };
 
-    const response = Response.successResponse(
-      200,
-      'User Success Login',
-      userLoginData
-    );
+    const response = successResponse(200, 'User Success Login', userLoginData);
 
     res.status(200).json(response);
   } catch (error) {
@@ -41,7 +49,7 @@ async function login(req, res) {
       errorMessage = `Error logging in user: ${error}`;
     }
 
-    const response = Response.badResponse(401, errorMessage);
+    const response = badResponse(401, errorMessage);
     res.status(401).json(response);
   }
 }
@@ -69,7 +77,7 @@ async function register(req, res) {
       user.gender,
       user.isLessor
     );
-    const response = Response.successResponse(
+    const response = successResponse(
       201,
       'User Success Register',
       userResponse
@@ -89,7 +97,7 @@ async function register(req, res) {
       errorMessage = error;
     }
 
-    const response = Response.badResponse(400, errorMessage);
+    const response = badResponse(400, errorMessage);
     res.json(response);
   }
 }
@@ -174,7 +182,4 @@ async function createUser(
   }
 }
 
-module.exports = {
-  login,
-  register,
-};
+export { login, register };

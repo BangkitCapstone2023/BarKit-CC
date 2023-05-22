@@ -39,7 +39,7 @@ const login = async (req, res) => {
     if (error.code === 'auth/wrong-password') {
       errorMessage = 'Password yang dimasukkan salah';
     } else if (error.code === 'auth/invalid-email') {
-      errorMessage = 'Email pengguna tidak ditemukan';
+      errorMessage = 'Email pengguna tidak valid';
     } else if (error.code === 'auth/user-not-found') {
       errorMessage = 'User tidak ditemukan';
     } else {
@@ -102,7 +102,6 @@ const register = async (req, res) => {
     res.json(response);
   }
 };
-
 const createUser = async (
   email,
   password,
@@ -122,8 +121,7 @@ const createUser = async (
       const errorMessage = missingFields
         .map((field) => `${field} is required`)
         .join('. ');
-      const response = badResponse(400, errorMessage);
-      return res.status(400, response);
+      throw new Error(errorMessage);
     }
 
     // Validating username uniqueness
@@ -132,11 +130,7 @@ const createUser = async (
       .where('username', '==', username)
       .get();
     if (!usernameSnapshot.empty) {
-      const response = badResponse(
-        409,
-        `Username '${username}' is already taken`
-      );
-      return res.status(409).json(response);
+      throw new Error(`Username '${username}' is already taken`);
     }
 
     const userRecord = await admin.auth().createUser({ email, password });

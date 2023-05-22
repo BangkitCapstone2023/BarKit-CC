@@ -179,29 +179,54 @@ const getAllRenters = async (req, res) => {
     return res.status(500).json(response);
   }
 };
-
 const deleteRenterById = async (req, res) => {
-  const { id } = req.params;
-
   try {
-    // Get the lessor document
-    const renterSnapshot = await db.collection('renters').doc(id).get();
+    const { renterId } = req.params;
 
-    if (!renterSnapshot.exists) {
-      const response = badResponse(500, `Renter '${id}' not found`);
-      return res.status(500).json(response);
-    } else {
-      await db.collection('renters').doc(id).delete();
+    // Hapus renter dari database
+    const renterRef = db.collection('renters').doc(renterId);
+    const renterDoc = await renterRef.get();
+
+    if (!renterDoc.exists) {
+      const response = badResponse(
+        404,
+        `Renter with ID '${renterId}' not found`
+      );
+      return res.status(404).json(response);
     }
 
-    const response = successResponse(200, 'Renters deleted successfully');
+    const renterData = renterDoc.data();
 
-    res.status(200).json(response);
+    // Hapus renter
+    await renterRef.delete();
+
+    // Hapus data lessor yang terkait dengan renter tersebut
+    const lessorSnapshot = await db
+      .collection('lessors')
+      .where('username', '==', renterData.username)
+      .get();
+
+    if (!lessorSnapshot.empty) {
+      const lessorId = lessorSnapshot.docs[0].id;
+      const lessorRef = db.collection('lessors').doc(lessorId);
+      await lessorRef.delete();
+    }
+
+    const response = successResponse(
+      200,
+      'Renter and associated lessor deleted successfully'
+    );
+    return res.json(response);
   } catch (error) {
-    console.error('Error deleting lessor:', error);
+    console.error('Error while deleting renter:', error);
 
-    const response = badResponse(500, 'Error deleting lessor', error.message);
-    res.status(500).json(response);
+    const response = badResponse(
+      500,
+      'An error occurred while deleting renter',
+      error.message
+    );
+
+    return res.status(500).json(response);
   }
 };
 

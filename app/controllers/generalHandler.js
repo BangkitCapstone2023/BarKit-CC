@@ -282,6 +282,77 @@ async function addSubCategory(req, res) {
     });
 }
 
+// Mengambil seluruh order dari renter
+const getAllOrders = async (req, res) => {
+  try {
+    const orderSnapshot = await db.collection('orders').get();
+
+    const orders = [];
+
+    orderSnapshot.forEach((doc) => {
+      const orderData = doc.data();
+      orders.push({ order_id: doc.id, ...orderData });
+    });
+
+    const response = {
+      status: 200,
+      message: 'Orders retrieved successfully',
+      data: orders,
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error('Error while getting orders:', error);
+
+    const response = {
+      status: 500,
+      message: 'An error occurred while getting orders',
+      error: error.message,
+    };
+
+    res.status(500).json(response);
+  }
+};
+
+// Mengambil detail suatu order berdasarkan order_id
+const getOrderById = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+
+    // Mencari order berdasarkan orderId
+    const orderRef = db.collection('orders').doc(orderId);
+    const orderDoc = await orderRef.get();
+
+    if (!orderDoc.exists) {
+      const response = {
+        status: 404,
+        message: 'Order not found',
+      };
+      return res.status(404).json(response);
+    }
+
+    const orderData = orderDoc.data();
+
+    const response = {
+      status: 200,
+      message: 'Order retrieved successfully',
+      data: orderData,
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error('Error while getting the order:', error);
+
+    const response = {
+      status: 500,
+      message: 'An error occurred while getting the order',
+      error: error.message,
+    };
+
+    res.status(500).json(response);
+  }
+};
+
 export {
   getImageByName,
   getAllImages,
@@ -291,4 +362,6 @@ export {
   deleteRenterById,
   addCategory,
   addSubCategory,
+  getAllOrders,
+  getOrderById,
 };

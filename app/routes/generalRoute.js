@@ -9,13 +9,19 @@ import {
   getAllRenters,
   addCategory,
   addSubCategory,
+  getAllOrders,
+  getOrderById,
 } from '../controllers/generalHandler.js';
 
+router.get('/renters', getAllRenters);
 router.get('/lessors', getAllLessors);
 
 router.post('/category', addCategory);
 router.post('/category/:categoryId/subcategory', addSubCategory);
 router.delete('/lessors/:lessorId', deleteLessorById);
+
+router.get('/orders', getAllOrders);
+router.get('/orders/:orderId', getOrderById);
 
 router.get('/images', getAllImages);
 router.get('/images/:name', getImageByName);

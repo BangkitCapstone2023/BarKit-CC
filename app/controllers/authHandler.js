@@ -21,17 +21,14 @@ firebase.initializeApp(clientConfig);
 
 // Login Renters
 const login = async (req, res) => {
-  const user = {
-    email: req.body.email,
-    password: req.body.password,
-  };
+  const { email, password } = req.body;
 
   try {
-    const { token, loginTime } = await loginUser(user.email, user.password);
+    const { token, loginTime } = await loginUser(email, password);
     const userLoginData = {
-      email: user.email,
-      loginTime: loginTime,
-      token: token,
+      email,
+      loginTime,
+      token,
     };
 
     const response = successResponse(200, 'User Success Login', userLoginData);
@@ -57,17 +54,15 @@ const loginUser = async (email, password) => {
   try {
     const timestamp = admin.firestore.Timestamp.now(); // Mendapatkan timestamp saat login
 
-    // Otentikasi di sisi klien
     const userCredential = await firebase
       .auth()
       .signInWithEmailAndPassword(email, password);
     const { uid } = userCredential.user;
 
-    // Generate custom token
     const token = await admin.auth().createCustomToken(uid);
 
     return {
-      token: token,
+      token,
       loginTime: timestamp.toDate(),
     };
   } catch (error) {
@@ -78,26 +73,18 @@ const loginUser = async (email, password) => {
 
 // Create Renters
 const register = async (req, res) => {
-  const user = {
-    email: req.body.email,
-    password: req.body.password,
-    username: req.body.username,
-    fullName: req.body.fullName,
-    address: req.body.address,
-    phone: req.body.phone,
-    gender: req.body.gender,
-  };
+  const { email, password, username, fullName, address, phone, gender } =
+    req.body;
 
   try {
     const userResponse = await createUser(
-      user.email,
-      user.password,
-      user.username,
-      user.fullName,
-      user.address,
-      user.phone,
-      user.gender,
-      user.isLessor
+      email,
+      password,
+      username,
+      fullName,
+      address,
+      phone,
+      gender
     );
     const response = successResponse(
       201,
@@ -105,9 +92,9 @@ const register = async (req, res) => {
       userResponse
     );
     res.status(201).json(response);
-    console.log(`Success Create User ${user.username}`);
+    console.log(`Success Create User ${username}`);
   } catch (error) {
-    const response = badResponse(400, error, error);
+    const response = badResponse(400, error.message, error.message);
     res.json(response);
   }
 };
@@ -119,26 +106,19 @@ const createUser = async (
   fullName,
   address = '',
   phone = '',
-  gender = 'male',
-  isLessor = false
+  gender = 'male'
 ) => {
   try {
     // Validating required fields
-    if (!email || !password || !username || !fullName) {
-      let errorMessage = '';
-      if (!email) {
-        errorMessage += 'Email is required. ';
-      }
-      if (!password) {
-        errorMessage += 'Password is required. ';
-      }
-      if (!username) {
-        errorMessage += 'Username is required. ';
-      }
-      if (!fullName) {
-        errorMessage += 'Full Name is required. ';
-      }
-      throw new Error(errorMessage.trim());
+    const requiredFields = ['email', 'password', 'username', 'fullName'];
+    const missingFields = requiredFields.filter(
+      (field) => !email || !password || !username || !fullName
+    );
+    if (missingFields.length > 0) {
+      const errorMessage = missingFields
+        .map((field) => `${field} is required`)
+        .join('. ');
+      throw new Error(errorMessage);
     }
 
     // Validating username uniqueness
@@ -150,12 +130,8 @@ const createUser = async (
       throw new Error(`Username '${username}' is already taken`);
     }
 
-    const userRecord = await admin.auth().createUser({
-      email,
-      password,
-    });
+    const userRecord = await admin.auth().createUser({ email, password });
 
-    // Save additional data to Firestore if not empty
     const userDocRef = db.collection('renters').doc(userRecord.uid);
     const userData = {
       id: userRecord.uid,
@@ -166,17 +142,16 @@ const createUser = async (
       phone,
       address,
       gender,
-      isLessor,
     };
 
     const responseData = { ...userData, userRecord };
 
     await userDocRef.set(userData);
-    console.log(`Success Store Renter to firestore ${username}`);
+    console.log(`Success Store Renter to Firestore ${username}`);
     return responseData;
   } catch (error) {
     console.error('Error creating user:', error.message);
-    throw error.message;
+    throw error;
   }
 };
 

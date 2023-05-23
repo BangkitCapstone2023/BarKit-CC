@@ -1,4 +1,4 @@
-const util = require('util');
+import util from 'util';
 const Multer = 'multer';
 const maxSize = 2 * 1024 * 1024;
 

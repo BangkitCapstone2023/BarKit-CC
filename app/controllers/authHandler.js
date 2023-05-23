@@ -59,7 +59,7 @@ const loginUser = async (email, password) => {
       .signInWithEmailAndPassword(email, password);
     const { uid } = userCredential.user;
 
-    const token = await admin.auth().createCustomToken(uid);
+    const token = await firebase.auth().currentUser.getIdToken();
 
     return {
       token,

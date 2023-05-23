@@ -124,10 +124,10 @@ const getAllCategories = async (req, res) => {
       categories.push({ id: doc.id, name: data.name });
     });
 
-    res.status(200).json(categories);
+    return res.status(200).json(categories);
   } catch (error) {
     console.error('Error getting categories', error);
-    res.status(500).json({ error: 'Failed to get categories' });
+    return res.status(500).json({ error: 'Failed to get categories' });
   }
 };
 
@@ -142,7 +142,7 @@ const getSubCategoriesByName = async (req, res) => {
       .get();
 
     if (snapshot.empty) {
-      res.status(404).json({ error: 'Category not found' });
+      return res.status(404).json({ error: 'Category not found' });
       return;
     }
 
@@ -160,10 +160,10 @@ const getSubCategoriesByName = async (req, res) => {
       subCategories.push({ id: doc.id, name: data.name });
     });
 
-    res.status(200).json(subCategories);
+    return res.status(200).json(subCategories);
   } catch (error) {
     console.error('Error getting subcategories', error);
-    res.status(500).json({ error: 'Failed to get subcategories' });
+    return res.status(500).json({ error: 'Failed to get subcategories' });
   }
 };
 
@@ -190,7 +190,7 @@ const getProductsBySubCategory = async (req, res) => {
       products
     );
 
-    res.status(200).json(response);
+    return res.status(200).json(response);
   } catch (error) {
     console.error('Error while getting products by subcategory:', error);
 
@@ -200,7 +200,7 @@ const getProductsBySubCategory = async (req, res) => {
       error.message
     );
 
-    res.status(500).json(response);
+    return res.status(500).json(response);
   }
 };
 
@@ -223,7 +223,7 @@ const getProductById = async (req, res) => {
       productData
     );
 
-    res.status(200).json(response);
+    return res.status(200).json(response);
   } catch (error) {
     console.error('Error while getting product details', error);
     const response = badResponse(
@@ -232,36 +232,42 @@ const getProductById = async (req, res) => {
       error.message
     );
 
-    res.status(500).json(response);
+    return res.status(500).json(response);
   }
 };
 
 const getUserProfile = async (req, res) => {
   try {
     const { username } = req.params;
+    const { uid } = req.user;
 
-    // Mencari data profil renter berdasarkan username
-    const profileQuery = await db
+    // Check Renter
+    const profileSnapshot = await db
       .collection('renters')
       .where('username', '==', username)
       .limit(1)
       .get();
 
-    if (profileQuery.empty) {
+    if (profileSnapshot.empty) {
       const response = badResponse(404, 'Profile not found');
-
-      res.status(404).json(response);
+      return res.status(404).json(response);
     }
 
-    const profileDoc = profileQuery.docs[0];
-    const profileData = profileDoc.data();
+    const renterData = profileSnapshot.docs[0].data();
+
+    // Check Auth Token
+    if (renterData.id !== uid) {
+      const response = badResponse(403, 'Not allowed');
+      return res.status(403).json(response);
+    }
+
     const response = successResponse(
       200,
       'Profile retrieved successfully',
-      profileData
+      renterData
     );
 
-    res.status(200).json(response);
+    return res.status(200).json(response);
   } catch (error) {
     console.error('Error while getting user profile:', error);
     const response = badResponse(
@@ -270,29 +276,37 @@ const getUserProfile = async (req, res) => {
       error.message
     );
 
-    res.status(500).json(response);
+    return res.status(500).json(response);
   }
 };
+
 const updateProfile = async (req, res) => {
   try {
     const { username } = req.params;
+    const { uid } = req.user;
     const { name, address, phone, gender } = req.body;
 
-    // Cari data profile renter berdasarkan username
-    const profileSnapshot = await db
+    // Check renter
+    const renterSnapshot = await db
       .collection('renters')
       .where('username', '==', username)
       .get();
 
-    if (profileSnapshot.empty) {
+    if (renterSnapshot.empty) {
       const response = badResponse(404, 'Profile not found');
-      res.status(404).json(response);
+      return res.status(404).json(response);
     }
 
-    const profileRef = profileSnapshot.docs[0].ref;
+    // Check Auth  Token
+    const renterData = renterSnapshot.docs[0].data();
+    if (renterData.id !== uid) {
+      const response = badResponse(403, 'Not allowed');
+      return res.status(403).json(response);
+    }
+    const renterRef = renterSnapshot.docs[0].ref;
 
     // Perbarui data profile renter pada database
-    await profileRef.update({
+    await renterRef.update({
       name,
       address,
       phone,
@@ -300,7 +314,7 @@ const updateProfile = async (req, res) => {
     });
 
     // Ambil snapshot terbaru dari data profile yang diperbarui
-    const updatedProfileSnapshot = await profileRef.get();
+    const updatedProfileSnapshot = await renterRef.get();
     const updatedProfileData = updatedProfileSnapshot.data();
 
     const response = successResponse(
@@ -308,7 +322,7 @@ const updateProfile = async (req, res) => {
       'Profile updated successfully',
       updatedProfileData
     );
-    res.status(200).json(response);
+    return res.status(200).json(response);
   } catch (error) {
     console.error('Error while updating user profile:', error);
 
@@ -318,13 +332,14 @@ const updateProfile = async (req, res) => {
       error.message
     );
 
-    res.status(500).json(response);
+    return res.status(500).json(response);
   }
 };
 
 const createOrder = async (req, res) => {
   try {
     const { username, productId } = req.params;
+    const { uid } = req.user;
     const {
       delivery_address,
       start_rent_date,
@@ -333,39 +348,48 @@ const createOrder = async (req, res) => {
       quantity_order,
       kurir,
     } = req.body;
+    console.log(uid);
 
-    // Get renter_id from renters collection based on username
-    const renterDoc = await db
+    // Check Renter
+    const renterSnapshot = await db
       .collection('renters')
       .where('username', '==', username)
       .get();
-    if (renterDoc.empty) {
+
+    if (renterSnapshot.empty) {
       const response = badResponse(404, 'Renter not found');
-
-      res.status(404).json(response);
-    }
-
-    const renterData = renterDoc.docs[0].data();
-    const renter_id = renterData.id;
-
-    // Get item_ids from products collection based on productId
-    const productDoc = await db.collection('products').doc(productId).get();
-    if (!productDoc.exists) {
-      const response = badResponse(404, 'Product not found');
-
       return res.status(404).json(response);
     }
-    const productData = productDoc.data();
+    const renterData = renterSnapshot.docs[0].data();
+    const renter_id = renterData.id;
+
+    // Check Product
+    const productSnapshot = await db
+      .collection('products')
+      .doc(productId)
+      .get();
+    if (!productSnapshot.exists) {
+      const response = badResponse(404, 'Product not found');
+      return res.status(404).json(response);
+    }
+
+    // Check Auth Token
+    if (renterData.id !== uid) {
+      const response = badResponse(403, 'Not allowed');
+      return res.status(403).json(response);
+    }
+    const productData = productSnapshot.data();
     const lessor_id = productData.lessor_id;
     const product_id = productId;
 
-    const lessorDoc = await db.collection('lessors').doc(lessor_id).get();
+    const lessorSnapshot = await db.collection('lessors').doc(lessor_id).get();
 
-    const lessorData = lessorDoc.data();
+    const lessorData = lessorSnapshot.data();
 
-    // Create a new order document in the orders collection
-    const orderRef = db.collection('orders').doc(); // Generate a new document reference
+    // Generate document reference baru
+    const orderRef = db.collection('orders').doc();
 
+    // Buat Order Baru
     const newOrder = {
       order_id: orderRef.id,
       renter_id,
@@ -380,16 +404,15 @@ const createOrder = async (req, res) => {
       status: 'pending',
     };
 
+    // Insert order baru ke database
+    await orderRef.set(newOrder);
+
     const responseData = {
       ...newOrder,
       lessor: lessorData,
       renter: renterData,
       product: productData,
     };
-
-    // Insert the new order into the orders collection in the database
-    await orderRef.set(newOrder); // Save the new order document
-
     const response = successResponse(
       200,
       'Order Created successfully',
@@ -405,26 +428,35 @@ const createOrder = async (req, res) => {
       error.message
     );
 
-    res.status(500).json(response);
+    return res.status(500).json(response);
   }
 };
 
 const getOrdersByRenter = async (req, res) => {
   try {
     const { username } = req.params;
+    const { uid } = req.user;
 
-    const renterDoc = await db
+    console.log(uid);
+    const renterSnapshot = await db
       .collection('renters')
       .where('username', '==', username)
       .get();
 
-    if (renterDoc.empty) {
+    // Check Renter
+    if (renterSnapshot.empty) {
       const response = badResponse(404, 'Renter not found');
-
-      res.status(404).json(response);
+      return res.status(404).json(response);
     }
 
-    const renterId = renterDoc.docs[0].id;
+    const renterData = renterSnapshot.docs[0].data();
+    // Check Auth Token
+    if (renterData.id !== uid) {
+      const response = badResponse(403, 'Not allowed');
+      return res.status(403).json(response);
+    }
+
+    const renterId = renterSnapshot.docs[0].id;
 
     // Mengambil seluruh order berdasarkan renter_id
     const orderRenter = await db
@@ -432,13 +464,14 @@ const getOrdersByRenter = async (req, res) => {
       .where('renter_id', '==', renterId)
       .get();
 
+    // Check Orders By Renter
     if (orderRenter.empty) {
       const response = badResponse(404, 'Renter is dont have order yet');
-
-      res.status(404).json(response);
+      return res.status(404).json(response);
     }
     const orders = [];
 
+    // Mengambil seluruh order by renter
     orderRenter.forEach((doc) => {
       const orderData = doc.data();
       orders.push({
@@ -459,7 +492,7 @@ const getOrdersByRenter = async (req, res) => {
       orders
     );
 
-    res.status(200).json(response);
+    return res.status(200).json(response);
   } catch (error) {
     console.error('Error while getting orders by renter:', error);
     const response = badResponse(
@@ -468,27 +501,44 @@ const getOrdersByRenter = async (req, res) => {
       error.message
     );
 
-    res.status(500).json(response);
+    return res.status(500).json(response);
   }
 };
 
 const updateOrder = async (req, res) => {
   try {
-    const { orderId } = req.params;
-    console.log(orderId);
+    const { uid } = req.user;
+    const { username, orderId } = req.params;
     const { delivery_address, kurir, start_rent_date, end_rent_date } =
       req.body;
 
+    console.log(orderId);
+
     // Mengambil data order berdasarkan orderId
-    const orderRef = db.collection('orders').doc(orderId);
-    const orderDoc = await orderRef.get();
+    const orderSnapshoot = db.collection('orders').doc(orderId);
+    const orderRef = await orderSnapshoot.get();
 
-    if (!orderDoc.exists) {
+    if (!orderRef.exists) {
       const response = badResponse(404, 'Order not found');
-      res.status(404).json(response);
+      return res.status(404).json(response);
     }
+    const orderData = orderRef.data();
 
-    const orderData = orderDoc.data();
+    const renterSnapshot = await db
+      .collection('renters')
+      .doc(orderData.renter_id)
+      .get();
+
+    const renterData = renterSnapshot.data();
+
+    // Memastikan order tersebut dimiliki oleh renter yang sesuai
+    if (renterData.username !== username || renterData.id !== uid) {
+      const response = badResponse(
+        403,
+        'Access denied. Order does not belong to the renter'
+      );
+      return res.status(403).json(response);
+    }
 
     // Cek apakah status order masih pending
     if (orderData.status !== 'pending') {
@@ -497,11 +547,11 @@ const updateOrder = async (req, res) => {
         'Order cannot be edited as it is not in pending status',
         error.message
       );
-      res.status(403).json(response);
+      return res.status(403).json(response);
     }
 
     // Update data order dengan atribut yang dapat diubah
-    await orderRef.update({
+    await orderSnapshoot.update({
       delivery_address: delivery_address || orderData.delivery_address,
       kurir: kurir || orderData.kurir,
       start_rent_date: start_rent_date || orderData.start_rent_date,
@@ -509,7 +559,7 @@ const updateOrder = async (req, res) => {
     });
 
     // Mengambil data terbaru dari order setelah pembaruan
-    const updatedOrderDoc = await orderRef.get();
+    const updatedOrderDoc = await orderSnapshoot.get();
     const updatedOrderData = updatedOrderDoc.data();
 
     const response = successResponse(
@@ -518,7 +568,7 @@ const updateOrder = async (req, res) => {
       updatedOrderData
     );
 
-    res.status(200).json(response);
+    return res.status(200).json(response);
   } catch (error) {
     console.error('Error while editing the order:', error);
 
@@ -528,37 +578,42 @@ const updateOrder = async (req, res) => {
       error.message
     );
 
-    res.status(500).json(response);
+    return res.status(500).json(response);
   }
 };
 
 const getDetailOrdersByRenter = async (req, res) => {
   try {
     const { username, orderId } = req.params;
+    const { uid } = req.user;
 
-    // Mencari data order berdasarkan orderId dan renterId
-    const orderRef = db.collection('orders').doc(orderId);
-    const orderDoc = await orderRef.get();
+    console.log('afeafkenf', orderId);
+    // Check Order
+    const orderSnapshot = await db.collection('orders').doc(orderId).get();
 
-    if (!orderDoc.exists) {
+    if (!orderSnapshot.exists) {
       const response = badResponse(404, 'Order not found');
-
-      res.status(404).json(response);
+      return res.status(404).json(response);
     }
 
-    const orderData = orderDoc.data();
-    const renterRef = db.collection('renters').doc(orderData.renter_id);
-    const renterDoc = await renterRef.get();
-    const renterData = renterDoc.data();
+    const orderData = orderSnapshot.data();
+
+    console.log(orderData.renter_id);
+
+    const renterSnapshot = await db
+      .collection('renters')
+      .doc(orderData.renter_id)
+      .get();
+
+    const renterData = renterSnapshot.data();
 
     // Memastikan order tersebut dimiliki oleh renter yang sesuai
-    if (orderData.renter_id !== renterData.id) {
+    if (renterData.username !== username || renterData.id !== uid) {
       const response = badResponse(
         403,
         'Access denied. Order does not belong to the renter'
       );
-
-      res.status(403).json(response);
+      return res.status(403).json(response);
     }
 
     const response = successResponse(
@@ -567,7 +622,7 @@ const getDetailOrdersByRenter = async (req, res) => {
       orderData
     );
 
-    res.status(200).json(response);
+    return res.status(200).json(response);
   } catch (error) {
     console.error('Error while getting the order:', error);
 
@@ -577,7 +632,7 @@ const getDetailOrdersByRenter = async (req, res) => {
       error.message
     );
 
-    res.status(500).json(response);
+    return res.status(500).json(response);
   }
 };
 

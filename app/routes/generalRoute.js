@@ -2,18 +2,28 @@ import express from 'express';
 const router = express.Router();
 
 import {
-  getAllImages,
   getImageByName,
+  getAllImages,
   getAllLessors,
+  getLessorById,
   getAllRenters,
+  getRenterById,
   addCategory,
   addSubCategory,
+  getAllProduct,
+  getProductById,
   getAllOrders,
   getOrderById,
 } from '../controllers/generalHandler.js';
 
-router.get('/renters', getAllRenters);
 router.get('/lessors', getAllLessors);
+router.get('/lessors/:lessorId', getLessorById);
+
+router.get('/renters', getAllRenters);
+router.get('/renters/:renterId', getRenterById);
+
+router.get('/products', getAllProduct);
+router.get('/products/:productId', getProductById);
 
 router.post('/category', addCategory);
 router.post('/category/:categoryId/subcategory', addSubCategory);
@@ -23,6 +33,5 @@ router.get('/orders/:orderId', getOrderById);
 
 router.get('/images', getAllImages);
 // router.get('/images/:name', getImageByName);
-// router.get('/images/:name/download', addProductHandler.downloadImage);
 
 export default router;

@@ -33,6 +33,41 @@ const getAllLessors = async (req, res) => {
   }
 };
 
+const getLessorById = async (req, res) => {
+  try {
+    const { lessorId } = req.params;
+
+    // Mencari lessor berdasarkan lessorId
+    const lessorSnapshot = db.collection('lessors').doc(lessorId);
+    const lessorRef = await lessorSnapshot.get();
+
+    if (!lessorRef.exists) {
+      const response = badResponse(404, 'Lessor not found');
+      return res.status(404).json(response);
+    }
+
+    const lessorData = lessorRef.data();
+
+    const response = successResponse(
+      200,
+      'Lessors retrieved successfully',
+      lessorData
+    );
+
+    res.status(200).json(response);
+  } catch (error) {
+    console.error('Error while getting the Lessor', error);
+
+    const response = badResponse(
+      500,
+      'An error occurred while getting the Lessor',
+      error.message
+    );
+
+    res.status(500).json(response);
+  }
+};
+
 //TODO: Still Error
 const getImageByName = async (req, res) => {
   const { name } = req.params;
@@ -132,6 +167,42 @@ const getAllRenters = async (req, res) => {
   }
 };
 
+// Mengambil detail suatu order berdasarkan order_id
+const getRenterById = async (req, res) => {
+  try {
+    const { renterId } = req.params;
+
+    // Mencari renter berdasarkan renterId
+    const renterSnapshot = db.collection('renters').doc(renterId);
+    const renterRef = await renterSnapshot.get();
+
+    if (!renterRef.exists) {
+      const response = badResponse(404, 'Renter not found');
+      return res.status(404).json(response);
+    }
+
+    const renterData = renterRef.data();
+
+    const response = successResponse(
+      200,
+      'Renter s retrieved successfully',
+      renterData
+    );
+
+    res.status(200).json(response);
+  } catch (error) {
+    console.error('Error while getting the Renter', error);
+
+    const response = badResponse(
+      500,
+      'An error occurred while getting the Renter',
+      error.message
+    );
+
+    res.status(500).json(response);
+  }
+};
+
 const addCategory = async (req, res) => {
   const { name } = req.body;
 
@@ -162,6 +233,69 @@ const addSubCategory = async (req, res) => {
       console.error('Error creating subcategory', error);
       res.status(500).json({ error: 'Failed to create subcategory' });
     });
+};
+
+const getAllProduct = async (req, res) => {
+  try {
+    // Get all renters from Firestore
+    const productSnapshot = await db.collection('products').get();
+
+    const productsData = [];
+
+    // Iterate through the renters snapshot and collect the data
+    productSnapshot.forEach((doc) => {
+      const productData = doc.data();
+      productsData.push(productData);
+    });
+
+    const response = successResponse(200, 'Success Get Product', productsData);
+
+    return res.status(200).json(response);
+  } catch (error) {
+    console.error('Error while getting all products', error);
+    const response = badResponse(
+      500,
+      'An error occurred while getting all products data',
+      error.message
+    );
+    return res.status(500).json(response);
+  }
+};
+
+// Mengambil detail suatu order berdasarkan order_id
+const getProductById = async (req, res) => {
+  try {
+    const { productId } = req.params;
+
+    // Mencari product berdasarkan productId
+    const productSnapshot = db.collection('products').doc(productId);
+    const productRef = await productSnapshot.get();
+
+    if (!productRef.exists) {
+      const response = badResponse(404, 'Products not found');
+      return res.status(404).json(response);
+    }
+
+    const productData = productRef.data();
+
+    const response = successResponse(
+      200,
+      'Products retrieved successfully',
+      productData
+    );
+
+    res.status(200).json(response);
+  } catch (error) {
+    console.error('Error while getting the Products', error);
+
+    const response = badResponse(
+      500,
+      'An error occurred while getting the Products',
+      error.message
+    );
+
+    res.status(500).json(response);
+  }
 };
 
 // Mengambil seluruh order dari renter
@@ -236,9 +370,13 @@ export {
   getImageByName,
   getAllImages,
   getAllLessors,
+  getLessorById,
   getAllRenters,
+  getRenterById,
   addCategory,
   addSubCategory,
+  getAllProduct,
+  getProductById,
   getAllOrders,
   getOrderById,
 };

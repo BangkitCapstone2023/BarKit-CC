@@ -168,8 +168,7 @@ const updateLessor = async (req, res) => {
   try {
     const { username } = req.params;
     const { uid } = req.user;
-    const { storeFullName, storeAddress, storeEmail, storePhone, kurir } =
-      req.body;
+    const { storeFullName, storeAddress, storeEmail, storePhone } = req.body;
 
     // Check if the lessor exists
     const lessorSnapshot = await db
@@ -197,23 +196,29 @@ const updateLessor = async (req, res) => {
       storeAddress,
       storeEmail,
       storePhone,
-      kurir,
     });
 
     const updateData = {
-      lessorId,
+      lessor_id: lessorId,
       username,
       storeFullName,
       storeAddress,
       storeEmail,
       storePhone,
-      kurir,
     };
 
+    const renterSnapshot = await db
+      .collection('renters')
+      .where('username', '==', username)
+      .get();
+
+    const renterData = renterSnapshot.docs[0].data();
+
+    const responseData = { ...updateData, renter: renterData };
     const response = successResponse(
       200,
       'Success Update Lessor Data',
-      updateData
+      responseData
     );
     return res.status(200).json(response);
   } catch (error) {

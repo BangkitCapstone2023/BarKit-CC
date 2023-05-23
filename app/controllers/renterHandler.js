@@ -58,7 +58,6 @@ function getRandomElements(arr, count) {
   const shuffled = arr.sort(() => 0.5 - Math.random());
   return shuffled.slice(0, count);
 }
-
 const searchProduct = async (req, res) => {
   try {
     const { title, category } = req.body;
@@ -80,19 +79,46 @@ const searchProduct = async (req, res) => {
     const searchResults = fuse.search(title);
 
     // Filter berdasarkan kategori jika diberikan
-    const filteredResults = searchResults.filter((result) =>
-      category ? result.category === category : true
-    );
-
-    console.log(filteredResults);
+    const filteredResults = searchResults.filter((result) => {
+      return category ? result.item.category === category : true;
+    });
 
     // Ambil hanya properti yang diperlukan dari hasil pencarian
-    const formattedResults = filteredResults.map((result) => {
-      const {
-        item: { title, category, sub_category, price },
-      } = result;
-      return { title, category, sub_category, price };
-    });
+    const formattedResults = await Promise.all(
+      filteredResults.map(async (result) => {
+        const lessorSnapshot = await db
+          .collection('lessors')
+          .doc(result.item.lessor_id)
+          .get();
+        const lessorData = lessorSnapshot.data();
+        const { storeFullName, storeAddress, storePhone } = lessorData;
+
+        const {
+          item: {
+            product_id,
+            title,
+            category,
+            sub_category,
+            price,
+            quantity,
+            imageUrl,
+          },
+        } = result;
+
+        return {
+          product_id,
+          title,
+          category,
+          sub_category,
+          price,
+          quantity,
+          imageUrl,
+          storeFullName,
+          storeAddress,
+          storePhone,
+        };
+      })
+    );
 
     const response = successResponse(
       200,
@@ -143,7 +169,6 @@ const getSubCategoriesByName = async (req, res) => {
 
     if (snapshot.empty) {
       return res.status(404).json({ error: 'Category not found' });
-      return;
     }
 
     const categoryId = snapshot.docs[0].id;
@@ -166,12 +191,10 @@ const getSubCategoriesByName = async (req, res) => {
     return res.status(500).json({ error: 'Failed to get subcategories' });
   }
 };
-
 const getProductsBySubCategory = async (req, res) => {
   try {
     const { name } = req.params;
 
-    console.log(name);
     const productsSnapshot = await db
       .collection('products')
       .where('sub_category', '==', name)
@@ -179,10 +202,33 @@ const getProductsBySubCategory = async (req, res) => {
 
     const products = [];
 
-    productsSnapshot.forEach((doc) => {
-      const { title, category, sub_category, quantity, price } = doc.data();
-      products.push({ title, category, sub_category, quantity, price });
-    });
+    for (const doc of productsSnapshot.docs) {
+      const productData = doc.data();
+
+      // Fetch lessor data using lessor_id from the product
+      const lessorSnapshot = await db
+        .collection('lessors')
+        .doc(productData.lessor_id)
+        .get();
+
+      if (lessorSnapshot.exists) {
+        const lessorData = lessorSnapshot.data();
+        const { storeFullName, storeAddress, storePhone } = lessorData;
+
+        products.push({
+          product_id: productData.product_id,
+          title: productData.title,
+          description: productData.description,
+          category: productData.category,
+          quantity: productData.quantity,
+          price: productData.price,
+          imageUrl: productData.imageUrl,
+          storeFullName,
+          storeAddress,
+          storePhone,
+        });
+      }
+    }
 
     const response = successResponse(
       200,
@@ -217,10 +263,34 @@ const getProductById = async (req, res) => {
     }
 
     const productData = productDoc.data();
+    const lessorDoc = await db
+      .collection('lessors')
+      .doc(productData.lessor_id)
+      .get();
+    const lessorData = lessorDoc.data();
+    const {
+      fullName,
+      storeFullName,
+      storeAddress,
+      storePhone,
+      storeEmail,
+      storeActive,
+    } = lessorData;
+
+    const lessorResponse = {
+      fullName,
+      storeFullName,
+      storeAddress,
+      storePhone,
+      storeEmail,
+      storeActive,
+    };
+
+    const responseData = { ...productData, lessor: lessorResponse };
     const response = successResponse(
       200,
       'Product details retrieved successfully',
-      productData
+      responseData
     );
 
     return res.status(200).json(response);
@@ -643,7 +713,6 @@ const getDetailOrdersByRenter = async (req, res) => {
     const { username, orderId } = req.params;
     const { uid } = req.user;
 
-    console.log('afeafkenf', orderId);
     // Check Order
     const orderSnapshot = await db.collection('orders').doc(orderId).get();
 
@@ -654,7 +723,19 @@ const getDetailOrdersByRenter = async (req, res) => {
 
     const orderData = orderSnapshot.data();
 
-    console.log(orderData.renter_id);
+    const productSnapshot = await db
+      .collection('products')
+      .doc(orderData.product_id)
+      .get();
+
+    const productData = productSnapshot.data();
+
+    const lessorSnapshot = await db
+      .collection('lessors')
+      .doc(orderData.lessor_id)
+      .get();
+
+    const lessorData = lessorSnapshot.data();
 
     const renterSnapshot = await db
       .collection('renters')
@@ -672,10 +753,15 @@ const getDetailOrdersByRenter = async (req, res) => {
       return res.status(403).json(response);
     }
 
+    const reponseData = {
+      ...orderData,
+      product: productData,
+      lessor: lessorData,
+    };
     const response = successResponse(
       200,
       'Order retrieved successfully',
-      orderData
+      reponseData
     );
 
     return res.status(200).json(response);

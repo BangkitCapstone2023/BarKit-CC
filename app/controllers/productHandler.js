@@ -119,6 +119,7 @@ const addProduct = async (req, res) => {
             .get();
 
           const lessor_id = lessorSnapshot.docs[0].id;
+          const lessorData = lessorSnapshot.docs[0].data();
 
           // Check title duplicate
           const existingProductSnapshot = await db
@@ -171,12 +172,12 @@ const addProduct = async (req, res) => {
             .doc(productData.product_id)
             .set(productData);
 
-          // Include the converted Date object in the response
+          const responseData = { ...productData, lessor: lessorData };
 
           const response = successResponse(
             200,
             'Success add product ',
-            productData
+            responseData
           );
           return res.status(200).json(response);
         } catch (error) {
@@ -237,7 +238,9 @@ const getAllProductsByLessor = async (req, res) => {
       productsData.push(productData);
     });
 
-    const response = successResponse(200, 'Success Get Product', productsData);
+    const responseData = { ...productsData, lessor: lessorData };
+
+    const response = successResponse(200, 'Success Get Product', responseData);
 
     return res.status(200).json(response);
   } catch (error) {
@@ -295,6 +298,13 @@ const updateProductById = async (req, res) => {
         .get();
 
       const renterData = renterSnapshot.docs[0].data();
+
+      const lessorSnapshot = await db
+        .collection('renters')
+        .where('username', '==', username)
+        .get();
+
+      const lessorData = lessorSnapshot.docs[0].data();
 
       // Pastikan lessor_id pada product sesuai dengan lessor yang mengirim permintaan
       if (itemData.username !== username || renterData.id !== uid) {
@@ -392,7 +402,8 @@ const updateProductById = async (req, res) => {
           const updatedItemData = updatedproductDoc.data();
 
           const responseData = {
-            updateData: updatedItemData,
+            ...updatedItemData,
+            lessor: lessorData,
           };
           const response = successResponse(
             200,
@@ -419,11 +430,12 @@ const updateProductById = async (req, res) => {
         const updatedItemData = updatedproductDoc.data();
 
         const responseData = {
-          updateData: updatedItemData,
+          ...updatedItemData,
+          lessor: lessorData,
         };
         const response = successResponse(
           200,
-          'Success update product data',
+          'Success update product data tanpa image',
           responseData
         );
         return res.status(200).json(response);

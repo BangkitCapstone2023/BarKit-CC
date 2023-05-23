@@ -25,13 +25,21 @@ const login = async (req, res) => {
 
   try {
     const { token, loginTime } = await loginUser(email, password);
+    const renterSnapshot = await db
+      .collection('renters')
+      .where('email', '==', email)
+      .get();
+
+    const renterData = renterSnapshot.docs[0].data();
+
     const userLoginData = {
       email,
       loginTime,
       token,
     };
 
-    const response = successResponse(200, 'User Success Login', userLoginData);
+    const resposeData = { ...userLoginData, renter: renterData };
+    const response = successResponse(200, 'User Success Login', resposeData);
     res.status(200).json(response);
   } catch (error) {
     let errorMessage = '';

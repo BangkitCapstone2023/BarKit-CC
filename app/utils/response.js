@@ -1,4 +1,4 @@
-function badResponse(statusCode, message, error = null) {
+const badResponse = (statusCode, message, error = null) => {
   const response = {
     status: statusCode,
     message: message,
@@ -9,9 +9,9 @@ function badResponse(statusCode, message, error = null) {
   }
 
   return response;
-}
+};
 
-function successResponse(statusCode, message, data) {
+const successResponse = (statusCode, message, data) => {
   if (data) {
     return {
       status: statusCode,
@@ -24,6 +24,6 @@ function successResponse(statusCode, message, data) {
       message: message,
     };
   }
-}
+};
 
 export { badResponse, successResponse };

@@ -15,9 +15,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use(authRouter);
-app.use(lessorRouter);
 app.use(generalRouter);
 app.use(renterRouter);
+app.use(lessorRouter);
 
 app.listen(port, () => {
   console.log(`BarKit App listening on port ${port}`);

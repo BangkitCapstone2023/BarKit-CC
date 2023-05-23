@@ -1,4 +1,6 @@
 import express from 'express';
+import authMiddleware from '../utils/validation.js';
+
 const router = express.Router();
 import {
   getAllProductsByLessor,
@@ -14,9 +16,12 @@ import {
   getOrdersByLessor,
   getLessorOrderById,
   updateOrderStatusAndNotes,
+  deleteLessorById,
   shippedOrder,
   cancelOrder,
 } from '../controllers/lessorHandler.js';
+
+router.use(authMiddleware);
 
 //! Lessor Register Route
 router.post('/lessors/:username/register', registerLessor);
@@ -24,6 +29,7 @@ router.post('/lessors/:username/register', registerLessor);
 //! Lessor Profiles Routes
 router.get('/lessors/:username/profile', getLessorProfile);
 router.put('/lessors/:username', updateLessor);
+router.delete('/lessors/:lessorId/profile', deleteLessorById);
 
 //! Lessor Products Routes
 router.get('/lessors/:username/products', getAllProductsByLessor);

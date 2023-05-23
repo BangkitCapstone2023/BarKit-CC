@@ -16,6 +16,7 @@ const formattedTimestamp = moment(date).format('YYYY-MM-DD HH:mm:ss');
 
 const addProduct = async (req, res) => {
   try {
+    const { uid } = req.user;
     upload.single('image')(req, res, async (err) => {
       if (err instanceof multer.MulterError) {
         console.error('Error saat mengunggah file:', err);
@@ -33,17 +34,34 @@ const addProduct = async (req, res) => {
         return res.status(500).json(response);
       }
 
-      const username = req.params.username;
+      const { username } = req.params;
 
+      // Check Renters
       const userSnapshot = await db
         .collection('renters')
         .where('username', '==', username)
         .get();
       if (userSnapshot.empty) {
-        const response = badResponse(404, `User '${username}' not found`);
+        const response = badResponse(404, `User '${username}' not found aefae`);
         return res.status(404).json(response);
       }
 
+      const renterData = userSnapshot.docs[0].data();
+
+      // Check if renter is lessor
+      const isLessor = renterData.isLessor;
+      if (isLessor !== true) {
+        const response = badResponse(403, `User '${username}' is not a lessor`);
+        return res.status(400).json(response);
+      }
+
+      // Check auth token
+      if (renterData.id !== uid) {
+        const response = badResponse(403, 'Not allowed');
+        return res.status(403).json(response);
+      }
+
+      // Check Jika lessor tidak mengupload gambar
       if (!req.file) {
         const response = badResponse(400, 'Tidak ada file yang diunggah.');
         return res.status(400).json(response);
@@ -94,26 +112,19 @@ const addProduct = async (req, res) => {
         const publicUrl = `https://storage.googleapis.com/${bucketName}/${filePath}`;
 
         try {
-          var userData = userSnapshot.docs[0].data();
-          const isLessor = userData.isLessor;
-          if (isLessor !== true) {
-            const response = badResponse(
-              403,
-              `User "${username}" is not a lessor`
-            );
-            return res.status(400).json(response);
-          }
-
+          // Check Lessor
           const lessorSnapshot = await db
             .collection('lessors')
             .where('username', '==', username)
             .get();
-          const lessorId = lessorSnapshot.docs[0].id;
 
+          const lessor_id = lessorSnapshot.docs[0].id;
+
+          // Check title duplicate
           const existingProductSnapshot = await db
             .collection('products')
             .where('title', '==', title)
-            .where('lessor_id', '==', lessorId)
+            .where('lessor_id', '==', lessor_id)
             .get();
           if (!existingProductSnapshot.empty) {
             const response = badResponse(
@@ -123,12 +134,16 @@ const addProduct = async (req, res) => {
             return res.status(400).json(response);
           }
 
-          const productId = uuidv4();
+          const productDocRef = db.collection('products').doc();
+          const productId = productDocRef.id;
 
+          // Check harga input product
           if (price < 1) {
             const response = badResponse(400, 'Price not valid');
             return res.status(400).json(response);
           }
+
+          // Check quantity input product
 
           if (quantity < 1) {
             const response = badResponse(400, 'Quantity not valid');
@@ -144,7 +159,7 @@ const addProduct = async (req, res) => {
             sub_category,
             quantity,
             username,
-            lessor_id: lessorId,
+            lessor_id,
             image_id: imageId,
             product_id: productId,
             create_at: formattedTimestamp,
@@ -157,13 +172,11 @@ const addProduct = async (req, res) => {
             .set(productData);
 
           // Include the converted Date object in the response
-          const responseData = {
-            productData,
-          };
+
           const response = successResponse(
             200,
-            'Success update product data',
-            responseData
+            'Success add product ',
+            productData
           );
           return res.status(200).json(response);
         } catch (error) {
@@ -190,7 +203,53 @@ const addProduct = async (req, res) => {
   }
 };
 
+const getAllProductsByLessor = async (req, res) => {
+  try {
+    const { username } = req.params;
+    const { uid } = req.user;
+    // Get the lessor document by username
+    const lessorSnapshot = await db
+      .collection('lessors')
+      .where('username', '==', username)
+      .get();
+
+    if (lessorSnapshot.empty) {
+      const response = badResponse(404, `Lessor '${username}' not found`);
+      return res.status(404).json(response);
+    }
+    const lessorId = lessorSnapshot.docs[0].id;
+    const lessorData = lessorSnapshot.docs[0].data();
+
+    if (lessorData.renter_id !== uid) {
+      const response = badResponse(403, 'Not allowed');
+      return res.status(403).json(response);
+    }
+    // Get all products by lessor ID
+    const productsSnapshot = await db
+      .collection('products')
+      .where('lessor_id', '==', lessorId)
+      .get();
+
+    const productsData = [];
+
+    productsSnapshot.forEach((doc) => {
+      const productData = doc.data();
+      productsData.push(productData);
+    });
+
+    const response = successResponse(200, 'Success Get Product', productsData);
+
+    return res.status(200).json(response);
+  } catch (error) {
+    console.error('Error while getting products by lessor:', error);
+
+    const response = badResponse(500, error.message);
+    return res.status(500).json(response);
+  }
+};
+
 const updateProductById = async (req, res) => {
+  const { uid } = req.user;
   try {
     upload.single('image')(req, res, async (err) => {
       if (err instanceof multer.MulterError) {
@@ -211,8 +270,7 @@ const updateProductById = async (req, res) => {
 
       const file = req.file;
       const { title, description, price, quantity } = req.body;
-      const productId = req.params.productId;
-      const username = req.params.username;
+      const { productId, username } = req.params;
 
       // Cek apakah item ID dan username valid
       if (!productId || !username) {
@@ -221,18 +279,25 @@ const updateProductById = async (req, res) => {
       }
 
       // Periksa apakah item dengan ID dan username tersebut ada
-      const itemRef = db.collection('products').doc(productId);
-      const itemDoc = await itemRef.get();
+      const productSnapshot = db.collection('products').doc(productId);
+      const productDoc = await productSnapshot.get();
 
-      if (!itemDoc.exists) {
+      if (!productDoc.exists) {
         const response = badResponse(404, 'Item not Found');
         return res.status(404).json(response);
       }
 
-      const itemData = itemDoc.data();
+      const itemData = productDoc.data();
+
+      const renterSnapshot = await db
+        .collection('renters')
+        .where('username', '==', username)
+        .get();
+
+      const renterData = renterSnapshot.docs[0].data();
 
       // Pastikan lessor_id pada product sesuai dengan lessor yang mengirim permintaan
-      if (itemData.username !== username) {
+      if (itemData.username !== username || renterData.id !== uid) {
         const response = badResponse(
           403,
           'Not allowed to modify antoher lessor product'
@@ -322,9 +387,9 @@ const updateProductById = async (req, res) => {
             await bucket.file(oldImagePath).delete();
           }
 
-          await itemRef.update(updateData);
-          const updatedItemDoc = await itemRef.get();
-          const updatedItemData = updatedItemDoc.data();
+          await productSnapshot.update(updateData);
+          const updatedproductDoc = await productSnapshot.get();
+          const updatedItemData = updatedproductDoc.data();
 
           const responseData = {
             updateData: updatedItemData,
@@ -348,10 +413,10 @@ const updateProductById = async (req, res) => {
           imageUrl: imageUrl, // Tetap gunakan gambar lama jika tidak ada pembaruan gambar
         };
 
-        await itemRef.update(updateData);
+        await productSnapshot.update(updateData);
 
-        const updatedItemDoc = await itemRef.get();
-        const updatedItemData = updatedItemDoc.data();
+        const updatedproductDoc = await productSnapshot.get();
+        const updatedItemData = updatedproductDoc.data();
 
         const responseData = {
           updateData: updatedItemData,
@@ -375,50 +440,9 @@ const updateProductById = async (req, res) => {
   }
 };
 
-const getAllProductsByLessor = async (req, res) => {
-  try {
-    const lessorUsername = req.params.username;
-
-    // Get the lessor document by username
-    const lessorSnapshot = await db
-      .collection('lessors')
-      .where('username', '==', lessorUsername)
-      .get();
-
-    if (lessorSnapshot.empty) {
-      const response = badResponse(404, `Lessor '${lessorUsername}' not found`);
-      return res.status(404).json(response);
-    }
-
-    const lessorId = lessorSnapshot.docs[0].id;
-
-    // Get all products by lessor ID
-    const productsSnapshot = await db
-      .collection('products')
-      .where('lessor_id', '==', lessorId)
-      .get();
-
-    const productsData = [];
-
-    productsSnapshot.forEach((doc) => {
-      const productData = doc.data();
-      productsData.push(productData);
-    });
-
-    const response = successResponse(200, 'Success Get Product', productsData);
-
-    return res.status(200).json(response);
-  } catch (error) {
-    console.error('Error while getting products by lessor:', error);
-
-    const response = badResponse(500, error.message);
-    return res.status(500).json(response);
-  }
-};
-
 const deleteProductById = async (req, res) => {
-  const { productId } = req.params;
-  const { username } = req.params;
+  const { productId, username } = req.params;
+  const { uid } = req.user;
 
   try {
     // Cek apakah produk dengan ID yang diberikan ada di database
@@ -432,8 +456,15 @@ const deleteProductById = async (req, res) => {
 
     const productData = productDoc.data();
 
+    const renterSnapshot = await db
+      .collection('renters')
+      .where('username', '==', username)
+      .get();
+
+    const renterData = renterSnapshot.docs[0].data();
+
     // Cek apakah lessor yang menghapus produk adalah lessor yang mengunggah produk
-    if (productData.username !== username) {
+    if (productData.username !== username || renterData.id !== uid) {
       const response = badResponse(
         403,
         'Access denied. Only the lessor who uploaded the product can delete it'

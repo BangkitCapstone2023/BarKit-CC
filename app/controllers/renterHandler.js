@@ -336,6 +336,57 @@ const updateProfile = async (req, res) => {
   }
 };
 
+const deleteRenterById = async (req, res) => {
+  try {
+    const { renterId } = req.params;
+
+    // Hapus renter dari database
+    const renterRef = db.collection('renters').doc(renterId);
+    const renterDoc = await renterRef.get();
+
+    if (!renterDoc.exists) {
+      const response = badResponse(
+        404,
+        `Renter with ID '${renterId}' not found`
+      );
+      return res.status(404).json(response);
+    }
+
+    const renterData = renterDoc.data();
+
+    // Hapus renter
+    await renterRef.delete();
+
+    // Hapus data lessor yang terkait dengan renter tersebut
+    const lessorSnapshot = await db
+      .collection('lessors')
+      .where('username', '==', renterData.username)
+      .get();
+
+    if (!lessorSnapshot.empty) {
+      const lessorId = lessorSnapshot.docs[0].id;
+      const lessorRef = db.collection('lessors').doc(lessorId);
+      await lessorRef.delete();
+    }
+
+    const response = successResponse(
+      200,
+      'Renter and associated lessor deleted successfully'
+    );
+    return res.json(response);
+  } catch (error) {
+    console.error('Error while deleting renter:', error);
+
+    const response = badResponse(
+      500,
+      'An error occurred while deleting renter',
+      error.message
+    );
+
+    return res.status(500).json(response);
+  }
+};
+
 const createOrder = async (req, res) => {
   try {
     const { username, productId } = req.params;
@@ -385,6 +436,11 @@ const createOrder = async (req, res) => {
     const lessorSnapshot = await db.collection('lessors').doc(lessor_id).get();
 
     const lessorData = lessorSnapshot.data();
+
+    if (lessorData.username == username) {
+      const response = badResponse(403, 'You cant order your own product');
+      return res.status(403).json(response);
+    }
 
     // Generate document reference baru
     const orderRef = db.collection('orders').doc();
@@ -645,6 +701,7 @@ export {
   getProductById,
   getUserProfile,
   updateProfile,
+  deleteRenterById,
   createOrder,
   getOrdersByRenter,
   getDetailOrdersByRenter,

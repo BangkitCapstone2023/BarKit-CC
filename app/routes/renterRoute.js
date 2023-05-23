@@ -10,6 +10,7 @@ import {
   getProductById,
   getUserProfile,
   updateProfile,
+  deleteRenterById,
   createOrder,
   getOrdersByRenter,
   getDetailOrdersByRenter,
@@ -28,6 +29,7 @@ router.use(authMiddleware);
 // Rute-rute yang membutuhkan otentikasi
 router.get('/:username/profile', getUserProfile);
 router.put('/:username/profile', updateProfile);
+router.delete('/renters/:renterId/profile', deleteRenterById);
 router.get('/:username/orders', getOrdersByRenter);
 router.post('/:username/orders/:productId', createOrder);
 router.get('/:username/orders/:orderId', getDetailOrdersByRenter);

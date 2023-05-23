@@ -33,54 +33,6 @@ const getAllLessors = async (req, res) => {
   }
 };
 
-const deleteLessorById = async (req, res) => {
-  const db = admin.firestore();
-  const { lessorId } = req.params;
-
-  try {
-    // Get the lessor document
-    const lessorSnapshot = await db.collection('lessors').doc(lessorId).get();
-
-    if (!lessorSnapshot.exists) {
-      const response = badResponse(500, `Lessor '${lessorId}' not found`);
-      return res.status(500).json(response);
-    }
-
-    // Get the lessor's username
-    const lessorData = lessorSnapshot.data();
-    const lessorUsername = lessorData.username;
-
-    const lessorRef = db.collection('lessors').doc(lessorId);
-    await lessorRef.delete();
-
-    // Delete all products uploaded by the lessor
-    const productsSnapshot = await db
-      .collection('products')
-      .where('username', '==', lessorUsername)
-      .get();
-
-    const batch = db.batch();
-
-    productsSnapshot.forEach((doc) => {
-      batch.delete(doc.ref);
-    });
-
-    await batch.commit();
-
-    const response = successResponse(
-      200,
-      'Lessor and associated products deleted successfully'
-    );
-
-    res.status(200).json(response);
-  } catch (error) {
-    console.error('Error deleting lessor:', error);
-
-    const response = badResponse(500, 'Error deleting lessor', error.message);
-    res.status(500).json(response);
-  }
-};
-
 //TODO: Still Error
 const getImageByName = async (req, res) => {
   const { name } = req.params;
@@ -176,56 +128,6 @@ const getAllRenters = async (req, res) => {
       'An error occurred while getting all renters data',
       error.message
     );
-    return res.status(500).json(response);
-  }
-};
-const deleteRenterById = async (req, res) => {
-  try {
-    const { renterId } = req.params;
-
-    // Hapus renter dari database
-    const renterRef = db.collection('renters').doc(renterId);
-    const renterDoc = await renterRef.get();
-
-    if (!renterDoc.exists) {
-      const response = badResponse(
-        404,
-        `Renter with ID '${renterId}' not found`
-      );
-      return res.status(404).json(response);
-    }
-
-    const renterData = renterDoc.data();
-
-    // Hapus renter
-    await renterRef.delete();
-
-    // Hapus data lessor yang terkait dengan renter tersebut
-    const lessorSnapshot = await db
-      .collection('lessors')
-      .where('username', '==', renterData.username)
-      .get();
-
-    if (!lessorSnapshot.empty) {
-      const lessorId = lessorSnapshot.docs[0].id;
-      const lessorRef = db.collection('lessors').doc(lessorId);
-      await lessorRef.delete();
-    }
-
-    const response = successResponse(
-      200,
-      'Renter and associated lessor deleted successfully'
-    );
-    return res.json(response);
-  } catch (error) {
-    console.error('Error while deleting renter:', error);
-
-    const response = badResponse(
-      500,
-      'An error occurred while deleting renter',
-      error.message
-    );
-
     return res.status(500).json(response);
   }
 };
@@ -330,14 +232,11 @@ const getOrderById = async (req, res) => {
   }
 };
 
-
 export {
   getImageByName,
   getAllImages,
   getAllLessors,
-  deleteLessorById,
   getAllRenters,
-  deleteRenterById,
   addCategory,
   addSubCategory,
   getAllOrders,

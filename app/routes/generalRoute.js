@@ -11,7 +11,6 @@ import {
   addCategory,
   addSubCategory,
   getAllProduct,
-  getProductById,
   getAllOrders,
   getOrderById,
 } from '../controllers/generalHandler.js';
@@ -23,7 +22,6 @@ router.get('/renters', getAllRenters);
 router.get('/renters/:renterId', getRenterById);
 
 router.get('/products', getAllProduct);
-router.get('/products/:productId', getProductById);
 
 router.post('/category', addCategory);
 router.post('/category/:categoryId/subcategory', addSubCategory);

@@ -168,7 +168,8 @@ const updateLessor = async (req, res) => {
   try {
     const { username } = req.params;
     const { uid } = req.user;
-    const { storeFullName, storeAddress, storeEmail, storePhone } = req.body;
+    const { storeFullName, storeAddress, storeEmail, storePhone, kurir } =
+      req.body;
 
     // Check if the lessor exists
     const lessorSnapshot = await db
@@ -187,16 +188,19 @@ const updateLessor = async (req, res) => {
       const response = badResponse(403, 'Not allowed');
       return res.status(403).json(response);
     }
-
     const lessorId = lessorSnapshot.docs[0].id;
 
     // Update  lessor data
-    await db.collection('lessors').doc(lessorId).update({
-      storeFullName,
-      storeAddress,
-      storeEmail,
-      storePhone,
-    });
+    await db
+      .collection('lessors')
+      .doc(lessorId)
+      .update({
+        storeFullName,
+        storeAddress,
+        storeEmail,
+        storePhone,
+        kurir: kurir ? kurir : lessorData.kurirId,
+      });
 
     const updateData = {
       lessor_id: lessorId,
@@ -205,6 +209,7 @@ const updateLessor = async (req, res) => {
       storeAddress,
       storeEmail,
       storePhone,
+      kurir: kurir ? kurir : lessorData.kurirId,
     };
 
     const renterSnapshot = await db

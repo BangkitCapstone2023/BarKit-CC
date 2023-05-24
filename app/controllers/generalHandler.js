@@ -262,42 +262,6 @@ const getAllProduct = async (req, res) => {
   }
 };
 
-// Mengambil detail suatu order berdasarkan order_id
-const getProductById = async (req, res) => {
-  try {
-    const { productId } = req.params;
-
-    // Mencari product berdasarkan productId
-    const productSnapshot = db.collection('products').doc(productId);
-    const productRef = await productSnapshot.get();
-
-    if (!productRef.exists) {
-      const response = badResponse(404, 'Products not found');
-      return res.status(404).json(response);
-    }
-
-    const productData = productRef.data();
-
-    const response = successResponse(
-      200,
-      'Products retrieved successfully',
-      productData
-    );
-
-    res.status(200).json(response);
-  } catch (error) {
-    console.error('Error while getting the Products', error);
-
-    const response = badResponse(
-      500,
-      'An error occurred while getting the Products',
-      error.message
-    );
-
-    res.status(500).json(response);
-  }
-};
-
 // Mengambil seluruh order dari renter
 const getAllOrders = async (req, res) => {
   try {
@@ -376,7 +340,6 @@ export {
   addCategory,
   addSubCategory,
   getAllProduct,
-  getProductById,
   getAllOrders,
   getOrderById,
 };

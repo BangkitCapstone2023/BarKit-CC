@@ -28,7 +28,7 @@ router.post('/lessors/:username/register', registerLessor);
 
 //! Lessor Profiles Routes
 router.get('/lessors/:username/profile', getLessorProfile);
-router.put('/lessors/:username', updateLessor);
+router.put('/lessors/:username/profile', updateLessor);
 router.delete('/lessors/:lessorId/profile', deleteLessorById);
 
 //! Lessor Products Routes

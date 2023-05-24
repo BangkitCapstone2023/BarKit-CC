@@ -356,7 +356,6 @@ const updateProfile = async (req, res) => {
     const { uid } = req.user;
     const { name, address, phone, gender } = req.body;
 
-    // Check renter
     const renterSnapshot = await db
       .collection('renters')
       .where('username', '==', username)
@@ -367,21 +366,42 @@ const updateProfile = async (req, res) => {
       return res.status(404).json(response);
     }
 
-    // Check Auth  Token
     const renterData = renterSnapshot.docs[0].data();
     if (renterData.id !== uid) {
       const response = badResponse(403, 'Not allowed');
       return res.status(403).json(response);
     }
+
     const renterRef = renterSnapshot.docs[0].ref;
+    const renterUpdateData = {};
+
+    if (name !== undefined && name !== '') {
+      renterUpdateData.name = name;
+    }
+
+    if (address !== undefined && address !== '') {
+      renterUpdateData.address = address;
+    }
+
+    if (phone !== undefined && phone !== '') {
+      renterUpdateData.phone = phone;
+    }
+
+    if (gender !== undefined && gender !== '') {
+      renterUpdateData.gender = gender;
+    }
+
+    if (Object.keys(renterUpdateData).length === 0) {
+      const response = successResponse(
+        200,
+        'Berhasil update profile tapi tidak ada data yang diupdate',
+        renterData
+      );
+      return res.status(200).json(response);
+    }
 
     // Perbarui data profile renter pada database
-    await renterRef.update({
-      name,
-      address,
-      phone,
-      gender,
-    });
+    await renterRef.update(renterUpdateData);
 
     // Ambil snapshot terbaru dari data profile yang diperbarui
     const updatedProfileSnapshot = await renterRef.get();

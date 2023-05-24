@@ -1,3 +1,7 @@
 node_modules
 firebaseAccountKey.json
 firebaseClientConfig.json
+cloudStorageKey.json
+cloudStorageKey2.json
+firebaseAccountKey2.json
+firebaseClientConfig2.json

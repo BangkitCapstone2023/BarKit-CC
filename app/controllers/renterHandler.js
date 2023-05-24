@@ -41,7 +41,7 @@ const getDashboardData = async (req, res) => {
       responseData
     );
 
-    return res.json(response);
+    return res.status(200).json(response);
   } catch (error) {
     console.error('Error:', error);
     const response = badResponse(
@@ -167,7 +167,7 @@ const getSubCategoriesByName = async (req, res) => {
   }
 };
 
-async function getProductsBySubCategory(req, res) {
+const getProductsBySubCategory = async (req, res) => {
   try {
     const { name } = req.params;
 
@@ -184,63 +184,59 @@ async function getProductsBySubCategory(req, res) {
       products.push({ title, category, sub_category, quantity, price });
     });
 
-    const response = {
-      status: 200,
-      message: 'Products retrieved successfully',
-      data: products,
-    };
+    const response = successResponse(
+      200,
+      'Products retrieved successfully',
+      products
+    );
 
-    res.json(response);
+    res.status(200).json(response);
   } catch (error) {
     console.error('Error while getting products by subcategory:', error);
 
-    const response = {
-      status: 500,
-      message: 'An error occurred while getting products by subcategory',
-      error: error.message,
-    };
+    const response = badResponse(
+      500,
+      'An error occurred while getting products by subcategory',
+      error.message
+    );
 
     res.status(500).json(response);
   }
-}
+};
 
-async function getProductById(req, res) {
+const getProductById = async (req, res) => {
   try {
     const { productId } = req.params;
 
     const productDoc = await db.collection('products').doc(productId).get();
 
     if (!productDoc.exists) {
-      const response = {
-        status: 404,
-        message: 'Product not found',
-      };
+      const response = badResponse(404, 'Product not founs');
+
       return res.status(404).json(response);
     }
 
     const productData = productDoc.data();
+    const response = successResponse(
+      200,
+      'Product details retrieved successfully',
+      productData
+    );
 
-    const response = {
-      status: 200,
-      message: 'Product details retrieved successfully',
-      data: productData,
-    };
-
-    res.json(response);
+    res.status(200).json(response);
   } catch (error) {
-    console.error('Error while getting product details:', error);
-
-    const response = {
-      status: 500,
-      message: 'An error occurred while getting product details',
-      error: error.message,
-    };
+    console.error('Error while getting product details', error);
+    const response = badResponse(
+      500,
+      'Error while getting product details',
+      error.message
+    );
 
     res.status(500).json(response);
   }
-}
+};
 
-async function getUserProfile(req, res) {
+const getUserProfile = async (req, res) => {
   try {
     const { username } = req.params;
 
@@ -252,36 +248,32 @@ async function getUserProfile(req, res) {
       .get();
 
     if (profileQuery.empty) {
-      const response = {
-        status: 404,
-        message: 'Profile not found',
-      };
-      return res.status(404).json(response);
+      const response = badResponse(404, 'Profile not found');
+
+      res.status(404).json(response);
     }
 
     const profileDoc = profileQuery.docs[0];
     const profileData = profileDoc.data();
+    const response = successResponse(
+      200,
+      'Profile retrieved successfully',
+      profileData
+    );
 
-    const response = {
-      status: 200,
-      message: 'Profile retrieved successfully',
-      data: profileData,
-    };
-
-    res.json(response);
+    res.status(200).json(response);
   } catch (error) {
     console.error('Error while getting user profile:', error);
-
-    const response = {
-      status: 500,
-      message: 'An error occurred while getting user profile',
-      error: error.message,
-    };
+    const response = badResponse(
+      500,
+      'An error occurred while getting user profile',
+      error.message
+    );
 
     res.status(500).json(response);
   }
-}
-async function updateProfile(req, res) {
+};
+const updateProfile = async (req, res) => {
   try {
     const { username } = req.params;
     const { name, address, phone, gender } = req.body;
@@ -293,11 +285,8 @@ async function updateProfile(req, res) {
       .get();
 
     if (profileSnapshot.empty) {
-      const response = {
-        status: 404,
-        message: 'Profile not found',
-      };
-      return res.status(404).json(response);
+      const response = badResponse(404, 'Profile not found');
+      res.status(404).json(response);
     }
 
     const profileRef = profileSnapshot.docs[0].ref;
@@ -310,24 +299,28 @@ async function updateProfile(req, res) {
       gender,
     });
 
-    const response = {
-      status: 200,
-      message: 'Profile updated successfully',
-    };
+    // Ambil snapshot terbaru dari data profile yang diperbarui
+    const updatedProfileSnapshot = await profileRef.get();
+    const updatedProfileData = updatedProfileSnapshot.data();
 
-    res.json(response);
+    const response = successResponse(
+      200,
+      'Profile updated successfully',
+      updatedProfileData
+    );
+    res.status(200).json(response);
   } catch (error) {
     console.error('Error while updating user profile:', error);
 
-    const response = {
-      status: 500,
-      message: 'An error occurred while updating user profile',
-      error: error.message,
-    };
+    const response = badResponse(
+      500,
+      'An error occurred while updating user profile',
+      error.message
+    );
 
     res.status(500).json(response);
   }
-}
+};
 
 const createOrder = async (req, res) => {
   try {
@@ -347,11 +340,9 @@ const createOrder = async (req, res) => {
       .where('username', '==', username)
       .get();
     if (renterDoc.empty) {
-      const response = {
-        status: 404,
-        message: 'Renter not found',
-      };
-      return res.status(404).json(response);
+      const response = badResponse(404, 'Renter not found');
+
+      res.status(404).json(response);
     }
 
     const renterData = renterDoc.docs[0].data();
@@ -360,10 +351,8 @@ const createOrder = async (req, res) => {
     // Get item_ids from products collection based on productId
     const productDoc = await db.collection('products').doc(productId).get();
     if (!productDoc.exists) {
-      const response = {
-        status: 404,
-        message: 'Product not found',
-      };
+      const response = badResponse(404, 'Product not found');
+
       return res.status(404).json(response);
     }
     const productData = productDoc.data();
@@ -410,12 +399,11 @@ const createOrder = async (req, res) => {
     res.json(response);
   } catch (error) {
     console.error('Error while creating the order:', error);
-
-    const response = {
-      status: 500,
-      message: 'An error occurred while creating the order',
-      error: error.message,
-    };
+    const response = badResponse(
+      500,
+      'An error occurred while creating the order',
+      error.message
+    );
 
     res.status(500).json(response);
   }
@@ -431,11 +419,9 @@ const getOrdersByRenter = async (req, res) => {
       .get();
 
     if (renterDoc.empty) {
-      const response = {
-        status: 404,
-        message: 'Renter not found',
-      };
-      return res.status(404).json(response);
+      const response = badResponse(404, 'Renter not found');
+
+      res.status(404).json(response);
     }
 
     const renterId = renterDoc.docs[0].id;
@@ -447,11 +433,9 @@ const getOrdersByRenter = async (req, res) => {
       .get();
 
     if (orderRenter.empty) {
-      const response = {
-        status: 404,
-        message: 'Renter is dont have order yet',
-      };
-      return res.status(404).json(response);
+      const response = badResponse(404, 'Renter is dont have order yet');
+
+      res.status(404).json(response);
     }
     const orders = [];
 
@@ -469,21 +453,20 @@ const getOrdersByRenter = async (req, res) => {
       });
     });
 
-    const response = {
-      status: 200,
-      message: 'Orders retrieved successfully',
-      data: orders,
-    };
+    const response = successResponse(
+      200,
+      'Orders retrieved successfully',
+      orders
+    );
 
-    res.json(response);
+    res.status(200).json(response);
   } catch (error) {
     console.error('Error while getting orders by renter:', error);
-
-    const response = {
-      status: 500,
-      message: 'An error occurred while getting orders by renter',
-      error: error.message,
-    };
+    const response = badResponse(
+      500,
+      'An error occurred while getting orders by renter',
+      error.message
+    );
 
     res.status(500).json(response);
   }
@@ -501,22 +484,20 @@ const updateOrder = async (req, res) => {
     const orderDoc = await orderRef.get();
 
     if (!orderDoc.exists) {
-      const response = {
-        status: 404,
-        message: 'Order not found',
-      };
-      return res.status(404).json(response);
+      const response = badResponse(404, 'Order not found');
+      res.status(404).json(response);
     }
 
     const orderData = orderDoc.data();
 
     // Cek apakah status order masih pending
     if (orderData.status !== 'pending') {
-      const response = {
-        status: 403,
-        message: 'Order cannot be edited as it is not in pending status',
-      };
-      return res.status(403).json(response);
+      const response = badResponse(
+        403,
+        'Order cannot be edited as it is not in pending status',
+        error.message
+      );
+      res.status(403).json(response);
     }
 
     // Update data order dengan atribut yang dapat diubah
@@ -527,20 +508,25 @@ const updateOrder = async (req, res) => {
       end_rent_date: end_rent_date || orderData.end_rent_date,
     });
 
-    const response = {
-      status: 200,
-      message: 'Order updated successfully',
-    };
+    // Mengambil data terbaru dari order setelah pembaruan
+    const updatedOrderDoc = await orderRef.get();
+    const updatedOrderData = updatedOrderDoc.data();
 
-    res.json(response);
+    const response = successResponse(
+      200,
+      'Order updated successfully',
+      updatedOrderData
+    );
+
+    res.status(200).json(response);
   } catch (error) {
     console.error('Error while editing the order:', error);
 
-    const response = {
-      status: 500,
-      message: 'An error occurred while editing the order',
-      error: error.message,
-    };
+    const response = badResponse(
+      500,
+      'An error occurred while editing the order',
+      error.message
+    );
 
     res.status(500).json(response);
   }
@@ -555,11 +541,9 @@ const getDetailOrdersByRenter = async (req, res) => {
     const orderDoc = await orderRef.get();
 
     if (!orderDoc.exists) {
-      const response = {
-        status: 404,
-        message: 'Order not found',
-      };
-      return res.status(404).json(response);
+      const response = badResponse(404, 'Order not found');
+
+      res.status(404).json(response);
     }
 
     const orderData = orderDoc.data();
@@ -569,28 +553,29 @@ const getDetailOrdersByRenter = async (req, res) => {
 
     // Memastikan order tersebut dimiliki oleh renter yang sesuai
     if (orderData.renter_id !== renterData.id) {
-      const response = {
-        status: 403,
-        message: 'Access denied. Order does not belong to the renter',
-      };
-      return res.status(403).json(response);
+      const response = badResponse(
+        403,
+        'Access denied. Order does not belong to the renter'
+      );
+
+      res.status(403).json(response);
     }
 
-    const response = {
-      status: 200,
-      message: 'Order retrieved successfully',
-      data: orderData,
-    };
+    const response = successResponse(
+      200,
+      'Order retrieved successfully',
+      orderData
+    );
 
-    res.json(response);
+    res.status(200).json(response);
   } catch (error) {
     console.error('Error while getting the order:', error);
 
-    const response = {
-      status: 500,
-      message: 'An error occurred while getting the order',
-      error: error.message,
-    };
+    const response = badResponse(
+      500,
+      'An error occurred while getting the order',
+      error.message
+    );
 
     res.status(500).json(response);
   }
@@ -610,44 +595,3 @@ export {
   getDetailOrdersByRenter,
   updateOrder,
 };
-
-// const searchProduct = async (req, res) => {
-//   try {
-//     const { title, category } = req.body;
-
-//     let query = db.collection('products');
-
-//     if (title) {
-//       query = query.where('title', '>=', title).where('title', '<=', title + '\uf8ff');
-//     }
-
-//     if (category) {
-//       query = query.where('category', '==', category);
-//     }
-
-//     const productsSnapshot = await query.get();
-//     const products = [];
-
-//     productsSnapshot.forEach((doc) => {
-//       const { title, category, sub_category, price } = doc.data();
-//       products.push({ title, category, sub_category, price });
-//     });
-
-//     const response = successResponse(
-//       200,
-//       'Product search successful',
-//       products
-//     );
-
-//     return res.json(response);
-//   } catch (error) {
-//     console.error('Error while searching products:', error);
-
-//     const response = badResponse(
-//       500,
-//       'An error occurred while searching products',
-//       error.message
-//     );
-//     return res.status(500).json(response);
-//   }
-// };

@@ -2,7 +2,7 @@ import admin from 'firebase-admin';
 import { badResponse, successResponse } from '../utils/response.js';
 import { db } from '../config/configFirebase.js';
 
-async function getAllLessors(req, res) {
+const getAllLessors = async (req, res) => {
   try {
     // Get all lessors from Firestore
     const lessorsSnapshot = await db.collection('lessors').get();
@@ -29,11 +29,11 @@ async function getAllLessors(req, res) {
       'An error occurred while getting all lessor data',
       error.message
     );
-    return res.status(500).send(response);
+    return res.status(500).json(response);
   }
-}
+};
 
-async function deleteLessorById(req, res) {
+const deleteLessorById = async (req, res) => {
   const db = admin.firestore();
   const { lessorId } = req.params;
 
@@ -42,7 +42,8 @@ async function deleteLessorById(req, res) {
     const lessorSnapshot = await db.collection('lessors').doc(lessorId).get();
 
     if (!lessorSnapshot.exists) {
-      throw new Error(`Lessor '${lessorId}' not found`);
+      const response = badResponse(500, `Lessor '${lessorId}' not found`);
+      return res.status(500).json(response);
     }
 
     // Get the lessor's username
@@ -78,57 +79,10 @@ async function deleteLessorById(req, res) {
     const response = badResponse(500, 'Error deleting lessor', error.message);
     res.status(500).json(response);
   }
-}
+};
 
-// async function deleteLessorById(req, res) {
-//   const db = admin.firestore();
-//   const { lessorId } = req.params;
-
-//   try {
-//     // Delete the lessor document
-//     const lessorSnapshot = await db
-//       .collection('lessors')
-//       .where('lessorId', '==', lessorId)
-//       .get();
-
-//     if (lessorSnapshot.empty) {
-//       throw new Error(`User '${lessorId}' not found or not a lessors`);
-//     }
-//     var lessorData = lessorSnapshot.docs[0].data();
-
-//     const userSnapshot = await db
-//       .collection('renters')
-//       .where('username', '==', lessorData.username)
-//       .get();
-
-//     const renterId = userSnapshot.docs[0].id; // Get the renter ID
-
-//     const renterRef = db.collection('renters').doc(renterId);
-//     await renterRef.update({ isLessor: false });
-
-//     const lessorRef = db.collection('lessors').doc(lessorId);
-//     await lessorRef.delete();
-
-//     const response = successResponse(
-//       200,
-//       'Lessor deleted successfully'
-//     );
-
-//     res.status(200).json(response);
-//   } catch (error) {
-//     console.error('Error deleting lessor:', error);
-
-//     const response = badResponse(
-//       500,
-//       'Error deleting lessor',
-//       error.message
-//     );
-//     res.status(500).json(response);
-//   }
-// }
-
-// ! Error
-async function getImageByName(req, res) {
+//TODO: Still Error
+const getImageByName = async (req, res) => {
   const { name } = req.params;
 
   try {
@@ -141,7 +95,7 @@ async function getImageByName(req, res) {
     console.log(productSnapshot);
     if (productSnapshot.empty) {
       const response = badResponse(404, `Image ${name} not found`);
-      return res.status(404).send(response);
+      return res.status(404).json(response);
     }
 
     const productData = productSnapshot.docs[0].data();
@@ -159,11 +113,11 @@ async function getImageByName(req, res) {
       'Error when getting image',
       error.message
     );
-    return res.status(500).send(response);
+    return res.status(500).json(response);
   }
-}
+};
 
-async function getAllImages(req, res) {
+const getAllImages = async (req, res) => {
   try {
     // Mendapatkan instance Firestore
     const productsSnapshot = await db.collection('products').get(); // Mendapatkan snapshot produk dari Firestore
@@ -191,11 +145,11 @@ async function getAllImages(req, res) {
       'Error when get all images',
       error.message
     );
-    return res.status(500).send(response);
+    return res.status(500).json(response);
   }
-}
+};
 
-async function getAllRenters(req, res) {
+const getAllRenters = async (req, res) => {
   try {
     // Get all renters from Firestore
     const renterSnapshot = await db.collection('renters').get();
@@ -222,35 +176,61 @@ async function getAllRenters(req, res) {
       'An error occurred while getting all renters data',
       error.message
     );
-    return res.status(500).send(response);
+    return res.status(500).json(response);
   }
-}
-
-async function deleteRenterById(req, res) {
-  const { id } = req.params;
-
+};
+const deleteRenterById = async (req, res) => {
   try {
-    // Get the lessor document
-    const renterSnapshot = await db.collection('renters').doc(id).get();
+    const { renterId } = req.params;
 
-    if (!renterSnapshot.exists) {
-      throw new Error(`Renter '${id}' not found`);
-    } else {
-      await db.collection('renters').doc(id).delete();
+    // Hapus renter dari database
+    const renterRef = db.collection('renters').doc(renterId);
+    const renterDoc = await renterRef.get();
+
+    if (!renterDoc.exists) {
+      const response = badResponse(
+        404,
+        `Renter with ID '${renterId}' not found`
+      );
+      return res.status(404).json(response);
     }
 
-    const response = successResponse(200, 'Renters deleted successfully');
+    const renterData = renterDoc.data();
 
-    res.status(200).json(response);
+    // Hapus renter
+    await renterRef.delete();
+
+    // Hapus data lessor yang terkait dengan renter tersebut
+    const lessorSnapshot = await db
+      .collection('lessors')
+      .where('username', '==', renterData.username)
+      .get();
+
+    if (!lessorSnapshot.empty) {
+      const lessorId = lessorSnapshot.docs[0].id;
+      const lessorRef = db.collection('lessors').doc(lessorId);
+      await lessorRef.delete();
+    }
+
+    const response = successResponse(
+      200,
+      'Renter and associated lessor deleted successfully'
+    );
+    return res.json(response);
   } catch (error) {
-    console.error('Error deleting lessor:', error);
+    console.error('Error while deleting renter:', error);
 
-    const response = badResponse(500, 'Error deleting lessor', error.message);
-    res.status(500).json(response);
+    const response = badResponse(
+      500,
+      'An error occurred while deleting renter',
+      error.message
+    );
+
+    return res.status(500).json(response);
   }
-}
+};
 
-async function addCategory(req, res) {
+const addCategory = async (req, res) => {
   const { name } = req.body;
 
   db.collection('categories')
@@ -262,9 +242,9 @@ async function addCategory(req, res) {
       console.error('Error creating category', error);
       res.status(500).json({ error: 'Failed to create category' });
     });
-}
+};
 
-async function addSubCategory(req, res) {
+const addSubCategory = async (req, res) => {
   const { categoryId } = req.params;
   const { name } = req.body;
 
@@ -280,7 +260,7 @@ async function addSubCategory(req, res) {
       console.error('Error creating subcategory', error);
       res.status(500).json({ error: 'Failed to create subcategory' });
     });
-}
+};
 
 // Mengambil seluruh order dari renter
 const getAllOrders = async (req, res) => {
@@ -294,21 +274,21 @@ const getAllOrders = async (req, res) => {
       orders.push({ order_id: doc.id, ...orderData });
     });
 
-    const response = {
-      status: 200,
-      message: 'Orders retrieved successfully',
-      data: orders,
-    };
+    const response = successResponse(
+      200,
+      'Orders retrieved successfully',
+      orders
+    );
 
-    res.json(response);
+    res.status(200).json(response);
   } catch (error) {
     console.error('Error while getting orders:', error);
 
-    const response = {
-      status: 500,
-      message: 'An error occurred while getting orders',
-      error: error.message,
-    };
+    const response = badResponse(
+      500,
+      'An error occurred while getting  orders',
+      error.message
+    );
 
     res.status(500).json(response);
   }
@@ -324,30 +304,27 @@ const getOrderById = async (req, res) => {
     const orderDoc = await orderRef.get();
 
     if (!orderDoc.exists) {
-      const response = {
-        status: 404,
-        message: 'Order not found',
-      };
+      const response = badResponse(404, 'Order not found');
       return res.status(404).json(response);
     }
 
     const orderData = orderDoc.data();
 
-    const response = {
-      status: 200,
-      message: 'Order retrieved successfully',
-      data: orderData,
-    };
+    const response = successResponse(
+      200,
+      'Orders retrieved successfully',
+      orderData
+    );
 
-    res.json(response);
+    res.status(200).json(response);
   } catch (error) {
     console.error('Error while getting the order:', error);
 
-    const response = {
-      status: 500,
-      message: 'An error occurred while getting the order',
-      error: error.message,
-    };
+    const response = badResponse(
+      500,
+      'An error occurred while getting the order',
+      error.message
+    );
 
     res.status(500).json(response);
   }

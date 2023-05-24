@@ -5,6 +5,7 @@ import {
   getAllImages,
   getImageByName,
   deleteLessorById,
+  deleteRenterById,
   getAllLessors,
   getAllRenters,
   addCategory,
@@ -15,10 +16,13 @@ import {
 
 router.get('/renters', getAllRenters);
 router.get('/lessors', getAllLessors);
+router.get('/renters', getAllRenters);
+router.delete('/renters/:id', deleteRenterById);
 
 router.post('/category', addCategory);
 router.post('/category/:categoryId/subcategory', addSubCategory);
-router.delete('/lessors/:lessorId', deleteLessorById);
+router.delete('/lessors/:lessorId/profile', deleteLessorById);
+router.delete('/renters/:renterId/profile', deleteRenterById);
 
 router.get('/orders', getAllOrders);
 router.get('/orders/:orderId', getOrderById);

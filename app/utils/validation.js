@@ -13,6 +13,12 @@ const authMiddleware = async (req, res, next) => {
     const decodedToken = await admin.auth().verifyIdToken(token);
     req.user = decodedToken;
 
+    const docRef = db.collection('logoutTokens').doc(token);
+    const doc = await docRef.get();
+    if (doc.exists && doc.data().invalid) {
+      throw new Error('Login Session Expire');
+    }
+
     next();
   } catch (error) {
     return res.status(401).json({ status: 401, message: 'Unauthorized' });

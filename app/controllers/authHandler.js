@@ -99,12 +99,10 @@ const logout = async (req, res) => {
 
     const token = authorization.split('Bearer ')[1];
 
-    // Hapus token dari Firebase Authentication
-    await admin.auth().revokeRefreshTokens(token);
+    // Tandai token sebagai tidak valid di Firestore
+    await db.collection('logoutTokens').doc(token).set({ invalid: true });
 
-    console.log(req.user);
-
-    const response = successResponse(200, 'User logged out successfully', {});
+    const response = successResponse(200, 'User logged out successfully');
     res.status(200).json(response);
   } catch (error) {
     const response = badResponse(401, 'Failed to logout user');
@@ -145,6 +143,7 @@ const register = async (req, res) => {
     res.json(response);
   }
 };
+
 const createUser = async (
   email,
   password,

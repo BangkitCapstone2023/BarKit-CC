@@ -1,66 +1,108 @@
-const fs = require('fs');
-const readline = require('readline');
-const { createCanvas, loadImage } = require('canvas');
-const tf = require('@tensorflow/tfjs-node');
+import pkg from 'canvas';
+const { createCanvas, loadImage } = pkg;
+import multer from 'multer';
+import { readFileSync } from 'fs';
+import path from 'path';
+import * as tf from '@tensorflow/tfjs';
 
-// Path ke model JSON
-const modelPath = 'C:/Users/HP/Documents/SEMESTER 6/BANGKIT 2023/DATASET/Deploy_VGG16_TFJS/model.json';
+const multerStorage = multer.memoryStorage();
+const upload = multer({ storage: multerStorage });
 
-// Daftar kategori
-const categories = ['CAMERA', 'LCD', 'MATRAS', 'PS', 'SEPATU', 'SPEAKER', 'TAS', 'TENDA'];
+// File paths
+const __filename = path.resolve();
+const __dirname = path.dirname(__filename);
+const modelPath = 'D:/VSCODE/CAPSTONE PROJECG/Barkit-CC/app/models/model.json';
 
-// Membaca input dari pengguna
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout
-});
+// List of categories
+const categories = [
+  'CAMERA',
+  'LCD',
+  'MATRAS',
+  'PS',
+  'SEPATU',
+  'SPEAKER',
+  'TAS',
+  'TENDA',
+];
 
-rl.question('Masukkan jenis kategori: ', (inputan) => {
-  const jenisKategori = inputan.toUpperCase();
+const predictionModel = async (req, res) => {
+  try {
+    upload.single('image')(req, res, async (err) => {
+      if (err) {
+        console.error('Error while uploading file:', err);
+        const response = {
+          status: 500,
+          message: 'An error occurred while uploading the file',
+        };
+        return res.status(500).json(response);
+      }
 
-  if (categories.includes(jenisKategori)) {
-    console.log(`Silahkan upload gambar ${jenisKategori}`);
-    console.log();
+      const file = req.file; // File can be accessed directly from req.file
 
-    rl.question('Masukkan path gambar: ', (path) => {
-      // Mengubah ukuran gambar sesuai dengan kebutuhan model
-      loadImage(path).then((image) => {
-        const canvas = createCanvas(150, 150);
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(image, 0, 0, 150, 150);
+      // Continue with file processing
+      const image = await loadImage(file.buffer);
+      const canvas = createCanvas(150, 150);
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(image, 0, 0, 150, 150);
 
-        // Mengubah gambar menjadi tensor
-        const imgData = ctx.getImageData(0, 0, 150, 150);
-        const input = tf.browser.fromPixels(imgData).expandDims(0).toFloat().div(255);
+      // Convert the canvas image to a buffer
+      const buffer = canvas.toBuffer('image/jpeg');
 
-        // Memuat model dari file JSON
-        tf.loadLayersModel(`file://${modelPath}`).then((model) => {
-          // Melakukan prediksi menggunakan model
-          const predictions = model.predict(input);
+      // Load the model from the JSON file
+      const modelData = readFileSync(modelPath, 'utf-8');
+      const modelJson = JSON.parse(modelData);
+      const model = await tf.loadLayersModel(
+        'file://D:/VSCODE/CAPSTONE PROJECG/Barkit-CC/app/models/model.json'
+      );
 
-          // Mendapatkan kelas prediksi
-          const predictedClass = predictions.argMax(1).dataSync()[0];
-          const hasil = categories[predictedClass];
+      // Convert the image buffer to a tensor
+      const imageData = tf.node.decodeImage(buffer);
+      const input = imageData
+        .resizeNearestNeighbor([150, 150])
+        .toFloat()
+        .div(255)
+        .expandDims();
 
-          // Menampilkan hasil prediksi
-          console.log('HASIL DETEKSINYA:');
-          console.log();
+      // Make predictions using the model
+      const predictions = model.predict(input);
 
-          if (hasil === jenisKategori) {
-            console.log(`Berhasil mengupload ${hasil}`);
-          } else {
-            console.log(`Gagal, gambar tersebut adalah ${hasil}, bukan ${jenisKategori}`);
-          }
+      // Get the predicted class
+      const predictedClass = predictions.argMax(1).dataSync()[0];
+      const predictedCategory = categories[predictedClass];
 
-          rl.close();
-        });
-      }).catch((err) => {
-        console.error('Gagal memuat gambar:', err);
-        rl.close();
-      });
+      // Display the prediction result
+      console.log('DETECTION RESULT:');
+      console.log();
+
+      if (predictedCategory === req.body.category) {
+        console.log(`Successfully uploaded ${predictedCategory}`);
+      } else {
+        console.log(
+          `Failed, the image is ${predictedCategory}, not ${req.body.category}`
+        );
+      }
+
+      // Delete the file after processing is complete
+      // fs.unlinkSync(file.path);
+
+      // Return the response
+      const response = {
+        status: 200,
+        message: 'Image processed successfully',
+        predictedCategory: predictedCategory,
+      };
+      return res.status(200).json(response);
     });
-  } else {
-    console.log(`Kategori ${jenisKategori} tidak tersedia`);
-    rl.close();
+  } catch (error) {
+    console.error('Error while processing the image:', error);
+
+    const response = {
+      status: 500,
+      message: 'An error occurred while processing the image',
+      error: error.message,
+    };
+    return res.status(500).json(response);
   }
-});
+};
+
+export default predictionModel;

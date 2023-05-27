@@ -75,11 +75,7 @@ const getImageByName = async (req, res) => {
   try {
     // const productSnapshot = await db.collection('products').get();
 
-    const productSnapshot = await db
-      .collection('products')
-      // .where('imageUrl', 'array-contains', name)
-      .get();
-    console.log(productSnapshot);
+    const productSnapshot = await db.collection('products').get();
     if (productSnapshot.empty) {
       const response = badResponse(404, `Image ${name} not found`);
       return res.status(404).json(response);
@@ -262,6 +258,41 @@ const getAllProduct = async (req, res) => {
   }
 };
 
+const getProductById = async (req, res) => {
+  try {
+    const { productId } = req.params;
+
+    // Mencari order berdasarkan productId
+    const productRef = db.collection('products').doc(productId);
+    const productDoc = await productRef.get();
+
+    if (!productDoc.exists) {
+      const response = badResponse(404, 'Product not found');
+      return res.status(404).json(response);
+    }
+
+    const orderData = productDoc.data();
+
+    const response = successResponse(
+      200,
+      'Products retrieved successfully',
+      orderData
+    );
+
+    res.status(200).json(response);
+  } catch (error) {
+    console.error('Error while getting the order:', error);
+
+    const response = badResponse(
+      500,
+      'An error occurred while getting the order',
+      error.message
+    );
+
+    res.status(500).json(response);
+  }
+};
+
 // Mengambil seluruh order dari renter
 const getAllOrders = async (req, res) => {
   try {
@@ -340,6 +371,7 @@ export {
   addCategory,
   addSubCategory,
   getAllProduct,
+  getProductById,
   getAllOrders,
   getOrderById,
 };

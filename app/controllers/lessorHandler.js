@@ -90,7 +90,6 @@ const registerLessor = async (req, res) => {
     };
 
     await lessorDocRef.set(lessorData);
-    console.log(`Success Store Lessor Data to Firestore ${username}`);
 
     // Update isLessor attribute in user document
     const renterRef = db.collection('renters').doc(renter_id);
@@ -103,7 +102,6 @@ const registerLessor = async (req, res) => {
       responseData
     );
     res.status(201).json(response);
-    console.log(`Success Create Lessor ${username}`);
   } catch (error) {
     console.error(error);
     const response = badResponse(

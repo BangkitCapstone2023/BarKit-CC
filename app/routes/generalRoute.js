@@ -1,4 +1,6 @@
 import express from 'express';
+import { adminMiddleware } from '../utils/validation.js';
+
 const router = express.Router();
 
 import {
@@ -11,25 +13,31 @@ import {
   addCategory,
   addSubCategory,
   getAllProduct,
+  getProductById,
   getAllOrders,
   getOrderById,
 } from '../controllers/generalHandler.js';
 
-router.get('/lessors', getAllLessors);
-router.get('/lessors/:lessorId', getLessorById);
+router.get('/admin/lessors', adminMiddleware, getAllLessors);
+router.get('/admin/lessors/:lessorId', adminMiddleware, getLessorById);
 
-router.get('/renters', getAllRenters);
-router.get('/renters/:renterId', getRenterById);
+router.get('/admin/renters', adminMiddleware, getAllRenters);
+router.get('/admin/renters/:renterId', adminMiddleware, getRenterById);
 
-router.get('/products', getAllProduct);
+router.get('/admin/products', adminMiddleware, getAllProduct);
+router.get('/admin/products/:productId', getProductById);
 
-router.post('/category', addCategory);
-router.post('/category/:categoryId/subcategory', addSubCategory);
+router.post('/admin/category', adminMiddleware, addCategory);
+router.post(
+  '/admin/category/:categoryId/subcategory',
+  adminMiddleware,
+  addSubCategory
+);
 
-router.get('/orders', getAllOrders);
-router.get('/orders/:orderId', getOrderById);
+router.get('/admin/orders', adminMiddleware, getAllOrders);
+router.get('/admin/orders/:orderId', adminMiddleware, getOrderById);
 
-router.get('/images', getAllImages);
+router.get('/admin/images', adminMiddleware, getAllImages);
 // router.get('/images/:name', getImageByName);
 
 export default router;

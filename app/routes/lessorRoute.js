@@ -1,5 +1,5 @@
 import express from 'express';
-import authMiddleware from '../utils/validation.js';
+import { authMiddleware } from '../utils/validation.js';
 
 const router = express.Router();
 import {

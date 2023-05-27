@@ -3,7 +3,7 @@ import firebase from 'firebase/compat/app';
 import 'firebase/compat/auth';
 import { badResponse, successResponse } from '../utils/response.js';
 import { db } from '../config/configFirebase.js';
-
+import formattedTimestamp from '../utils/time.js';
 // Inisialisasi Firebase client-side app
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -34,11 +34,23 @@ const login = async (req, res) => {
 
     const userLoginData = {
       email,
-      loginTime,
       token,
     };
 
-    const resposeData = { ...userLoginData, renter: renterData };
+    const renterDocRef = renterSnapshot.docs[0].ref;
+    await renterDocRef.update({
+      'userRecordData.lastSignInTime': loginTime,
+    });
+    const resposeData = {
+      ...userLoginData,
+      renter: {
+        ...renterData,
+        userRecordData: {
+          ...renterData.userRecordData,
+          lastSignInTime: loginTime,
+        },
+      },
+    };
     const response = successResponse(200, 'User Success Login', resposeData);
     res.status(200).json(response);
   } catch (error) {
@@ -60,8 +72,6 @@ const login = async (req, res) => {
 
 const loginUser = async (email, password) => {
   try {
-    const timestamp = admin.firestore.Timestamp.now(); // Mendapatkan timestamp saat login
-
     const userCredential = await firebase
       .auth()
       .signInWithEmailAndPassword(email, password);
@@ -71,11 +81,34 @@ const loginUser = async (email, password) => {
 
     return {
       token,
-      loginTime: timestamp.toDate(),
+      loginTime: formattedTimestamp,
     };
   } catch (error) {
     console.error('Error logging in user:', error);
     throw error;
+  }
+};
+
+const logout = async (req, res) => {
+  try {
+    const { authorization } = req.headers;
+
+    if (!authorization || !authorization.startsWith('Bearer ')) {
+      throw new Error('Unauthorized');
+    }
+
+    const token = authorization.split('Bearer ')[1];
+
+    // Hapus token dari Firebase Authentication
+    await admin.auth().revokeRefreshTokens(token);
+
+    console.log(req.user);
+
+    const response = successResponse(200, 'User logged out successfully', {});
+    res.status(200).json(response);
+  } catch (error) {
+    const response = badResponse(401, 'Failed to logout user');
+    res.status(401).json(response);
   }
 };
 
@@ -94,13 +127,15 @@ const register = async (req, res) => {
       phone,
       gender
     );
+
+    delete userResponse.password;
+
     const response = successResponse(
       201,
       'User Success Register',
       userResponse
     );
     res.status(201).json(response);
-    console.log(`Success Create User ${username}`);
   } catch (error) {
     const response = badResponse(
       500,
@@ -141,11 +176,19 @@ const createUser = async (
       throw new Error(`Username '${username}' is already taken`);
     }
 
-    const userRecord = await admin.auth().createUser({ email, password });
+    const userRecord = await admin.auth().createUser({ email, password }); // berhasil
+    console.log(userRecord);
+
+    const userRecordData = {
+      emailVerified: userRecord.emailVerified,
+      lastRefreshTime: userRecord.metadata.lastRefreshTime,
+      creationTime: userRecord.metadata.creationTime,
+      lastSignInTime: userRecord.metadata.lastSignInTime,
+    };
 
     const userDocRef = db.collection('renters').doc(userRecord.uid);
     const userData = {
-      id: userRecord.uid,
+      renter_id: userRecord.uid,
       email,
       password,
       username,
@@ -155,10 +198,9 @@ const createUser = async (
       gender,
     };
 
-    const responseData = { ...userData, userRecord };
-
+    delete userData.password;
     await userDocRef.set(userData);
-    console.log(`Success Store Renter to Firestore ${username}`);
+    const responseData = { ...userData, userRecordData: userRecordData };
     return responseData;
   } catch (error) {
     console.error('Error creating user', error.message);
@@ -166,4 +208,4 @@ const createUser = async (
   }
 };
 
-export { login, register };
+export { login, register, logout };

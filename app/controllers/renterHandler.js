@@ -326,15 +326,19 @@ const getUserProfile = async (req, res) => {
     const renterData = profileSnapshot.docs[0].data();
 
     // Check Auth Token
-    if (renterData.id !== uid) {
+    if (renterData.renter_id !== uid) {
       const response = badResponse(403, 'Not allowed');
       return res.status(403).json(response);
     }
 
+    const responseData = renterData;
+
+    delete responseData.userRecordData;
+
     const response = successResponse(
       200,
       'Profile retrieved successfully',
-      renterData
+      responseData
     );
 
     return res.status(200).json(response);
@@ -367,7 +371,7 @@ const updateProfile = async (req, res) => {
     }
 
     const renterData = renterSnapshot.docs[0].data();
-    if (renterData.id !== uid) {
+    if (renterData.renter_id !== uid) {
       const response = badResponse(403, 'Not allowed');
       return res.status(403).json(response);
     }
@@ -406,6 +410,8 @@ const updateProfile = async (req, res) => {
     // Ambil snapshot terbaru dari data profile yang diperbarui
     const updatedProfileSnapshot = await renterRef.get();
     const updatedProfileData = updatedProfileSnapshot.data();
+
+    delete updatedProfileData.userRecordData;
 
     const response = successResponse(
       200,
@@ -489,7 +495,6 @@ const createOrder = async (req, res) => {
       quantity_order,
       kurir,
     } = req.body;
-    console.log(uid);
 
     // Check Renter
     const renterSnapshot = await db
@@ -502,7 +507,7 @@ const createOrder = async (req, res) => {
       return res.status(404).json(response);
     }
     const renterData = renterSnapshot.docs[0].data();
-    const renter_id = renterData.id;
+    const renter_id = renterData.renter_id;
 
     // Check Product
     const productSnapshot = await db
@@ -515,7 +520,7 @@ const createOrder = async (req, res) => {
     }
 
     // Check Auth Token
-    if (renterData.id !== uid) {
+    if (renterData.renter_id !== uid) {
       const response = badResponse(403, 'Not allowed');
       return res.status(403).json(response);
     }
@@ -559,6 +564,8 @@ const createOrder = async (req, res) => {
       renter: renterData,
       product: productData,
     };
+
+    delete responseData.renter.userRecordData;
     const response = successResponse(
       200,
       'Order Created successfully',
@@ -583,7 +590,6 @@ const getOrdersByRenter = async (req, res) => {
     const { username } = req.params;
     const { uid } = req.user;
 
-    console.log(uid);
     const renterSnapshot = await db
       .collection('renters')
       .where('username', '==', username)
@@ -597,7 +603,7 @@ const getOrdersByRenter = async (req, res) => {
 
     const renterData = renterSnapshot.docs[0].data();
     // Check Auth Token
-    if (renterData.id !== uid) {
+    if (renterData.renter_id !== uid) {
       const response = badResponse(403, 'Not allowed');
       return res.status(403).json(response);
     }
@@ -658,8 +664,6 @@ const updateOrder = async (req, res) => {
     const { delivery_address, kurir, start_rent_date, end_rent_date } =
       req.body;
 
-    console.log(orderId);
-
     // Mengambil data order berdasarkan orderId
     const orderSnapshoot = db.collection('orders').doc(orderId);
     const orderRef = await orderSnapshoot.get();
@@ -678,7 +682,7 @@ const updateOrder = async (req, res) => {
     const renterData = renterSnapshot.data();
 
     // Memastikan order tersebut dimiliki oleh renter yang sesuai
-    if (renterData.username !== username || renterData.id !== uid) {
+    if (renterData.username !== username || renterData.renter_id !== uid) {
       const response = badResponse(
         403,
         'Access denied. Order does not belong to the renter'
@@ -690,8 +694,7 @@ const updateOrder = async (req, res) => {
     if (orderData.status !== 'pending') {
       const response = badResponse(
         403,
-        'Order cannot be edited as it is not in pending status',
-        error.message
+        'Order cannot be edited , because is not in pending status'
       );
       return res.status(403).json(response);
     }
@@ -765,7 +768,7 @@ const getDetailOrdersByRenter = async (req, res) => {
     const renterData = renterSnapshot.data();
 
     // Memastikan order tersebut dimiliki oleh renter yang sesuai
-    if (renterData.username !== username || renterData.id !== uid) {
+    if (renterData.username !== username || renterData.renter_id !== uid) {
       const response = badResponse(
         403,
         'Access denied. Order does not belong to the renter'

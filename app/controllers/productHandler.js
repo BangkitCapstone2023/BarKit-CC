@@ -56,10 +56,14 @@ const addProduct = async (req, res) => {
       }
 
       // Check auth token
-      if (renterData.id !== uid) {
+      if (renterData.renter_id !== uid) {
         const response = badResponse(403, 'Not allowed');
         return res.status(403).json(response);
       }
+
+      const file = req.file;
+      const { title, description, price, category, sub_category, quantity } =
+        req.body;
 
       // Check Jika lessor tidak mengupload gambar
       if (!req.file) {
@@ -67,9 +71,29 @@ const addProduct = async (req, res) => {
         return res.status(400).json(response);
       }
 
-      const file = req.file;
-      const { title, description, price, category, sub_category, quantity } =
-        req.body;
+      const requiredFields = [
+        'title',
+        'description',
+        'price',
+        'category',
+        'sub_category',
+        'quantity',
+      ];
+      const missingFields = [];
+
+      requiredFields.forEach((field) => {
+        if (!req.body[field]) {
+          missingFields.push(field);
+        }
+      });
+
+      if (missingFields.length > 0) {
+        const errorMessage = missingFields
+          .map((field) => `${field} is required`)
+          .join('. ');
+        const response = badResponse(400, errorMessage);
+        return res.status(400).json(response);
+      }
 
       // Cek ukuran file
       const maxSizeInBytes = 10 * 1024 * 1024; // 10 MB
@@ -300,14 +324,14 @@ const updateProductById = async (req, res) => {
       const renterData = renterSnapshot.docs[0].data();
 
       const lessorSnapshot = await db
-        .collection('renters')
+        .collection('lessors')
         .where('username', '==', username)
         .get();
 
       const lessorData = lessorSnapshot.docs[0].data();
 
       // Pastikan lessor_id pada product sesuai dengan lessor yang mengirim permintaan
-      if (itemData.username !== username || renterData.id !== uid) {
+      if (itemData.username !== username || renterData.renter_id !== uid) {
         const response = badResponse(
           403,
           'Not allowed to modify antoher lessor product'
@@ -476,7 +500,7 @@ const deleteProductById = async (req, res) => {
     const renterData = renterSnapshot.docs[0].data();
 
     // Cek apakah lessor yang menghapus produk adalah lessor yang mengunggah produk
-    if (productData.username !== username || renterData.id !== uid) {
+    if (productData.username !== username || renterData.renter_id !== uid) {
       const response = badResponse(
         403,
         'Access denied. Only the lessor who uploaded the product can delete it'

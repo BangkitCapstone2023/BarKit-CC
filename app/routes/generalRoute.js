@@ -18,6 +18,10 @@ import {
   getOrderById,
 } from '../controllers/generalHandler.js';
 
+import predictionModel from '../models/deploy.js';
+
+router.post('/predict', predictionModel);
+
 router.get('/admin/lessors', adminMiddleware, getAllLessors);
 router.get('/admin/lessors/:lessorId', adminMiddleware, getLessorById);
 

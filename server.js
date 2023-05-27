@@ -19,6 +19,8 @@ app.use(generalRouter);
 app.use(renterRouter);
 app.use(lessorRouter);
 
+console.log('tes');
+
 app.listen(port, () => {
   console.log(`BarKit App listening on port ${port}`);
 });

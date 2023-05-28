@@ -16,7 +16,11 @@
     "type": "git",
     "url": "git+https://github.com/BangkitCapstone2023/Barkit-CC.git"
   },
+<<<<<<< HEAD
   "author": "Barkit Team",
+=======
+  "author": "Bakit Team",
+>>>>>>> 248ce70 (update package.json)
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/BangkitCapstone2023/Barkit-CC/issues"

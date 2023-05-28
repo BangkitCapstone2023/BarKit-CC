@@ -1,7 +1,7 @@
 {
   "name": "barkit-cc",
   "version": "1.0.0",
-  "description": "* [Brief Description](#brief-description)\r * [Installation Requirements](#installation-requirements)\r * [Download Folder](#download-folder)\r * [How To Use](#how-to-use)\r * [Author](#author)",
+  "description": "Casptone Project Bangkit - Barkit",
   "main": "server.js",
   "type": "module",
   "directories": {
@@ -16,7 +16,7 @@
     "type": "git",
     "url": "git+https://github.com/BangkitCapstone2023/Barkit-CC.git"
   },
-  "author": "",
+  "author": "Barkit Team",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/BangkitCapstone2023/Barkit-CC/issues"

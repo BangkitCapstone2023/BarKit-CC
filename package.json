@@ -24,7 +24,16 @@
   "homepage": "https://github.com/BangkitCapstone2023/Barkit-CC#readme",
   "dependencies": {
     "@google-cloud/storage": "^6.10.1",
+<<<<<<< HEAD
     "@tensorflow/tfjs-node": "^3.19.0",
+=======
+    "@tensorflow/tfjs": "^4.6.0",
+    "@tensorflow/tfjs-converter": "^4.6.0",
+    "@tensorflow/tfjs-core": "^4.6.0",
+    "@tensorflow/tfjs-node": "^3.19.0",
+    "@types/web3": "^1.2.2",
+    "body-parser": "^1.20.2",
+>>>>>>> 14ea090 (update work)
     "canvas": "^2.11.2",
     "cors": "^2.8.5",
     "express": "^4.18.2",

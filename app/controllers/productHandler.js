@@ -6,6 +6,7 @@ import admin from 'firebase-admin';
 import { badResponse, successResponse } from '../utils/response.js';
 import { storage, bucketName } from '../config/configCloudStorage.js';
 import { db } from '../config/configFirebase.js';
+import predictionModel from '../models/model.js';
 
 const multerStorage = multer.memoryStorage();
 const upload = multer({ storage: multerStorage });
@@ -13,7 +14,6 @@ const upload = multer({ storage: multerStorage });
 const timestamp = admin.firestore.Timestamp.now();
 const date = timestamp.toDate();
 const formattedTimestamp = moment(date).format('YYYY-MM-DD HH:mm:ss');
-
 const addProduct = async (req, res) => {
   try {
     const { uid } = req.user;
@@ -105,117 +105,132 @@ const addProduct = async (req, res) => {
         return res.status(413).json(response);
       }
 
-      const imageId = uuidv4(); // Membuat UUID sebagai ID gambar
-      const originalFileName = file.originalname;
-      const fileName = `${originalFileName
-        .split('.')
-        .slice(0, -1)
-        .join('.')}_${username}_${title}.${originalFileName
-        .split('.')
-        .pop()}`.replace(/\s+/g, '_');
-      const filePath = `${category}/${sub_category}/${fileName}`;
-      const blob = storage.bucket(bucketName).file(filePath);
+      // TODO: Buatkan predict image di sini berdasarkan req.file dan category
 
-      const blobStream = blob.createWriteStream({
-        metadata: {
-          contentType: file.mimetype,
-        },
-        predefinedAcl: 'publicRead', // Membuat gambar otomatis public
-      });
+      const predictionResult = await predictionModel(file, sub_category);
 
-      blobStream.on('error', (err) => {
-        console.error('Error saat mengunggah file:', err);
-        const response = badResponse(
-          500,
-          'Terjadi kesalahan saat mengunggah gambar.'
-        );
-        return res.status(500).json(response);
-      });
+      if (predictionResult.success) {
+        const imageId = uuidv4(); // Membuat UUID sebagai ID gambar
+        const originalFileName = file.originalname;
+        const fileName = `${originalFileName
+          .split('.')
+          .slice(0, -1)
+          .join('.')}_${username}_${title}.${originalFileName
+          .split('.')
+          .pop()}`.replace(/\s+/g, '_');
+        const filePath = `${category}/${sub_category}/${fileName}`;
+        const blob = storage.bucket(bucketName).file(filePath);
 
-      blobStream.on('finish', async () => {
-        const publicUrl = `https://storage.googleapis.com/${bucketName}/${filePath}`;
+        const blobStream = blob.createWriteStream({
+          metadata: {
+            contentType: file.mimetype,
+          },
+          predefinedAcl: 'publicRead', // Membuat gambar otomatis public
+        });
 
-        try {
-          // Check Lessor
-          const lessorSnapshot = await db
-            .collection('lessors')
-            .where('username', '==', username)
-            .get();
-
-          const lessor_id = lessorSnapshot.docs[0].id;
-          const lessorData = lessorSnapshot.docs[0].data();
-
-          // Check title duplicate
-          const existingProductSnapshot = await db
-            .collection('products')
-            .where('title', '==', title)
-            .where('lessor_id', '==', lessor_id)
-            .get();
-          if (!existingProductSnapshot.empty) {
-            const response = badResponse(
-              409,
-              `Product '${title}' already exists for the lessor, plese use another title`
-            );
-            return res.status(400).json(response);
-          }
-
-          const productDocRef = db.collection('products').doc();
-          const productId = productDocRef.id;
-
-          // Check harga input product
-          if (price < 1) {
-            const response = badResponse(400, 'Price not valid');
-            return res.status(400).json(response);
-          }
-
-          // Check quantity input product
-
-          if (quantity < 1) {
-            const response = badResponse(400, 'Quantity not valid');
-            return res.status(400).json(response);
-          }
-
-          const productData = {
-            title,
-            description,
-            price,
-            imageUrl: publicUrl,
-            category,
-            sub_category,
-            quantity,
-            username,
-            lessor_id,
-            image_id: imageId,
-            product_id: productId,
-            create_at: formattedTimestamp,
-          };
-
-          // Simpan data produk ke koleksi produk di Firestore
-          await db
-            .collection('products')
-            .doc(productData.product_id)
-            .set(productData);
-
-          const responseData = { ...productData, lessor: lessorData };
-
-          const response = successResponse(
-            200,
-            'Success add product ',
-            responseData
-          );
-          return res.status(200).json(response);
-        } catch (error) {
-          console.error('Error :', error);
+        blobStream.on('error', (err) => {
+          console.error('Error saat mengunggah file:', err);
           const response = badResponse(
             500,
-            'An error occurred while add product',
-            error.message
+            'Terjadi kesalahan saat mengunggah gambar.'
           );
           return res.status(500).json(response);
-        }
-      });
+        });
 
-      blobStream.end(file.buffer);
+        blobStream.on('finish', async () => {
+          const publicUrl = `https://storage.googleapis.com/${bucketName}/${filePath}`;
+
+          try {
+            // Check Lessor
+            const lessorSnapshot = await db
+              .collection('lessors')
+              .where('username', '==', username)
+              .get();
+
+            const lessor_id = lessorSnapshot.docs[0].id;
+            const lessorData = lessorSnapshot.docs[0].data();
+
+            // Check title duplicate
+            const existingProductSnapshot = await db
+              .collection('products')
+              .where('title', '==', title)
+              .where('lessor_id', '==', lessor_id)
+              .get();
+            if (!existingProductSnapshot.empty) {
+              const response = badResponse(
+                409,
+                `Product '${title}' already exists for the lessor, plese use another title`
+              );
+              return res.status(400).json(response);
+            }
+
+            const productDocRef = db.collection('products').doc();
+            const productId = productDocRef.id;
+
+            // Check harga input product
+            if (price < 1) {
+              const response = badResponse(400, 'Price not valid');
+              return res.status(400).json(response);
+            }
+
+            // Check quantity input product
+
+            if (quantity < 1) {
+              const response = badResponse(400, 'Quantity not valid');
+              return res.status(400).json(response);
+            }
+
+            const productData = {
+              title,
+              description,
+              price,
+              imageUrl: publicUrl,
+              category,
+              sub_category,
+              quantity,
+              username,
+              lessor_id,
+              image_id: imageId,
+              product_id: productId,
+              create_at: formattedTimestamp,
+            };
+
+            // Simpan data produk ke koleksi produk di Firestore
+            await db
+              .collection('products')
+              .doc(productData.product_id)
+              .set(productData);
+
+            const responseData = { ...productData, lessor: lessorData };
+
+            const response = successResponse(
+              200,
+              'Success add product ',
+              responseData
+            );
+            return res.status(200).json(response);
+          } catch (error) {
+            console.error('Error :', error);
+            const response = badResponse(
+              500,
+              'An error occurred while add product',
+              error.message
+            );
+            return res.status(500).json(response);
+          }
+        });
+
+        blobStream.end(file.buffer);
+      } else {
+        const { errorMessage } = predictionResult;
+        console.error('Error :', errorMessage);
+        const response = badResponse(
+          403,
+          'Category dan gambar yang di input tidak sesuai',
+          errorMessage
+        );
+        return res.status(403).json(response);
+      }
     });
   } catch (error) {
     console.error('Error saat mengunggah file:', error);

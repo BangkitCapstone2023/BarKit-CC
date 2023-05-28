@@ -18,7 +18,7 @@ import {
   getOrderById,
 } from '../controllers/generalHandler.js';
 
-import predictionModel from '../models/deploy.js';
+import predictionModel from '../models/model.js';
 
 router.post('/predict', predictionModel);
 

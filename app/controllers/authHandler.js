@@ -3,11 +3,10 @@ import firebase from 'firebase/compat/app';
 import 'firebase/compat/auth';
 import { badResponse, successResponse } from '../utils/response.js';
 import { db } from '../config/configFirebase.js';
-import formattedTimestamp from '../utils/time.js';
-// Inisialisasi Firebase client-side app
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { readFileSync } from 'fs';
+import formattedTimestamp from '../utils/time.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

@@ -20,14 +20,17 @@ import {
 
 import predictionModel from '../models/model.js';
 
+// Model Router
 router.post('/predict', predictionModel);
 
+// User Routes
 router.get('/admin/lessors', adminMiddleware, getAllLessors);
 router.get('/admin/lessors/:lessorId', adminMiddleware, getLessorById);
 
 router.get('/admin/renters', adminMiddleware, getAllRenters);
 router.get('/admin/renters/:renterId', adminMiddleware, getRenterById);
 
+// Product Routers
 router.get('/admin/products', adminMiddleware, getAllProduct);
 router.get('/admin/products/:productId', getProductById);
 
@@ -38,6 +41,7 @@ router.post(
   addSubCategory
 );
 
+// Order Routes
 router.get('/admin/orders', adminMiddleware, getAllOrders);
 router.get('/admin/orders/:orderId', adminMiddleware, getOrderById);
 

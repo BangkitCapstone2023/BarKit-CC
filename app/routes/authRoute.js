@@ -9,7 +9,7 @@ router.post('/register', register);
 // Login route
 router.post('/login', login);
 
-// Register route
+// Logout route
 router.post('/logout', authMiddleware, logout);
 
 export default router;

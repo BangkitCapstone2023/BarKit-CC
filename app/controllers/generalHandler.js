@@ -1,4 +1,3 @@
-import admin from 'firebase-admin';
 import { badResponse, successResponse } from '../utils/response.js';
 import { db } from '../config/configFirebase.js';
 

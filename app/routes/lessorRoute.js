@@ -23,21 +23,21 @@ import {
 
 router.use(authMiddleware);
 
-//! Lessor Register Route
+// Lessor Register Route
 router.post('/lessors/:username/register', registerLessor);
 
-//! Lessor Profiles Routes
+// Lessor Profiles Routes
 router.get('/lessors/:username/profile', getLessorProfile);
 router.put('/lessors/:username/profile', updateLessor);
 router.delete('/lessors/:lessorId/profile', deleteLessorById);
 
-//! Lessor Products Routes
+// Lessor Products Routes
 router.get('/lessors/:username/products', getAllProductsByLessor);
 router.put('/lessors/:username/products/:productId', updateProductById);
 router.post('/lessors/:username/products', addProduct);
 router.delete('/lessors/:username/products/:productId', deleteProductById);
 
-//! Lessor Orders Routes
+// Lessor Orders Routes
 router.get('/lessors/:username/orders', getOrdersByLessor);
 router.get('/lessors/:username/orders/:orderId', getLessorOrderById);
 router.put(

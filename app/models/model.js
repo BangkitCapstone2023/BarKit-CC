@@ -14,8 +14,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const modelPath = join(__dirname, 'model', 'model.json');
 
-// List of categories
-const categories = [
+// List of subCategories
+const subCategories = [
   'camera',
   'lcd',
   'matras',
@@ -26,7 +26,7 @@ const categories = [
   'tenda',
 ];
 
-const predictionModel = async (file, category) => {
+const predictionModel = async (file, sub_category) => {
   try {
     // Proses gambar yang diunggah
     const image = await loadImage(file.buffer);
@@ -54,15 +54,15 @@ const predictionModel = async (file, category) => {
 
     // Dapatkan kelas yang diprediksi
     const predictedClass = predictions.argMax(1).dataSync()[0];
-    const predictedCategory = categories[predictedClass];
+    const predictedSubCategorie = subCategories[predictedClass];
 
     // Bandingkan kategori prediksi dengan kategori yang diberikan
-    if (predictedCategory === category) {
+    if (predictedSubCategorie === sub_category) {
       // Prediksi sesuai dengan kategori yang diberikan
-      return { success: true, predictedCategory };
+      return { success: true, predictedSubCategorie };
     } else {
       // Prediksi tidak sesuai dengan kategori yang diberikan
-      const errorMessage = `Failed, the image is ${predictedCategory}, not ${category}`;
+      const errorMessage = `Failed, the image is ${predictedSubCategorie}, not ${sub_category}`;
       return { success: false, errorMessage };
     }
   } catch (error) {

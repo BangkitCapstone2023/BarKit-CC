@@ -13,6 +13,7 @@ const __dirname = dirname(__filename);
 const modelPath = join(__dirname, 'model', 'model.json');
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 // List of categories
 const categories = [
 <<<<<<< HEAD
@@ -23,6 +24,10 @@ const categories = [
 // List of subCategories
 const subCategories = [
 >>>>>>> 3ca9182 (fix typo)
+=======
+// List of subCategories
+const subCategories = [
+>>>>>>> abc379b91e37f77ce336fbf888b6eb035f1f722f
   'camera',
   'lcd',
   'matras',
@@ -83,19 +88,13 @@ const predictionModel = async (file, sub_category) => {
 >>>>>>> 4bbf4c5 (update)
 ];
 
-const predictionModel = async (file, category) => {
+const predictionModel = async (file, sub_category) => {
   try {
-    // Proses gambar yang diunggah
-    const image = await loadImage(file.buffer);
-    const canvas = createCanvas(150, 150);
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(image, 0, 0, 150, 150);
-
-    // Convert gambar canvas menjadi buffer
-    const buffer = canvas.toBuffer('image/jpeg');
+    // Proses gambar yang diunggah menggunakan sharp
+    const image = sharp(file.buffer).resize(150, 150);
+    const buffer = await image.toBuffer();
 
     // Load model dari file JSON
-    const modelData = readFileSync(modelPath, 'utf-8');
     const model = await tf.loadLayersModel(`file://${modelPath}`);
 
     // Convert buffer gambar menjadi tensor
@@ -111,18 +110,19 @@ const predictionModel = async (file, category) => {
 
     // Dapatkan kelas yang diprediksi
     const predictedClass = predictions.argMax(1).dataSync()[0];
-    const predictedCategory = categories[predictedClass];
+    const predictedSubCategorie = subCategories[predictedClass];
 
     // Bandingkan kategori prediksi dengan kategori yang diberikan
-    if (predictedCategory === category) {
+    if (predictedSubCategorie === sub_category) {
       // Prediksi sesuai dengan kategori yang diberikan
-      return { success: true, predictedCategory };
+      return { success: true, predictedSubCategorie };
     } else {
       // Prediksi tidak sesuai dengan kategori yang diberikan
-      const errorMessage = `Failed, the image is ${predictedCategory}, not ${category}`;
+      const errorMessage = `Failed, the image is ${predictedSubCategorie}, not ${sub_category}`;
       return { success: false, errorMessage };
     }
   } catch (error) {
+<<<<<<< HEAD
 <<<<<<< HEAD
     console.error('Error while processing the image:', error);
 
@@ -136,6 +136,9 @@ const predictionModel = async (file, category) => {
 =======
     // Handle error saat memproses prediksi
     // ...
+=======
+    console.error(error.message);
+>>>>>>> abc379b91e37f77ce336fbf888b6eb035f1f722f
     return { success: false, errorMessage: error.message };
 >>>>>>> 4bbf4c5 (update)
   }

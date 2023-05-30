@@ -17,10 +17,14 @@
     "url": "git+https://github.com/BangkitCapstone2023/Barkit-CC.git"
   },
 <<<<<<< HEAD
+<<<<<<< HEAD
   "author": "Barkit Team",
 =======
   "author": "Bakit Team",
 >>>>>>> 248ce70 (update package.json)
+=======
+  "author": "Bakit Team",
+>>>>>>> abc379b91e37f77ce336fbf888b6eb035f1f722f
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/BangkitCapstone2023/Barkit-CC/issues"
@@ -31,6 +35,7 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
     "@tensorflow/tfjs-node": "^3.19.0",
+<<<<<<< HEAD
 <<<<<<< HEAD
 =======
     "@tensorflow/tfjs": "^4.6.0",
@@ -46,6 +51,8 @@
     "canvas": "^2.11.2",
 =======
 >>>>>>> abc379b (deploy)
+=======
+>>>>>>> abc379b91e37f77ce336fbf888b6eb035f1f722f
     "cors": "^2.8.5",
     "express": "^4.18.2",
     "firebase": "^9.22.1",

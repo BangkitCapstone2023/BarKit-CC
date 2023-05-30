@@ -101,19 +101,8 @@ const logout = async (req, res) => {
 
     const token = authorization.split('Bearer ')[1];
 
-<<<<<<< HEAD
-    await admin.auth().revokeRefreshTokens(uid);
-
-    const logoutTime = formattedTimestamp;
     // Tandai token sebagai tidak valid di Firestore
-    await db
-      .collection('tokens')
-      .doc(token)
-      .set({ invalid: true, time: logoutTime, type: 'logout tokens' });
-
-=======
-    // Tandai token sebagai tidak valid di Firestore
-    await db.collection('logoutTokens').doc(token).set({ invalid: true });
+    await db.collection('tokens').doc(token).set({ invalid: true });
 
     await admin.auth().revokeRefreshTokens(uid);
 
@@ -124,7 +113,6 @@ const logout = async (req, res) => {
       .doc(token)
       .set({ invalid: true, time: logoutTime, type: 'logout tokens' });
 
->>>>>>> abc379b91e37f77ce336fbf888b6eb035f1f722f
     const response = successResponse(200, 'User logged out successfully');
     res.status(200).json(response);
   } catch (error) {

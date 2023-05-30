@@ -3,13 +3,13 @@ const router = express.Router();
 import { login, logout, register } from '../controllers/authHandler.js';
 import { authMiddleware } from '../utils/validation.js';
 
-// Register route
+// Register router
 router.post('/register', register);
 
-// Login route
+// Login router
 router.post('/login', login);
 
-// Register route
+// Logout router
 router.post('/logout', authMiddleware, logout);
 
 export default router;

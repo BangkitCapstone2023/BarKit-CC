@@ -1,7 +1,7 @@
 import { badResponse, successResponse } from '../utils/response.js';
 import { db } from '../config/configFirebase.js';
 
-// Register Lessor
+// Register Lessor Handler
 const registerLessor = async (req, res) => {
   const lessor = {
     email: req.body.email,
@@ -24,6 +24,8 @@ const registerLessor = async (req, res) => {
       'storeEmail',
       'storePhone',
     ];
+
+    // Cek Required Fields
     const missingFields = requiredFields.filter((field) => !lessor[field]);
     if (missingFields.length > 0) {
       const errorMessage = missingFields
@@ -34,7 +36,7 @@ const registerLessor = async (req, res) => {
       return res.status(404).json(response);
     }
 
-    // Check if the renter exists
+    // Check renters exist
     const renterSnapshot = await db
       .collection('renters')
       .where('username', '==', req.params.username)
@@ -47,7 +49,7 @@ const registerLessor = async (req, res) => {
       return res.status(404).json(response);
     }
 
-    // Get Renter Data
+    // Check Auth Token
     const renter_id = renterSnapshot.docs[0].id;
     if (renter_id !== uid) {
       const response = badResponse(403, 'Not allowed');
@@ -55,7 +57,6 @@ const registerLessor = async (req, res) => {
     }
 
     const renterData = renterSnapshot.docs[0].data();
-
     const { fullName, username, email } = renterData;
 
     const lessorSnapshot = await db
@@ -63,6 +64,7 @@ const registerLessor = async (req, res) => {
       .where('renter_id', '==', renter_id)
       .get();
 
+    // Check if renter already lessor
     if (!lessorSnapshot.empty) {
       const response = badResponse(
         409,
@@ -71,9 +73,9 @@ const registerLessor = async (req, res) => {
       return res.status(404).json(response);
     }
 
-    // Save additional data to Firestore if not empty
+    // Save data to firestore
     const lessorDocRef = db.collection('lessors').doc();
-    // Generate a new lessor ID
+
     const lessor_id = lessorDocRef.id;
     const lessorData = {
       lessor_id,
@@ -113,6 +115,7 @@ const registerLessor = async (req, res) => {
   }
 };
 
+// Lessor Profile Handler
 const getLessorProfile = async (req, res) => {
   try {
     const { username } = req.params;
@@ -130,6 +133,7 @@ const getLessorProfile = async (req, res) => {
 
     const lessorData = lessorSnapshot.docs[0].data();
 
+    // Check Auth Token
     if (lessorData.renter_id !== uid) {
       const response = badResponse(403, 'Not allowed');
       return res.status(403).json(response);
@@ -162,6 +166,7 @@ const getLessorProfile = async (req, res) => {
   }
 };
 
+// Update Profile Lessor Handler
 const updateLessor = async (req, res) => {
   try {
     const { username } = req.params;
@@ -182,6 +187,7 @@ const updateLessor = async (req, res) => {
 
     const lessorData = lessorSnapshot.docs[0].data();
 
+    // Check Auth Token
     if (lessorData.renter_id !== uid) {
       const response = badResponse(403, 'Not allowed');
       return res.status(403).json(response);
@@ -236,6 +242,7 @@ const updateLessor = async (req, res) => {
   }
 };
 
+// Delete Lessor Account Handler
 const deleteLessorById = async (req, res) => {
   const { lessorId } = req.params;
 
@@ -283,6 +290,7 @@ const deleteLessorById = async (req, res) => {
   }
 };
 
+// All Order By Lessor Handler
 const getOrdersByLessor = async (req, res) => {
   try {
     const { username } = req.params;
@@ -341,6 +349,7 @@ const getOrdersByLessor = async (req, res) => {
   }
 };
 
+// Detail Order Lessor Handler
 const getLessorOrderById = async (req, res) => {
   try {
     const { username, orderId } = req.params;
@@ -408,7 +417,7 @@ const getLessorOrderById = async (req, res) => {
   }
 };
 
-// Mengubah status order dan menambahkan catatan (optional)
+// Update Order Status Lessor Handler
 const updateOrderStatusAndNotes = async (req, res) => {
   try {
     const { username, orderId } = req.params;

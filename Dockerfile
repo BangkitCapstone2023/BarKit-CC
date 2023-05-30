@@ -1,6 +1,9 @@
-FROM node:14-alpine
+FROM node:14
 
 WORKDIR /usr/src/app
+
+# Install dependencies required for building native modules and TensorFlow
+RUN apt-get update && apt-get install -y build-essential python
 
 COPY package*.json ./
 

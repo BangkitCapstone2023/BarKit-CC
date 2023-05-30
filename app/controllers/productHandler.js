@@ -1,5 +1,4 @@
 import multer from 'multer';
-import moment from 'moment';
 import { v4 as uuidv4 } from 'uuid';
 import admin from 'firebase-admin';
 
@@ -8,13 +7,12 @@ import { storage, bucketName } from '../config/configCloudStorage.js';
 import { db } from '../config/configFirebase.js';
 import predictionModel from '../models/model.js';
 
+import formattedTimestamp from '../utils/time.js';
+
 const multerStorage = multer.memoryStorage();
 const upload = multer({ storage: multerStorage });
 
-const timestamp = admin.firestore.Timestamp.now();
-const date = timestamp.toDate();
-const formattedTimestamp = moment(date).format('YYYY-MM-DD HH:mm:ss');
-
+// Posting a new Product Handler
 const addProduct = async (req, res) => {
   try {
     const { uid } = req.user;
@@ -242,6 +240,7 @@ const addProduct = async (req, res) => {
   }
 };
 
+// Get All Products Handler
 const getAllProductsByLessor = async (req, res) => {
   try {
     const { username } = req.params;
@@ -289,6 +288,7 @@ const getAllProductsByLessor = async (req, res) => {
   }
 };
 
+// Update Product By Id Handler
 const updateProductById = async (req, res) => {
   const { uid } = req.user;
   try {
@@ -504,6 +504,7 @@ const updateProductById = async (req, res) => {
   }
 };
 
+// Delete Product By Id Handlers
 const deleteProductById = async (req, res) => {
   const { productId, username } = req.params;
   const { uid } = req.user;
@@ -693,6 +694,7 @@ const addProductToCart = async (req, res) => {
   }
 };
 
+// Get Cart Product Handler
 const getCartProductsByRenter = async (req, res) => {
   try {
     const { username } = req.params;
@@ -767,59 +769,8 @@ const getCartProductsByRenter = async (req, res) => {
     return res.status(500).json(response);
   }
 };
-const deleteCartProduct = async (req, res) => {
-  try {
-    const { uid } = req.user;
-    const { productId } = req.params;
 
-    // Get user's cart
-    const cartRef = db.collection('carts').doc(uid);
-    const cartSnapshot = await cartRef.get();
-    const cartData = cartSnapshot.data();
-
-    // Check if cart exists
-    if (!cartData) {
-      const response = badResponse(404, 'Cart not found');
-      return res.status(404).json(response);
-    }
-
-    // Find the product in the cart
-    const existingProductIndex = cartData.cart_products.findIndex(
-      (product) => product.product_id === productId
-    );
-
-    if (existingProductIndex === -1) {
-      const response = badResponse(
-        404,
-        `Product '${productId}' not found in the cart`
-      );
-      return res.status(404).json(response);
-    }
-
-    // Remove the product from the cart
-    cartData.cart_products.splice(existingProductIndex, 1);
-
-    // Update cart data
-    await cartRef.update({
-      cart_products: cartData.cart_products,
-    });
-
-    const response = successResponse(
-      200,
-      `Product '${productId}' removed from the cart`
-    );
-    return res.status(200).json(response);
-  } catch (error) {
-    console.error('Error:', error);
-    const response = badResponse(
-      500,
-      'An error occurred while deleting cart product',
-      error.message
-    );
-    return res.status(500).json(response);
-  }
-};
-
+// Update Product Quantity in Cart Handler
 const updateCartProductQuantity = async (req, res) => {
   try {
     const { uid } = req.user;
@@ -864,10 +815,8 @@ const updateCartProductQuantity = async (req, res) => {
 
     // Update product quantity and total price
     const existingProduct = cartData.cart_products[existingProductIndex];
-    console.log(existingProduct);
 
     const quantityNow = productData.quantity - existingProduct.quantity;
-    console.log(quantityNow);
 
     if (quantityNow < cartQuantity) {
       const response = badResponse(
@@ -916,6 +865,60 @@ const updateCartProductQuantity = async (req, res) => {
     const response = badResponse(
       500,
       'An error occurred while updating cart product quantity',
+      error.message
+    );
+    return res.status(500).json(response);
+  }
+};
+
+// Delete Cart Product Handler
+const deleteCartProduct = async (req, res) => {
+  try {
+    const { uid } = req.user;
+    const { productId } = req.params;
+
+    // Get user's cart
+    const cartRef = db.collection('carts').doc(uid);
+    const cartSnapshot = await cartRef.get();
+    const cartData = cartSnapshot.data();
+
+    // Check if cart exists
+    if (!cartData) {
+      const response = badResponse(404, 'Cart not found');
+      return res.status(404).json(response);
+    }
+
+    // Find the product in the cart
+    const existingProductIndex = cartData.cart_products.findIndex(
+      (product) => product.product_id === productId
+    );
+
+    if (existingProductIndex === -1) {
+      const response = badResponse(
+        404,
+        `Product '${productId}' not found in the cart`
+      );
+      return res.status(404).json(response);
+    }
+
+    // Remove the product from the cart
+    cartData.cart_products.splice(existingProductIndex, 1);
+
+    // Update cart data
+    await cartRef.update({
+      cart_products: cartData.cart_products,
+    });
+
+    const response = successResponse(
+      200,
+      `Product '${productId}' removed from the cart`
+    );
+    return res.status(200).json(response);
+  } catch (error) {
+    console.error('Error:', error);
+    const response = badResponse(
+      500,
+      'An error occurred while deleting cart product',
       error.message
     );
     return res.status(500).json(response);

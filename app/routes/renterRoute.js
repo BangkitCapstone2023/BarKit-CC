@@ -5,7 +5,7 @@ import {
   getDashboardData,
   searchProduct,
   getAllCategories,
-  getSubCategoriesByName,
+  getSubCategoriesByCategory,
   getProductsBySubCategory,
   getProductById,
   getUserProfile,
@@ -29,12 +29,12 @@ import {
 router.get('/', getDashboardData);
 router.get('/search', searchProduct);
 router.get('/category', getAllCategories);
-router.get('/category/:name', getSubCategoriesByName);
+router.get('/category/:name', getSubCategoriesByCategory);
 router.get('/subcategory/:name/products', getProductsBySubCategory);
 router.get('/products/:productId', getProductById);
 
-router.use(authMiddleware);
 // Rute-rute yang membutuhkan otentikasi
+router.use(authMiddleware);
 // Profile Renter Routes
 router.get('/:username/profile', getUserProfile);
 router.put('/:username/profile', updateProfile);

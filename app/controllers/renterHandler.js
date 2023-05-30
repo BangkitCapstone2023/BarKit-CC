@@ -2,6 +2,7 @@ import { badResponse, successResponse } from '../utils/response.js';
 import { db } from '../config/configFirebase.js';
 import Fuse from 'fuse.js';
 
+// Dashboard Handler
 const getDashboardData = async (req, res) => {
   try {
     const productsSnapshot = await db.collection('products').get();
@@ -58,6 +59,8 @@ function getRandomElements(arr, count) {
   const shuffled = arr.sort(() => 0.5 - Math.random());
   return shuffled.slice(0, count);
 }
+
+// Search Products Handler
 const searchProduct = async (req, res) => {
   try {
     const { title, category } = req.body;
@@ -139,7 +142,7 @@ const searchProduct = async (req, res) => {
   }
 };
 
-// Mendapatkan semua kategori
+// Get All Categories Handler
 const getAllCategories = async (req, res) => {
   try {
     const snapshot = await db.collection('categories').get();
@@ -157,21 +160,21 @@ const getAllCategories = async (req, res) => {
   }
 };
 
-// Mendapatkan subkategori berdasarkan ID kategori
-const getSubCategoriesByName = async (req, res) => {
+// Get All Sub Categories By Category Handler
+const getSubCategoriesByCategory = async (req, res) => {
   const { name } = req.params;
 
   try {
-    const snapshot = await db
+    const categorySnapshoot = await db
       .collection('categories')
       .where('name', '==', name)
       .get();
 
-    if (snapshot.empty) {
+    if (categorySnapshoot.empty) {
       return res.status(404).json({ error: 'Category not found' });
     }
 
-    const categoryId = snapshot.docs[0].id;
+    const categoryId = categorySnapshoot.docs[0].id;
     const subCategoriesSnapshot = await db
       .collection('categories')
       .doc(categoryId)
@@ -191,10 +194,13 @@ const getSubCategoriesByName = async (req, res) => {
     return res.status(500).json({ error: 'Failed to get subcategories' });
   }
 };
+
+// Get All Product By Subcategories Handler
 const getProductsBySubCategory = async (req, res) => {
   try {
     const { name } = req.params;
 
+    // Get Product Data
     const productsSnapshot = await db
       .collection('products')
       .where('sub_category', '==', name)
@@ -205,7 +211,7 @@ const getProductsBySubCategory = async (req, res) => {
     for (const doc of productsSnapshot.docs) {
       const productData = doc.data();
 
-      // Fetch lessor data using lessor_id from the product
+      // Get lessor data
       const lessorSnapshot = await db
         .collection('lessors')
         .doc(productData.lessor_id)
@@ -250,6 +256,7 @@ const getProductsBySubCategory = async (req, res) => {
   }
 };
 
+// Detail Products Handler
 const getProductById = async (req, res) => {
   try {
     const { productId } = req.params;
@@ -306,6 +313,7 @@ const getProductById = async (req, res) => {
   }
 };
 
+// Get User Profile Handler
 const getUserProfile = async (req, res) => {
   try {
     const { username } = req.params;
@@ -354,12 +362,14 @@ const getUserProfile = async (req, res) => {
   }
 };
 
+// Update User Profile Handler
 const updateProfile = async (req, res) => {
   try {
     const { username } = req.params;
     const { uid } = req.user;
     const { name, address, phone, gender } = req.body;
 
+    // Check renters
     const renterSnapshot = await db
       .collection('renters')
       .where('username', '==', username)
@@ -370,12 +380,14 @@ const updateProfile = async (req, res) => {
       return res.status(404).json(response);
     }
 
+    // Check Auth Token
     const renterData = renterSnapshot.docs[0].data();
     if (renterData.renter_id !== uid) {
       const response = badResponse(403, 'Not allowed');
       return res.status(403).json(response);
     }
 
+    // Check Input Data For Edit
     const renterRef = renterSnapshot.docs[0].ref;
     const renterUpdateData = {};
 
@@ -432,11 +444,12 @@ const updateProfile = async (req, res) => {
   }
 };
 
+// Delete Account Renter Handler
 const deleteRenterById = async (req, res) => {
   try {
     const { renterId } = req.params;
 
-    // Hapus renter dari database
+    // Check renters
     const renterRef = db.collection('renters').doc(renterId);
     const renterDoc = await renterRef.get();
 
@@ -483,6 +496,7 @@ const deleteRenterById = async (req, res) => {
   }
 };
 
+// Create New Order Handler
 const createOrder = async (req, res) => {
   try {
     const { username, productId } = req.params;
@@ -585,6 +599,7 @@ const createOrder = async (req, res) => {
   }
 };
 
+// Get All Orders By Renter Handler
 const getOrdersByRenter = async (req, res) => {
   try {
     const { username } = req.params;
@@ -657,6 +672,7 @@ const getOrdersByRenter = async (req, res) => {
   }
 };
 
+// Update Order By Renter Handler
 const updateOrder = async (req, res) => {
   try {
     const { uid } = req.user;
@@ -731,6 +747,7 @@ const updateOrder = async (req, res) => {
   }
 };
 
+// Get Detail Order By Renter
 const getDetailOrdersByRenter = async (req, res) => {
   try {
     const { username, orderId } = req.params;
@@ -805,7 +822,7 @@ export {
   getDashboardData,
   searchProduct,
   getAllCategories,
-  getSubCategoriesByName,
+  getSubCategoriesByCategory,
   getProductsBySubCategory,
   getProductById,
   getUserProfile,

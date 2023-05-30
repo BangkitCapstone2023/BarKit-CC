@@ -17,8 +17,6 @@ import {
   getLessorOrderById,
   updateOrderStatusAndNotes,
   deleteLessorById,
-  shippedOrder,
-  cancelOrder,
 } from '../controllers/lessorHandler.js';
 
 router.use(authMiddleware);

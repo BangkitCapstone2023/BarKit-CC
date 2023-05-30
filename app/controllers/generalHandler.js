@@ -1,6 +1,7 @@
 import { badResponse, successResponse } from '../utils/response.js';
 import { db } from '../config/configFirebase.js';
 
+// Get All Lessor Hander
 const getAllLessors = async (req, res) => {
   try {
     // Get all lessors from Firestore
@@ -32,6 +33,7 @@ const getAllLessors = async (req, res) => {
   }
 };
 
+// Get Lessor By Id Handler
 const getLessorById = async (req, res) => {
   try {
     const { lessorId } = req.params;
@@ -99,17 +101,17 @@ const getImageByName = async (req, res) => {
   }
 };
 
+// Get All Images Handler
 const getAllImages = async (req, res) => {
   try {
-    // Mendapatkan instance Firestore
-    const productsSnapshot = await db.collection('products').get(); // Mendapatkan snapshot produk dari Firestore
+    const productsSnapshot = await db.collection('products').get();
 
     const allImages = [];
 
     // Iterate through the products snapshot
     productsSnapshot.forEach((productDoc) => {
       const productData = productDoc.data();
-      const imageUrl = productData.imageUrl; // Ambil data imageUrl dari field 'imageUrl' di dokument produk
+      const imageUrl = productData.imageUrl;
 
       if (imageUrl) {
         const image_id = productData.image_id; // Ambil data image_id dari field 'image_id' di dokument produk
@@ -131,6 +133,7 @@ const getAllImages = async (req, res) => {
   }
 };
 
+// Get All Renter Handler
 const getAllRenters = async (req, res) => {
   try {
     // Get all renters from Firestore
@@ -162,7 +165,7 @@ const getAllRenters = async (req, res) => {
   }
 };
 
-// Mengambil detail suatu order berdasarkan order_id
+// Get Renter By Id Handler
 const getRenterById = async (req, res) => {
   try {
     const { renterId } = req.params;
@@ -198,6 +201,7 @@ const getRenterById = async (req, res) => {
   }
 };
 
+// Add New Category Handler
 const addCategory = async (req, res) => {
   const { name } = req.body;
 
@@ -212,6 +216,7 @@ const addCategory = async (req, res) => {
     });
 };
 
+// Add New Sub Category Handler
 const addSubCategory = async (req, res) => {
   const { categoryId } = req.params;
   const { name } = req.body;
@@ -230,6 +235,7 @@ const addSubCategory = async (req, res) => {
     });
 };
 
+// Get All Product Handler
 const getAllProduct = async (req, res) => {
   try {
     // Get all renters from Firestore
@@ -257,6 +263,7 @@ const getAllProduct = async (req, res) => {
   }
 };
 
+// Get Product By Id Handler
 const getProductById = async (req, res) => {
   try {
     const { productId } = req.params;
@@ -292,7 +299,7 @@ const getProductById = async (req, res) => {
   }
 };
 
-// Mengambil seluruh order dari renter
+// Get All Order Handler
 const getAllOrders = async (req, res) => {
   try {
     const orderSnapshot = await db.collection('orders').get();
@@ -324,7 +331,7 @@ const getAllOrders = async (req, res) => {
   }
 };
 
-// Mengambil detail suatu order berdasarkan order_id
+// Get Order By Id Handler
 const getOrderById = async (req, res) => {
   try {
     const { orderId } = req.params;

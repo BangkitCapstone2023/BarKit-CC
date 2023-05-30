@@ -1,4 +1,4 @@
-import { createCanvas, loadImage } from 'canvas';
+import sharp from 'sharp';
 import * as tf from '@tensorflow/tfjs-node';
 import multer from 'multer';
 import { fileURLToPath } from 'url';
@@ -36,14 +36,9 @@ const subCategories = [
 
 const predictionModel = async (file, sub_category) => {
   try {
-    // Proses gambar yang diunggah
-    const image = await loadImage(file.buffer);
-    const canvas = createCanvas(150, 150);
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(image, 0, 0, 150, 150);
-
-    // Convert gambar canvas menjadi buffer
-    const buffer = canvas.toBuffer('image/jpeg');
+    // Proses gambar yang diunggah menggunakan sharp
+    const image = sharp(file.buffer).resize(150, 150);
+    const buffer = await image.toBuffer();
 
     // Load model dari file JSON
     const model = await tf.loadLayersModel(`file://${modelPath}`);

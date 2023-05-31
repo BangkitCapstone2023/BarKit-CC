@@ -19,4 +19,4 @@ steps:
 
   # Deploy container image to Cloud Run
   - name: 'gcr.io/cloud-builders/gcloud' 
-    args: ['run', 'deploy', '${_IMAGE_NAME}', '--image', 'asia-southeast2-docker.pkg.dev/$PROJECT_ID/${_SERVICE_NAME}/${_IMAGE_NAME}:${SHORT_SHA}', '--region', 'asia-southeast2', '--platform', 'managed', "--allow-unauthenticated"]
+    args: ['run', 'deploy', '${_IMAGE_NAME}', '--image', 'asia-southeast2-docker.pkg.dev/$PROJECT_ID/${_SERVICE_NAME}/${_IMAGE_NAME}:${SHORT_SHA}', '--region', 'asia-southeast2', '--platform', 'managed', "--allow-unauthenticated", '--tag', 'latest', '--allow-unauthenticated']

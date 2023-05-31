@@ -36,8 +36,6 @@ const getDashboardData = async (req, res) => {
       categories,
     };
 
-    console.log('testing dashbaord');
-
     const response = successResponse(
       200,
       'Dashboard data retrieved successfully',
@@ -65,7 +63,7 @@ function getRandomElements(arr, count) {
 // Search Products Handler
 const searchProduct = async (req, res) => {
   try {
-    const { title, category } = req.body;
+    const { title, category } = req.query;
 
     // Buat query pencarian berdasarkan judul dan kategori
     let query = db.collection('products');

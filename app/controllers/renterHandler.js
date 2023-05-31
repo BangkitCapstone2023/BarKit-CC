@@ -36,6 +36,8 @@ const getDashboardData = async (req, res) => {
       categories,
     };
 
+    console.log('testing dashbaord');
+
     const response = successResponse(
       200,
       'Dashboard data retrieved successfully',

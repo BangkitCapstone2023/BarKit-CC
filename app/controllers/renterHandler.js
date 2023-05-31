@@ -63,50 +63,51 @@ function getRandomElements(arr, count) {
 // Search Products Handler
 const searchProduct = async (req, res) => {
   try {
-    const { title, category } = req.body;
+    const { title, category } = req.query;
 
-    // Ambil semua data produk dari Firestore
-    const productsSnapshot = await db.collection('products').get();
-    const products = productsSnapshot.docs.map((doc) => doc.data());
+    // Buat query pencarian berdasarkan judul dan kategori
+    let query = db.collection('products');
 
-    // Buat opsi Fuse.js
-    const fuseOptions = {
-      keys: ['title'],
-      threshold: 0.3, // Nilai threshold (0 hingga 1) untuk pencocokan pencarian
-    };
+    if (title) {
+      // Menggunakan pencarian teks parsial (partial match) untuk mencari produk yang mirip
+      query = query
+        .where('title', '>=', title)
+        .where('title', '<=', title + '\uf8ff');
+      if (category) {
+        query = query.where('category', '==', category);
+      }
+    } else {
+      const response = badResponse(
+        404,
+        'Plese Enter a Word to search product',
+        error.message
+      );
+      return res.status(404).json(response);
+    }
 
-    // Buat instance Fuse dengan data produk dan opsi
-    const fuse = new Fuse(products, fuseOptions);
+    // Ambil data produk yang sesuai dengan query
+    const querySnapshot = await query.get();
+    const products = querySnapshot.docs.map((doc) => doc.data());
 
-    // Lakukan pencarian menggunakan Fuse.js
-    const searchResults = fuse.search(title);
-
-    // Filter berdasarkan kategori jika diberikan
-    const filteredResults = searchResults.filter((result) => {
-      return category ? result.item.category === category : true;
-    });
-
-    // Ambil hanya properti yang diperlukan dari hasil pencarian
+    // Format data produk yang diperlukan
     const formattedResults = await Promise.all(
-      filteredResults.map(async (result) => {
+      products.map(async (product) => {
         const lessorSnapshot = await db
           .collection('lessors')
-          .doc(result.item.lessor_id)
+          .doc(product.lessor_id)
           .get();
         const lessorData = lessorSnapshot.data();
         const { storeFullName, storeAddress, storePhone } = lessorData;
 
         const {
-          item: {
-            product_id,
-            title,
-            category,
-            sub_category,
-            price,
-            quantity,
-            imageUrl,
-          },
-        } = result;
+          product_id,
+          title,
+          category,
+          sub_category,
+          price,
+          quantity,
+          imageUrl,
+        } = product;
 
         return {
           product_id,

@@ -101,6 +101,9 @@ const logout = async (req, res) => {
 
     const token = authorization.split('Bearer ')[1];
 
+    // Tandai token sebagai tidak valid di Firestore
+    await db.collection('tokens').doc(token).set({ invalid: true });
+
     await admin.auth().revokeRefreshTokens(uid);
 
     const logoutTime = formattedTimestamp;

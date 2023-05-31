@@ -21,6 +21,12 @@ const authMiddleware = async (req, res, next) => {
     const decodedToken = await admin.auth().verifyIdToken(token);
     req.user = decodedToken;
 
+    const docRef = db.collection('tokens').doc(token);
+    const doc = await docRef.get();
+    if (doc.exists && doc.data().invalid) {
+      throw new Error('Login Session Expire');
+    }
+
     next();
   } catch (error) {
     console.error(error.message);

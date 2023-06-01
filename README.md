@@ -98,10 +98,13 @@ To run this project, you will need to add the following credential file to app/c
     <li><a href="https://firebase.google.com/docs/web/setup">Firebase Config/Client</a></li>
     <li><a href="https://cloud.google.com/storage/docs/apis">Cloud Storage Credential</a></li>
   </ul>
+  
 _Note:_ Change the name file
-  * Firebase Admin SDK = firebaseAccountKey2.json
-  * Firebase Config = firebaseClientConfig2.json
-  * Cloud Storage Credential = cloudStorageKey2.json
+  <ul>
+    <li>Firebase Admin SDK = firebaseAccountKey2.json</li>
+    <li>Firebase Config = firebaseClientConfig2.json</li>
+    <li>Cloud Storage Credential = cloudStorageKey2.json</li>
+  </ul>
 
 <!-- Getting Started -->
 ## 	:toolbox: Getting Started
@@ -135,7 +138,7 @@ Follow this step to run this repostory code in your local device:
    ```sh
    npm install
    ```
-4. Make sure you already have the credential file (refer to the [Credential File](#key-credential-file) section) and store it in the `app/config` folder.
+4. Make sure you already have the [Credential File](#key-credential-file) and store it in the `app/config` folder.
 5. Start the server
    ```sh
    npm start, or

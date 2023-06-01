@@ -148,11 +148,11 @@ Follow this step to run this repostory code in your local device:
 <!-- Deployment -->
 ### :triangular_flag_on_post: Deployment
 
-To deploy this project we are using cloud run at GCP (you can use another way), but this is the way to deploy it at cloud run:
+To deploy this project we are using cloud run at GCP (you can use another service), this is the way to deploy it at cloud run:
 
-1. Make sure your cmd/git path already at BarKit-CC folder
+1. Build Container Image
 ```bash
-  docker build -t IMAGE-NAME
+  docker build -t IMAGE-NAME . 
 ```
 2. Run the docker image for make sure everything okay
   ```bash

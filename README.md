@@ -71,31 +71,17 @@
 <!-- TechStack -->
 ### :space_invader: Tech Stack
 
-<details>
-  <summary>BackEnd</summary>
-  <ul>
-    <li><a href="https://expressjs.com/">Express.js</a></li>
-    <li><a href="https://www.tensorflow.org/js">Tensorflow.js</a></li>
-    <li><a href="https://firebase.google.com/docs/reference/node">Firebase Javascript SDK</a></li>
-  </ul>
-</details>
+  <h4>BackEnd:</h4>
+  <img src="https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white" />
+  <img src="https://img.shields.io/badge/TensorFlow-FF6F00?style=for-the-badge&logo=tensorflow&logoColor=white" />
+  <img src="https://img.shields.io/badge/firebase-ffca28?style=for-the-badge&logo=firebase&logoColor=black" />
 
-<details>
-<summary>Database & GCP Resource</summary>
-  <ul>
-    <li><a href="https://firebase.google.com/docs/firestore">Cloud Firestore</a></li>
-    <li><a href="https://cloud.google.com/storage/docs">Cloud Storage</a></li>
-    <li><a href="https://cloud.google.com/run/docs">Cloud Run</a></li>
-  </ul>
-</details>
+<h4>Cloud:</h4>
+  <img src="https://img.shields.io/badge/Google_Cloud-4285F4?style=for-the-badge&logo=google-cloud&logoColor=white" />
 
-<details>
-<summary>Tools</summary>
-  <ul>
-    <li><a href="https://www.docker.com/">Docker</a></li>
-    <li><a href="https://app.diagrams.net/">Draw Io</a></li>
-  </ul>
-</details>
+<h4>Tools:</h4>
+  <img src="https://img.shields.io/badge/Docker-2CA5E0?style=for-the-badge&logo=docker&logoColor=white" />
+  <img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" />
 
 <!-- Features -->
 ### :dart: Features

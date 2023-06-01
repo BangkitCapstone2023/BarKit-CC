@@ -1,11 +1,3 @@
-<!--
-Hey, thanks for using the awesome-readme-template template.  
-If you have any enhancements, then fork this project and create a pull request 
-or just open an issue with the label "enhancement".
-
-Don't forget to give this project a star for additional support ;)
-Maybe you can mention me or this repo in the acknowledgements too
--->
 <div align="center">
 
   <img src="https://github.com/BangkitCapstone2023/BarKit-CC/assets/72277295/2336c3c0-b237-4a17-8cd4-f66502d25547" alt="logo" width="200" height="auto" />
@@ -53,20 +45,13 @@ Maybe you can mention me or this repo in the acknowledgements too
   * [Screenshots](#camera-screenshots)
   * [Tech Stack](#space_invader-tech-stack)
   * [Features](#dart-features)
-  * [Color Reference](#art-color-reference)
-  * [Environment Variables](#key-environment-variables)
+  * [Environment Variables](#key-credential-file)
 - [Getting Started](#toolbox-getting-started)
   * [Prerequisites](#bangbang-prerequisites)
-  * [Installation](#gear-installation)
-  * [Running Tests](#test_tube-running-tests)
   * [Run Locally](#running-run-locally)
   * [Deployment](#triangular_flag_on_post-deployment)
 - [Usage](#eyes-usage)
-- [Roadmap](#compass-roadmap)
 - [Contributing](#wave-contributing)
-  * [Code of Conduct](#scroll-code-of-conduct)
-- [FAQ](#grey_question-faq)
-- [License](#warning-license)
 - [Contact](#handshake-contact)
 - [Acknowledgements](#gem-acknowledgements)
 
@@ -120,13 +105,17 @@ You can see all api feature at our [API documentation](https://documenter.getpos
 <!-- Env Variables -->
 ### :key: Credential File 
 
-To run this project, you will need to add the following credential file to app/config Folder
+To run this project, you will need to add the following credential file to app/config folder
 
   <ul>
-    <li><a href="https://www.mysql.com/">Firebase Admin</a></li>
-    <li><a href="https://www.postgresql.org/">Firebase Client</a></li>
-    <li><a href="https://redis.io/">Cloud Storage Credential</a></li>
+    <li><a href="https://firebase.google.com/docs/admin/setup">Firebase Admin SDK</a></li>
+    <li><a href="https://firebase.google.com/docs/web/setup">Firebase Config/Client</a></li>
+    <li><a href="https://cloud.google.com/storage/docs/apis">Cloud Storage Credential</a></li>
   </ul>
+_Note:_ Change the name file
+  * Firebase Admin SDK = firebaseAccountKey2.json
+  * Firebase Config = firebaseClientConfig2.json
+  * Cloud Storage Credential = cloudStorageKey2.json
 
 <!-- Getting Started -->
 ## 	:toolbox: Getting Started
@@ -136,13 +125,13 @@ To run this project, you will need to add the following credential file to app/c
 
 This project uses NPM as package manager
 
-* Install node.js version 14.21.3 <a href="https://nodejs.org/en/blog/release/v14.21.3">*Here*<a/>
+* Install node.js version 14.21.3 <a href="https://nodejs.org/en/blog/release/v14.21.3">*here*<a/>
 * Make sure your node.js and npm already install in your device using, open cmd and run:
   ```bash
   node -v
   npm -v
   ```
-  *Note: In development we are using node version 14.21.3 and npm version 6.14.18*
+  _Note: In development we are using **node version 14.21.3** and **npm version 6.14.18**_
 
 <!-- Installation -->
 ### :running: Run Locally
@@ -180,7 +169,7 @@ To deploy this project we are using cloud run at GCP (you can use another way), 
   ```bash
   docker run -p 8080:8080 IMAGE-NAME
   ```
- 3. Make a <a href="https://cloud.google.com/artifact-registry/docs/repositories/create-repos">repostory at artifact registery<a/a>
+ 3. Make a <a href="https://cloud.google.com/artifact-registry/docs/repositories/create-repos">repostory at artifact registery</a>
  4. Push the <a href="https://cloud.google.com/artifact-registry/docs/docker/pushing-and-pulling">Docker image to a artifact registery</a>
    ```bash
   docker tag barkit-image docker tag SOURCE-IMAGE LOCATION-docker.pkg.dev/PROJECT-ID/REPOSITORY/IMAGE:TAG
@@ -189,7 +178,7 @@ To deploy this project we are using cloud run at GCP (you can use another way), 
   5. Create a <a href="https://cloud.google.com/run/docs/deploying">cloud run service </a> and use your image at artifac registery repostory
   6. Check your deployed API Link
   
-  Note: 
+  _Note:_
   1. Replace IMAGE-NAME, PROJECT-ID, REPOSTORY, TAG, YOUR-TAGGED-IMAGE-NAME according to what you have/want
   2. You can also use our cloudbuild.yaml file to CI/CD using cloud build at GCP, but dont forget to replace some variabel there
 
@@ -201,28 +190,18 @@ To deploy this project we are using cloud run at GCP (you can use another way), 
 <!-- Contributing -->
 ## :wave: Contributing
 
-<a href="https://github.com/Louis3797/BangkitCapstone2023/BarKit-CC/contributors">
+<h5>Contributtor in this repostory:</h5>
+<a href="https://github.com/BangkitCapstone2023/BarKit-CC/contributors">
   <img src="https://contrib.rocks/image?repo=BangkitCapstone2023/BarKit-CC" />
 </a>
 
-
 Contributions are always welcome!
-
-See `contributing.md` for ways to get started.
-
-
-<!-- Code of Conduct -->
-### :scroll: Code of Conduct - Coming Soon
-
-<!-- License -->
-## :warning: License - Coming Soon
+See [CONTRIBUTING.md](https://github.com/BangkitCapstone2023/BarKit-CC/blob/main/CONTRIBUTING.md) for ways to get started.
 
 <!-- Contact -->
 ## :handshake: Contact
 
 Muhammad Thoriq Ali Said - [LinkedIn](https://www.linkedin.com/in/thoriqas/) - [Github](https://github.com/Muhthoriqas) - [Instagram](https://www.instagram.com/mthoriq_as/)
-
-Project Link: [https://github.com/Louis3797/awesome-readme-template](https://github.com/Louis3797/awesome-readme-template)
 
 <!-- Acknowledgments -->
 ## :gem: Acknowledgements

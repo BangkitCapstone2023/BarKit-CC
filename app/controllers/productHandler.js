@@ -41,7 +41,7 @@ const addProduct = async (req, res) => {
         .where('username', '==', username)
         .get();
       if (userSnapshot.empty) {
-        const response = badResponse(404, `User '${username}' not found aefae`);
+        const response = badResponse(404, `User '${username}' not found`);
         return res.status(404).json(response);
       }
 
@@ -51,7 +51,7 @@ const addProduct = async (req, res) => {
       const isLessor = renterData.isLessor;
       if (isLessor !== true) {
         const response = badResponse(403, `User '${username}' is not a lessor`);
-        return res.status(400).json(response);
+        return res.status(403).json(response);
       }
 
       // Check auth token
@@ -159,7 +159,7 @@ const addProduct = async (req, res) => {
                 409,
                 `Product '${title}' already exists for the lessor, plese use another title`
               );
-              return res.status(400).json(response);
+              return res.status(409).json(response);
             }
 
             const productDocRef = db.collection('products').doc();
@@ -315,7 +315,7 @@ const updateProductById = async (req, res) => {
 
       // Cek apakah item ID dan username valid
       if (!productId || !username) {
-        const response = badResponse(400, 'Product or  username not valid');
+        const response = badResponse(400, 'Product or username not valid');
         return res.status(400).json(response);
       }
 
@@ -606,6 +606,12 @@ const addProductToCart = async (req, res) => {
       return res.status(400).json(response);
     }
 
+    // Check if product is available
+    if (cartQuantity < 1) {
+      const response = badResponse(400, `Minimum 1 Quantity to add to cart`);
+      return res.status(400).json(response);
+    }
+
     if (productData.quantity < cartQuantity) {
       const response = badResponse(
         400,
@@ -742,10 +748,33 @@ const getCartProductsByRenter = async (req, res) => {
       .where(admin.firestore.FieldPath.documentId(), 'in', productIds)
       .get();
 
-    const cart_products = productSnapshot.docs.map((doc) => ({
-      product_id: doc.id,
-      ...doc.data(),
-    }));
+    if (productSnapshot.empty) {
+      const response = successResponse(
+        200,
+        `Cart products retrieved successfully, but ${username} dont have a product in cart`
+      );
+      return res.status(200).json(response);
+    }
+
+    const cart_products = productSnapshot.docs.map((doc) => {
+      const { quantity, username, lessor_id, image_id, ...rest } = doc.data();
+      return { ...rest };
+    });
+
+    const cart_product = cart_products.map((cartProduct) => {
+      const matchingCartItem = cartProducts.find(
+        (item) => item.product_id === cartProduct.product_id
+      );
+
+      if (matchingCartItem) {
+        return {
+          ...cartProduct,
+          ...matchingCartItem,
+        };
+      }
+
+      return cartProduct;
+    });
 
     const response = successResponse(
       200,
@@ -754,13 +783,13 @@ const getCartProductsByRenter = async (req, res) => {
         cart_id: cartData.cart_id,
         renter_id: cartData.renter_id,
         username: cartData.username,
-        cart_products,
+        cart_product,
       }
     );
 
     return res.status(200).json(response);
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error:', error.message);
     const response = badResponse(
       500,
       'An error occurred while retrieving cart products',
@@ -816,12 +845,10 @@ const updateCartProductQuantity = async (req, res) => {
     // Update product quantity and total price
     const existingProduct = cartData.cart_products[existingProductIndex];
 
-    const quantityNow = productData.quantity - existingProduct.quantity;
-
-    if (quantityNow < cartQuantity) {
+    if (productData.quantity < cartQuantity) {
       const response = badResponse(
         400,
-        `You already cart ${existingProduct.quantity} for this product, the avalable quantity is ${quantityNow}`
+        `The maximum quantity for this product is ${productData.quantity}`
       );
       return res.status(400).json(response);
     }
@@ -838,6 +865,9 @@ const updateCartProductQuantity = async (req, res) => {
     // If quantity is 0, remove the product from the cart
     if (cartQuantity === 0) {
       cartData.cart_products.splice(existingProductIndex, 1);
+      await cartRef.update({
+        cart_products: cartData.cart_products,
+      });
       const response = successResponse(
         200,
         `Product deleted successfully because quantity was edit to 0`
@@ -875,7 +905,7 @@ const updateCartProductQuantity = async (req, res) => {
 const deleteCartProduct = async (req, res) => {
   try {
     const { uid } = req.user;
-    const { productId } = req.params;
+    const { productId, username } = req.params;
 
     // Get user's cart
     const cartRef = db.collection('carts').doc(uid);
@@ -887,16 +917,35 @@ const deleteCartProduct = async (req, res) => {
       const response = badResponse(404, 'Cart not found');
       return res.status(404).json(response);
     }
+    const renterSnapshot = await db
+      .collection('renters')
+      .where('username', '==', username)
+      .get();
+    const renterData = renterSnapshot.docs[0].data();
+
+    const renterId = renterData.renter_id;
+
+    // Check Auth Token
+    if (renterId !== uid) {
+      const response = badResponse(403, 'Not allowed');
+      return res.status(403).json(response);
+    }
 
     // Find the product in the cart
     const existingProductIndex = cartData.cart_products.findIndex(
       (product) => product.product_id === productId
     );
 
+    const productSnapshot = await db
+      .collection('products')
+      .where('product_id', '==', productId)
+      .get();
+    const productData = productSnapshot.docs[0].data();
+
     if (existingProductIndex === -1) {
       const response = badResponse(
         404,
-        `Product '${productId}' not found in the cart`
+        `Product '${productData.title}' not found in the cart`
       );
       return res.status(404).json(response);
     }
@@ -911,7 +960,7 @@ const deleteCartProduct = async (req, res) => {
 
     const response = successResponse(
       200,
-      `Product '${productId}' removed from the cart`
+      `Product '${productData.title}' removed from the cart`
     );
     return res.status(200).json(response);
   } catch (error) {

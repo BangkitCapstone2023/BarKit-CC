@@ -32,8 +32,8 @@ const registerLessor = async (req, res) => {
         .map((field) => `${field} is required`)
         .join('. ');
 
-      const response = badResponse(404, errorMessage);
-      return res.status(404).json(response);
+      const response = badResponse(400, errorMessage);
+      return res.status(400).json(response);
     }
 
     // Check renters exist
@@ -70,7 +70,7 @@ const registerLessor = async (req, res) => {
         409,
         `User '${req.params.username}' is already a lessor`
       );
-      return res.status(404).json(response);
+      return res.status(409).json(response);
     }
 
     // Save data to firestore
@@ -468,8 +468,8 @@ const updateOrderStatusAndNotes = async (req, res) => {
     // Update status orderan sesuai permintaan
     const allowedStatus = ['pending', 'process', 'cancelled', 'shipped'];
     if (!allowedStatus.includes(status)) {
-      const response = badResponse(404, 'Invalid status value');
-      return res.status(404).json(response);
+      const response = badResponse(400, 'Invalid status value');
+      return res.status(400).json(response);
     }
 
     // Persiapan data yang akan diupdate
@@ -501,144 +501,12 @@ const updateOrderStatusAndNotes = async (req, res) => {
   }
 };
 
-// Konfirmasi pengiriman orderan
-const shippedOrder = async (req, res) => {
-  try {
-    const { username, orderId } = req.params;
-    const { confirm, notes } = req.body;
-
-    const lessorSnapshot = await db
-      .collection('lessors')
-      .where('username', '==', username)
-      .get();
-
-    if (lessorSnapshot.empty) {
-      const response = badResponse(404, `Lessor '${username}' not found`);
-      return res.status(404).json(response);
-    }
-
-    const lessorId = lessorSnapshot.docs[0].id;
-
-    const orderRef = db.collection('orders').doc(orderId);
-    const orderDoc = await orderRef.get();
-
-    if (!orderDoc.exists) {
-      const response = badResponse(404, 'Order not found');
-      return res.status(404).json(response);
-    }
-
-    const orderData = orderDoc.data();
-
-    // Pastikan orderan masih dalam status 'pending'
-    if (orderData.status !== 'pending') {
-      const response = badResponse(403, 'Order cannot be modified');
-      return res.status(403).json(response);
-    }
-
-    if (confirm) {
-      // Update status orderan menjadi 'shipped' dan tambahkan catatan opsional
-      const updatedData = { status: 'shipped' };
-      if (notes !== undefined) {
-        updatedData.notes = notes;
-      }
-
-      await orderRef.update(updatedData);
-
-      const response = successResponse(200, 'Order shipment confirmed');
-
-      return res.status(200).json(response);
-    } else {
-      const response = badResponse(404, 'Order shipment confirmation declined');
-      return res.status(404).json(response);
-    }
-  } catch (error) {
-    console.error('Error while confirming order shipment:', error);
-
-    const response = badResponse(
-      500,
-      'Error while confirming order shipment:',
-      error.message
-    );
-    return res.status(500).json(response);
-  }
-};
-
-// Konfirmasi pengiriman orderan
-const cancelOrder = async (req, res) => {
-  try {
-    const { username, orderId } = req.params;
-    const { confirm, notes } = req.body;
-
-    const lessorSnapshot = await db
-      .collection('lessors')
-      .where('username', '==', username)
-      .get();
-
-    if (lessorSnapshot.empty) {
-      const response = badResponse(404, `Lessor '${username}' not found`);
-      return res.status(404).json(response);
-    }
-
-    const lessorId = lessorSnapshot.docs[0].id;
-
-    const orderRef = db.collection('orders').doc(orderId);
-    const orderDoc = await orderRef.get();
-
-    if (!orderDoc.exists) {
-      const response = badResponse(404, 'Order not found');
-      return res.status(404).json(response);
-    }
-
-    const orderData = orderDoc.data();
-
-    // Pastikan orderan masih dalam status 'pending'
-    if (orderData.status !== 'shipped') {
-      const response = badResponse(
-        409,
-        'Status cannot be modified because already shipped'
-      );
-      return res.status(403).json(response);
-    }
-
-    if (confirm) {
-      // Update status orderan menjadi 'shipped' dan tambahkan catatan opsional
-      const updatedData = { status: 'cancelled' };
-      if (notes !== undefined) {
-        updatedData.notes = notes;
-      }
-
-      await orderRef.update(updatedData);
-
-      const response = successResponse(200, 'Order Canclled');
-      return res.status(200).json(response);
-    } else {
-      const response = badResponse(
-        404,
-        'Order cancelled confirmation declined'
-      );
-
-      return res.status(404).json(response);
-    }
-  } catch (error) {
-    console.error('Error while confirming order shipment:', error);
-
-    const response = badResponse(
-      500,
-      'Error while confirming order shipment',
-      error.message
-    );
-    return res.status(500).json(response);
-  }
-};
-
 export {
   registerLessor,
   getLessorProfile,
   updateLessor,
+  deleteLessorById,
   getOrdersByLessor,
   getLessorOrderById,
   updateOrderStatusAndNotes,
-  shippedOrder,
-  cancelOrder,
-  deleteLessorById,
 };

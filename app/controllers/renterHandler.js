@@ -78,11 +78,11 @@ const searchProduct = async (req, res) => {
       }
     } else {
       const response = badResponse(
-        404,
+        400,
         'Plese Enter a Word to search product',
         error.message
       );
-      return res.status(404).json(response);
+      return res.status(400).json(response);
     }
 
     // Ambil data produk yang sesuai dengan query
@@ -265,7 +265,7 @@ const getProductById = async (req, res) => {
     const productDoc = await db.collection('products').doc(productId).get();
 
     if (!productDoc.exists) {
-      const response = badResponse(404, 'Product not founs');
+      const response = badResponse(404, 'Product not found');
 
       return res.status(404).json(response);
     }
@@ -455,10 +455,7 @@ const deleteRenterById = async (req, res) => {
     const renterDoc = await renterRef.get();
 
     if (!renterDoc.exists) {
-      const response = badResponse(
-        404,
-        `Renter with ID '${renterId}' not found`
-      );
+      const response = badResponse(404, `Renter not found`);
       return res.status(404).json(response);
     }
 

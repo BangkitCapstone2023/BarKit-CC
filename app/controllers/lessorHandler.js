@@ -392,7 +392,7 @@ const getLessorOrderById = async (req, res) => {
 
     const renterSnapshot = await db
       .collection('renters')
-      .where('id', '==', orderData.renter_id)
+      .where('renter_id', '==', orderData.renter_id)
       .get();
 
     const renterData = renterSnapshot.docs[0].data();
@@ -476,6 +476,30 @@ const updateOrderStatusAndNotes = async (req, res) => {
     const updateData = { status };
     if (notes) {
       updateData.notes = notes;
+    }
+
+    if (status === 'shipped') {
+      const orderProductRef = db
+        .collection('products')
+        .doc(orderData.product_id);
+      const orderProductDoc = await orderProductRef.get();
+
+      if (orderProductDoc.exists) {
+        const orderProductData = orderProductDoc.data();
+        const quantityOrder = orderData.quantity_order;
+
+        // Mengurangi quantity produk berdasarkan quantity_order
+        const updatedQuantity = orderProductData.quantity - quantityOrder;
+
+        // Pastikan quantity tidak menjadi negatif
+        if (updatedQuantity < 0) {
+          const response = badResponse(400, 'Insufficient product quantity');
+          return res.status(400).json(response);
+        }
+
+        // Update quantity produk
+        await orderProductRef.update({ quantity: updatedQuantity });
+      }
     }
 
     await orderRef.update(updateData);

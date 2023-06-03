@@ -540,6 +540,14 @@ const createOrder = async (req, res) => {
     const lessor_id = productData.lessor_id;
     const product_id = productId;
 
+    if (productData.quantity < quantity_order) {
+      const response = badResponse(
+        400,
+        `The maximum order quantity for this product is ${productData.quantity}`
+      );
+      return res.status(400).json(response);
+    }
+
     const lessorSnapshot = await db.collection('lessors').doc(lessor_id).get();
 
     const lessorData = lessorSnapshot.data();
@@ -631,25 +639,44 @@ const getOrdersByRenter = async (req, res) => {
 
     // Check Orders By Renter
     if (orderRenter.empty) {
-      const response = badResponse(404, 'Renter is dont have order yet');
+      const response = badResponse(404, 'Renter does not have any orders yet');
       return res.status(404).json(response);
     }
+
     const orders = [];
 
     // Mengambil seluruh order by renter
-    orderRenter.forEach((doc) => {
+    for (const doc of orderRenter.docs) {
       const orderData = doc.data();
-      orders.push({
-        order_id: doc.id,
-        delivery_address: orderData.delivery_address,
-        start_rent_date: orderData.start_rent_date,
-        end_rent_date: orderData.end_rent_date,
-        quantity_order: orderData.quantity_order,
-        payment_use: orderData.payment_use,
-        kurir: orderData.kurir,
-        status: orderData.status,
-      });
-    });
+
+      // Mengambil data produk terkait
+      const productSnapshot = await db
+        .collection('products')
+        .doc(orderData.product_id)
+        .get();
+
+      // Memastikan produk tersedia
+      if (productSnapshot.exists) {
+        const productData = productSnapshot.data();
+
+        orders.push({
+          order_id: doc.id,
+          delivery_address: orderData.delivery_address,
+          start_rent_date: orderData.start_rent_date,
+          end_rent_date: orderData.end_rent_date,
+          quantity_order: orderData.quantity_order,
+          payment_use: orderData.payment_use,
+          kurir: orderData.kurir,
+          status: orderData.status,
+          title: productData.title,
+          description: productData.description,
+          price: productData.price,
+          imageUrl: productData.imageUrl,
+          categori: productData.categori,
+          sub_category: productData.sub_category,
+        });
+      }
+    }
 
     const response = successResponse(
       200,

@@ -1,6 +1,5 @@
 import { badResponse, successResponse } from '../utils/response.js';
 import { db } from '../config/configFirebase.js';
-import Fuse from 'fuse.js';
 
 // Dashboard Handler
 const getDashboardData = async (req, res) => {
@@ -153,6 +152,8 @@ const getAllCategories = async (req, res) => {
       const data = doc.data();
       categories.push({ id: doc.id, name: data.name });
     });
+
+    console.log('Working 5 Juni ');
 
     return res.status(200).json(categories);
   } catch (error) {

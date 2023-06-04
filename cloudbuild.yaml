@@ -1,11 +1,20 @@
 steps:
+
+  # Retrieve the config.json file
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        gcloud secrets versions access latest --secret="config-file" --format='get(payload.data)' | base64 -d > app/config/${_CONFIG_NAME}
+        
   # Retrieve the cloud-storage-credential secret
   - name: 'gcr.io/cloud-builders/gcloud'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
-        gcloud secrets versions access latest --secret="cloud-storage-credential" --format='get(payload.data)' | base64 -d > app/config/cloudStorageKey2.json
+        gcloud secrets versions access latest --secret="cloud-storage-credential" --format='get(payload.data)' | base64 -d > app/config/${_CONFIG_STORAGE_NAME}
 
   # Retrieve the firebase-config secret
   - name: 'gcr.io/cloud-builders/gcloud'
@@ -13,7 +22,7 @@ steps:
     args:
       - '-c'
       - |
-        gcloud secrets versions access latest --secret="firebase-config" --format='get(payload.data)' | base64 -d > app/config/firebaseClientConfig2.json
+        gcloud secrets versions access latest --secret="firebase-config" --format='get(payload.data)' | base64 -d > app/config/${_CONFIG_FIREBASE_NAME}
 
   # Retrieve the firebase-admin secret
   - name: 'gcr.io/cloud-builders/gcloud'
@@ -21,7 +30,7 @@ steps:
     args:
       - '-c'
       - |
-        gcloud secrets versions access latest --secret="firebase-admin" --format='get(payload.data)' | base64 -d > app/config/firebaseAccountKey2.json
+        gcloud secrets versions access latest --secret="firebase-admin" --format='get(payload.data)' | base64 -d > app/config/${_CONFIG_FIREBASE_ADMIN_NAME}
 
   # Build the container image
   - name: 'gcr.io/cloud-builders/docker'

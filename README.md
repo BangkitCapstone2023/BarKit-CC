@@ -120,7 +120,8 @@ This project uses NPM as package manager
   
 * [Docker](https://www.docker.com/) (if you want to run this repostory with docker)
 * Google Cloud Platform Account (If You want to to deploy it in GCP)
-  _Note: We already deploy our API but the database we are using is still free tier (firebase spark), not the final delivery, and for cloud run we are setting to maximun 2 instances, this for saving GCP money, we will update the credetail to "real credential" and higher cloud run instaces and cpu capacity , no later than 11 June 2023
+  
+  _Note: We already deploy our API but the database we are using is still free tier (firebase spark), not the final delivery databases, and for cloud run we are setting to maximun 2 instances, this for saving GCP money, we will update the credetail to "real credential" and higher cloud run instaces and cpu capacity , no later than 11 June 2023_
 
 <!-- Installation -->
 ### :running: Run Locally With NPM

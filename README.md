@@ -48,8 +48,9 @@
   * [Environment Variables](#key-credential-file)
 - [Getting Started](#toolbox-getting-started)
   * [Prerequisites](#bangbang-prerequisites)
-  * [Run Locally](#running-run-locally)
-  * [Deployment](#triangular_flag_on_post-deployment)
+  * [Run Locally With NPM](#running-run-locally-with-npm)
+  * [Run Locally With Docker](#whale2-run-locally-with-docker-coming-soon)
+  * [Deployment](#cloud-deployment)
 - [Usage](#eyes-usage)
 - [Contributing](#wave-contributing)
 - [Contact](#handshake-contact)
@@ -91,12 +92,12 @@ You can see all api feature at our [API documentation](https://documenter.getpos
 <!-- Env Variables -->
 ### :key: Credential File 
 
-To run this project, you will need to add the following credential file to app/config folder
+To run this project, you will need to add the following credential file to `app/config` folder
 
   <ul>
-    <li><a href="https://firebase.google.com/docs/admin/setup">Firebase Admin SDK</a></li>
-    <li><a href="https://firebase.google.com/docs/web/setup">Firebase Config/Client</a></li>
-    <li><a href="https://cloud.google.com/storage/docs/apis">Cloud Storage Credential</a></li>
+    <li><a href="https://firebase.google.com/docs/admin/setup">Firebase Admin SDK</a> <br /> Go to firebase console -> pick your project -> project setting -> service account tab -> genereate new private key -> change the file to firebaseAccountKey2.json</li>
+    <li><a href="https://firebase.google.com/docs/web/setup">Firebase Config/Client</a> <br /> Go to firebase console -> pick your project -> project setting -> in general tab scroll down -> click add app button -> pick web logo "<\>" -> fill app nickname & click register app -> copy all <em>const firebaseConfig</em> variabel value -> make a new notepad and name it with firebaseClientConfig2.json -> paste value from firebaseConfig variabel before</li>
+    <li><a href="https://cloud.google.com/storage/docs/apis">Cloud Storage Credential</a> <br /> Go to google cloud console -> go to IAM & Admin tab -> service account -> create service account -> fill service account name (ex: cloud-storage-barkit-admin) -> select the role to cloud storage admin -> click done -> click your service account you already created -> go to KEYS tab -> click add key -> create new key -> pick json -> create -> and rename it to cloudStorageKey2.json </li>
   </ul>
   
 _Note:_ Change the name file
@@ -105,7 +106,9 @@ _Note:_ Change the name file
     <li>Firebase Config = firebaseClientConfig2.json</li>
     <li>Cloud Storage Credential = cloudStorageKey2.json</li>
   </ul>
-
+  
+  <em>Note: if you are someone i know, request & <strong>download our credential</strong> <a href="https://drive.google.com/drive/folders/1nNdzHuIT3-UUD0rRbfC111-mpkefqcfc?usp=sharing">Here</a></em>
+  
 <!-- Getting Started -->
 ## 	:toolbox: Getting Started
 
@@ -114,16 +117,19 @@ _Note:_ Change the name file
 
 This project uses NPM as package manager
 
-* Install node.js version 14.21.3 <a href="https://nodejs.org/en/blog/release/v14.21.3">*here*<a/>
-* Make sure your node.js and npm already install in your device using, open cmd and run:
+* Install node.js version 14.21.3 <a href="https://nodejs.org/en/blog/release/v14.21.3">*here*<a/> <br />
+  Make sure your node.js and npm already install in your device using, open cmd and run:
   ```bash
   node -v
   npm -v
   ```
-  _Note: In development we are using **node version 14.21.3** and **npm version 6.14.18**_
+  _Note: In development we are using Windows 10 pro, Visual studio code, **node version 14.21.3** ,and **npm version 6.14.18**_
+  
+* [Docker](https://www.docker.com/) (if you want to run this repostory with docker)
+* Google Cloud Platform Account (If You want to to deploy it in GCP)
 
 <!-- Installation -->
-### :running: Run Locally
+### :running: Run Locally With NPM
 
 Follow this step to run this repostory code in your local device:
   1. Clone the repo
@@ -139,14 +145,19 @@ Follow this step to run this repostory code in your local device:
    npm install
    ```
 4. Make sure you already have the [Credential File](#key-credential-file) and store it in the `app/config` folder.
-5. Start the server
+5. Change databaseURL value at app/config/configFirebase.js file, to your databaseURL (ex : https://{projectName}.firebaseio.com)
+5. Change projectId and bucketName value at app/configCloudStorage.js file, to your GCP project id and bucket name 
+6. Start the server
    ```sh
    npm start, or
    npm run dev (using nodemon)
+ 
+ _Note: Steps 4-6 are only performed if you do not have access to [Our Credential](https://drive.google.com/drive/folders/1nNdzHuIT3-UUD0rRbfC111-mpkefqcfc?usp=share_link). If you are someone we know, please request to obtain our credentials._
 
+### :whale2: Run Locally With Docker - Coming Soon
 
 <!-- Deployment -->
-### :triangular_flag_on_post: Deployment
+### :cloud: Deployment
 
 To deploy this project we are using cloud run at GCP (you can use another service), this is the way to deploy it at cloud run:
 

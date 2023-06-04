@@ -149,7 +149,6 @@ Follow this step to run this repostory code in your local device:
    ```sh
    npm start, or
    npm run dev (using nodemon)
-  ```
 
 ### :whale2: Run Locally With Docker - Coming Soon
 

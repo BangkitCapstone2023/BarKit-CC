@@ -11,9 +11,13 @@ import formattedTimestamp from '../utils/time.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+const configPath = join(__dirname, '../config/config.json');
+const config = JSON.parse(readFileSync(configPath));
+
 const clientConfigPath = join(
   __dirname,
-  '../config/firebaseClientConfig2.json'
+  '../config/',
+  config.firebaseConfigCredentail
 );
 const clientConfig = JSON.parse(readFileSync(clientConfigPath, 'utf8'));
 firebase.initializeApp(clientConfig);

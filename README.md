@@ -92,7 +92,7 @@ You can see all api feature at our [API documentation](https://documenter.getpos
 <!-- Env Variables -->
 ### :key: Credential File 
 
-To run this project, you will need to add the following credential file to app/config folder
+To run this project, you will need to add the following credential file to `app/config` folder
 
   <ul>
     <li><a href="https://firebase.google.com/docs/admin/setup">Firebase Admin SDK</a> <br /> Go to firebase console -> pick your project -> project setting -> service account tab -> genereate new private key -> change the file to firebaseAccountKey2.json</li>
@@ -106,9 +106,9 @@ _Note:_ Change the name file
     <li>Firebase Config = firebaseClientConfig2.json</li>
     <li>Cloud Storage Credential = cloudStorageKey2.json</li>
   </ul>
-  <em>if you are someone i know, request & download my credential here:</em> <br /> 
-  https://drive.google.com/drive/folders/1nNdzHuIT3-UUD0rRbfC111-mpkefqcfc?usp=sharing
-
+  
+  <em>Note: if you are someone i know, request & <strong>download our credential</strong> <a href="https://drive.google.com/drive/folders/1nNdzHuIT3-UUD0rRbfC111-mpkefqcfc?usp=sharing">Here</a></em>
+  
 <!-- Getting Started -->
 ## 	:toolbox: Getting Started
 
@@ -145,10 +145,14 @@ Follow this step to run this repostory code in your local device:
    npm install
    ```
 4. Make sure you already have the [Credential File](#key-credential-file) and store it in the `app/config` folder.
-5. Start the server
+5. Change databaseURL value at app/config/configFirebase.js file, to your databaseURL (ex : https://{projectName}.firebaseio.com)
+5. Change projectId and bucketName value at app/configCloudStorage.js file, to your GCP project id and bucket name 
+6. Start the server
    ```sh
    npm start, or
    npm run dev (using nodemon)
+ 
+ _Note: Steps 4-6 are only performed if you do not have access to [Our Credential](https://drive.google.com/drive/folders/1nNdzHuIT3-UUD0rRbfC111-mpkefqcfc?usp=share_link). If you are someone we know, please request to obtain our credentials._
 
 ### :whale2: Run Locally With Docker - Coming Soon
 

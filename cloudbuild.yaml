@@ -1,11 +1,27 @@
 steps:
-  # Download credential files from Cloud Storage
-  - name: 'gcr.io/cloud-builders/gsutil'
-    args: ['cp', 'gs://barkit-credential/firebaseAccountKey2.json', 'config/firebaseAccountKey2.json']
-  - name: 'gcr.io/cloud-builders/gsutil'
-    args: ['cp', 'gs://barkit-credential/firebaseClientConfig2.json', 'config/firebaseClientConfig2.json']
-  - name: 'gcr.io/cloud-builders/gsutil'
-    args: ['cp', 'gs://barkit-credential/cloudStorageKey2.json', 'config/cloudStorageKey2.json']
+  # Retrieve the cloud-storage-credential secret
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        gcloud secrets versions access latest --secret="cloud-storage-credential" --format='get(payload.data)' | base64 -d > app/config/cloudStorageKey2.json
+
+  # Retrieve the firebase-config secret
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        gcloud secrets versions access latest --secret="firebase-config" --format='get(payload.data)' | base64 -d > app/config/firebaseClientConfig2.json
+
+  # Retrieve the firebase-admin secret
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        gcloud secrets versions access latest --secret="firebase-admin" --format='get(payload.data)' | base64 -d > app/config/firebaseAccountKey2.json
 
   # Build the container image
   - name: 'gcr.io/cloud-builders/docker'

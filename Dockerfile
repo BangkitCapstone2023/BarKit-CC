@@ -11,9 +11,6 @@ RUN npm install
 
 COPY . .
 
-# Copy credential files into the container
-COPY config/firebaseAccountKey2.json ./app/config/firebaseAccountKey2.json
-COPY config/firebaseClientConfig2.json ./app/config/firebaseClientConfig2.json
-COPY config/cloudStorageKey2.json ./app/config/cloudStorageKey2.json
+COPY app/config/ app/config/
 
 CMD [ "npm", "start" ]

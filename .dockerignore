@@ -1,2 +1,7 @@
 node_modules
 npm-debug.log
+app/config/firebaseAccountKey2.json
+app/config/firebaseClientConfig2.json
+app/config/firebaseAccountKey.json
+app/config/cloudStorageKey2.json
+app/config/config.json

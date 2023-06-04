@@ -1,18 +1,21 @@
 import pkg from '@google-cloud/storage';
-const { Storage } = pkg;
-
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
+const { Storage } = pkg;
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const serviceKey = join(__dirname, 'cloudStorageKey2.json');
+const configPath = join(__dirname, 'config.json');
+const config = JSON.parse(readFileSync(configPath));
+
+const serviceKey = join(__dirname, config.cloudStorageCredential);
 const storage = new Storage({
-  projectId: 'barkit-c23pr544',
+  projectId: config.projectId,
   keyFilename: serviceKey,
 });
-const bucketName = 'barkit-images';
+const bucketName = config.bucketName;
 
 export { storage, bucketName };

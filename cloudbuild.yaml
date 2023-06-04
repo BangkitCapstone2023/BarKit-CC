@@ -1,4 +1,13 @@
 steps:
+
+  # Retrieve the config.json file
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        gcloud secrets versions access latest --secret="config-file" --format='get(payload.data)' | base64 -d > app/config/config.json
+        
   # Retrieve the cloud-storage-credential secret
   - name: 'gcr.io/cloud-builders/gcloud'
     entrypoint: 'bash'

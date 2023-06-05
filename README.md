@@ -132,8 +132,6 @@ This project uses NPM as package manager
     3. If there is any error with step 2 (install windows-build-tools), check [here](https://github.com/tensorflow/tfjs/blob/master/tfjs-node/WINDOWS_TROUBLESHOOTING.md#msbuildexe-exceptions).
     4. If there is any error when trying steps 3-4 (install Python & Visual C++ build tools), check [here](https://github.com/nodejs/node-gyp#on-windows).
     
-
-  
 * [Docker](https://www.docker.com/) (if you want to run this repostory with docker)
 * Google Cloud Platform Account (If You want to to deploy it in GCP)
   
@@ -186,7 +184,7 @@ Follow this step to run this repostory code in your local device:
   code . 
   ``` 
   4. Make sure you already have the [Credential File](#key-credential-file) and store the credential *file name* in  `app/config/config-template.json` file.
-  5. And also Change `projectID, bucketName, and databaseURL` value at `app/config/config-template.json` file, with your GCP project id, bucket name, and firestore database url, see the example [here]    (https://github-production-user-asset-6210df.s3.amazonaws.com/72277295/243223361-3196686f-7fa0-4ed5-a64a-d8fc5fdc9814.PNG) 
+  5. And also Change `projectID, bucketName, and databaseURL` value at `app/config/config-template.json` file, with your GCP project id, bucket name, and firestore database url, see the example [here](https://github-production-user-asset-6210df.s3.amazonaws.com/72277295/243223361-3196686f-7fa0-4ed5-a64a-d8fc5fdc9814.PNG)
   6. Change `config-template.json` file name to `config.json`
   7. open terminal & build docker image
   ``` sh

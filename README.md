@@ -116,7 +116,24 @@ This project uses NPM as package manager
   node -v
   npm -v
   ```
-  _Note: In development we are using Windows 10 pro, Visual studio code, **node version 14.21.3** ,and **npm version 6.14.18**_
+  
+ * If there are **any error with tfjs-node** when running at local using NPM (if you are not clone/run the server yet,ignore this step), try this step 1 by 1: <a name="tfjs-node-error"></a>
+    1. `npm install -g node-gyp`
+    2. `Install the current version of Python` from the [Microsoft Store package](https://www.microsoft.com/en-us/p/python-310/9pjpw5ldxlz5).
+    3. `Install Visual C++ Build Environment`: [Visual Studio Build Tools](https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=BuildTools)
+    (using "Visual C++ build tools" workload) or [Visual Studio Community](https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=Community)
+   (using the "Desktop development with C++" workload)
+    4. Go to powershell -> Run as administrator -> `npm install -g --production windows-build-tools`
+  
+    _Note:_
+    1. In development we are using `Windows 10 pro`, `Visual Studio Code`, `node version 14.21.3`, and `npm version 6.14.18`.
+  
+       **For TFJS-Node Error:**
+    2. If you _already done with 1 step (ex: install node-gcp), try running the server again_. If the error persists, move on to the next step.
+    3. If there is any error with node-gyp, try going [here](https://github.com/nodejs/node-gyp/issues/809).
+    4. If there is any error when trying steps 2-3 (install Python & Visual C++ build tools), check [here](https://github.com/nodejs/node-gyp#on-windows).
+    5. If there is any error with step 4 (install windows-build-tools), check [here](https://github.com/tensorflow/tfjs/blob/master/tfjs-node/WINDOWS_TROUBLESHOOTING.md#msbuildexe-exceptions).
+
   
 * [Docker](https://www.docker.com/) (if you want to run this repostory with docker)
 * Google Cloud Platform Account (If You want to to deploy it in GCP)
@@ -147,7 +164,9 @@ Follow this step to run this repostory code in your local device:
    npm start, or
    npm run dev (using nodemon)
  
- _Note: Steps 4-6 are only performed if you do not have access to [Our Credential](https://drive.google.com/drive/folders/1nNdzHuIT3-UUD0rRbfC111-mpkefqcfc?usp=share_link). If you are someone we know, please request to obtain our credentials and config file._
+ _Note:_
+  1. Steps 4-6 are only performed if you do not have access to [Our Credential](https://drive.google.com/drive/folders/1nNdzHuIT3-UUD0rRbfC111-mpkefqcfc?usp=share_link). If you are someone we know, please request to obtain our credentials and config file.
+  2. If there are any errors with `tfjs-node`, try [this step](#tfjs-node-error) 
 
 ### :whale2: Run Locally With Docker - Coming Soon
 

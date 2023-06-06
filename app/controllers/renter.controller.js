@@ -1,3 +1,4 @@
+import Fuse from 'fuse.js';
 import db from '../config/firebase.config.js';
 import getRandomElements from '../utils/random.js';
 import { badResponse, successResponse } from '../utils/response.js';
@@ -11,19 +12,21 @@ const getDashboardData = async (req, res) => {
     const categoriesSnapshot = await db.collection('categories').get();
     const categories = [];
 
-    categoriesSnapshot.docs.forEach(async (categoryDoc) => {
-      const categoryData = categoryDoc.data();
-      const category = { name: categoryData.name, subcategories: [] };
-      const subcategoriesSnapshot = await categoryDoc.ref
-        .collection('sub_categories')
-        .get();
-      subcategoriesSnapshot.forEach((subDoc) => {
-        const subcategoryData = subDoc.data();
-        const subcategory = { name: subcategoryData.name };
-        category.subcategories.push(subcategory);
-      });
-      categories.push(category);
-    });
+    await Promise.all(
+      categoriesSnapshot.docs.map(async (categoryDoc) => {
+        const categoryData = categoryDoc.data();
+        const category = { name: categoryData.name, subcategories: [] };
+        const subcategoriesSnapshot = await categoryDoc.ref
+          .collection('sub_categories')
+          .get();
+        subcategoriesSnapshot.forEach((subDoc) => {
+          const subcategoryData = subDoc.data();
+          const subcategory = { name: subcategoryData.name };
+          category.subcategories.push(subcategory);
+        });
+        categories.push(category);
+      }),
+    );
 
     // Randomly select 10 products
     const randomProducts = getRandomElements(products, 10);
@@ -56,18 +59,7 @@ const searchProduct = async (req, res) => {
   try {
     const { title, category } = req.query;
 
-    // Buat query pencarian berdasarkan judul dan kategori
-    let query = db.collection('products');
-
-    if (title) {
-      // Menggunakan pencarian teks parsial (partial match) untuk mencari produk yang mirip
-      query = query
-        .where('title', '>=', title)
-        .where('title', '<=', `${title}\uf8ff`);
-      if (category) {
-        query = query.where('category', '==', category);
-      }
-    } else {
+    if (!title) {
       const response = badResponse(
         400,
         'Plese Enter a Word to search product',
@@ -75,31 +67,49 @@ const searchProduct = async (req, res) => {
       return res.status(400).json(response);
     }
 
-    // Ambil data produk yang sesuai dengan query
-    const querySnapshot = await query.get();
-    const products = querySnapshot.docs.map((doc) => doc.data());
+    // Ambil semua data produk dari Firestore
+    const productsSnapshot = await db.collection('products').get();
+    const products = productsSnapshot.docs.map((doc) => doc.data());
 
-    // Format data produk yang diperlukan
+    // Buat opsi Fuse.js
+    const fuseOptions = {
+      keys: ['title'],
+      threshold: 0.3,
+    };
+
+    // Buat instance Fuse dengan data produk dan opsi
+    const fuse = new Fuse(products, fuseOptions);
+
+    // Lakukan pencarian menggunakan Fuse.js
+    const searchResults = fuse.search(title);
+
+    // Filter berdasarkan kategori
+    // eslint-disable-next-line max-len
+    const filteredResults = searchResults.filter((result) => (category ? result.item.category === category : true));
+
+    // Ambil hanya properti yang diperlukan dari hasil pencarian
     const formattedResults = await Promise.all(
-      products.map(async (product) => {
+      filteredResults.map(async (result) => {
         const lessorSnapshot = await db
           .collection('lessors')
-          .doc(product.lessor_id)
+          .doc(result.item.lessor_id)
           .get();
         const lessorData = lessorSnapshot.data();
         const { storeFullName, storeAddress, storePhone } = lessorData;
 
         const {
-          price,
-          quantity,
-          imageUrl,
-        } = product;
+          item: {
+            price,
+            quantity,
+            imageUrl,
+          },
+        } = result;
 
         return {
-          product_id: product.product_id,
-          title: product.title,
-          category: product.category,
-          sub_category: product.sub_category,
+          product_id: result.item.product_id,
+          title: result.item.title,
+          category: result.item.category,
+          sub_category: result.item.sub_category,
           price,
           quantity,
           imageUrl,
@@ -110,13 +120,21 @@ const searchProduct = async (req, res) => {
       }),
     );
 
+    if (formattedResults.length === 0) {
+      const response = badResponse(
+        404,
+        'Product not found',
+      );
+      return res.status(404).json(response);
+    }
+
     const response = successResponse(
       200,
       'Product search successful',
       formattedResults,
     );
 
-    return res.json(response);
+    return res.status(200).json(response);
   } catch (error) {
     console.error('Error while searching products:', error);
 
@@ -140,7 +158,7 @@ const getAllCategories = async (req, res) => {
       categories.push({ id: doc.id, name: data.name });
     });
 
-    console.log('Working 6 Juni ');
+    console.log('Working 7 Juni');
 
     return res.status(200).json(categories);
   } catch (error) {

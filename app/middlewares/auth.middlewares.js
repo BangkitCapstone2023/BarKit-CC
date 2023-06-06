@@ -47,7 +47,7 @@ const adminMiddleware = async (req, res, next) => {
 
     const adminSnapshot = await db
       .collection('renters')
-      .where('fullName', '==', 'Admin Barkit')
+      .where('isAdmin', '==', true)
       .get();
     const adminData = adminSnapshot.docs[0].data();
     if (adminData.admin_id !== decodedToken.uid) {

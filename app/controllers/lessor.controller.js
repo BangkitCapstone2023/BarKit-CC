@@ -12,7 +12,7 @@ const registerLessor = async (req, res) => {
     storeEmail: req.body.storeEmail,
     storePhone: req.body.storePhone,
     storeStatus: req.body.storeStatus,
-    kurirId: req.body.kurirId,
+    kurir: req.body.kurir,
   };
 
   const { uid } = req.user;
@@ -88,7 +88,7 @@ const registerLessor = async (req, res) => {
       storeEmail: lessor.storeEmail,
       storePhone: lessor.storePhone,
       storeActive: true,
-      kurirId: lessor.kurirId || '',
+      kurir: lessor.kurir || '',
     };
 
     await lessorDocRef.set(lessorData);
@@ -207,7 +207,7 @@ const updateLessor = async (req, res) => {
         storeAddress,
         storeEmail,
         storePhone,
-        kurir: kurir || lessorData.kurirId,
+        kurir: kurir || lessorData.kurir,
       });
 
     const updateData = {
@@ -217,7 +217,7 @@ const updateLessor = async (req, res) => {
       storeAddress,
       storeEmail,
       storePhone,
-      kurir: kurir || lessorData.kurirId,
+      kurir: kurir || lessorData.kurir,
     };
 
     const renterSnapshot = await db

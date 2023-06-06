@@ -1,3 +1,4 @@
+import Fuse from 'fuse.js';
 import db from '../config/firebase.config.js';
 import getRandomElements from '../utils/random.js';
 import { badResponse, successResponse } from '../utils/response.js';
@@ -11,19 +12,21 @@ const getDashboardData = async (req, res) => {
     const categoriesSnapshot = await db.collection('categories').get();
     const categories = [];
 
-    categoriesSnapshot.docs.forEach(async (categoryDoc) => {
-      const categoryData = categoryDoc.data();
-      const category = { name: categoryData.name, subcategories: [] };
-      const subcategoriesSnapshot = await categoryDoc.ref
-        .collection('sub_categories')
-        .get();
-      subcategoriesSnapshot.forEach((subDoc) => {
-        const subcategoryData = subDoc.data();
-        const subcategory = { name: subcategoryData.name };
-        category.subcategories.push(subcategory);
-      });
-      categories.push(category);
-    });
+    await Promise.all(
+      categoriesSnapshot.docs.map(async (categoryDoc) => {
+        const categoryData = categoryDoc.data();
+        const category = { name: categoryData.name, subcategories: [] };
+        const subcategoriesSnapshot = await categoryDoc.ref
+          .collection('sub_categories')
+          .get();
+        subcategoriesSnapshot.forEach((subDoc) => {
+          const subcategoryData = subDoc.data();
+          const subcategory = { name: subcategoryData.name };
+          category.subcategories.push(subcategory);
+        });
+        categories.push(category);
+      }),
+    );
 
     // Randomly select 10 products
     const randomProducts = getRandomElements(products, 10);
@@ -54,52 +57,65 @@ const getDashboardData = async (req, res) => {
 // Search Products Handler
 const searchProduct = async (req, res) => {
   try {
-    const { title, category } = req.query;
+    const { title, category, subCategory } = req.query;
 
-    // Buat query pencarian berdasarkan judul dan kategori
-    let query = db.collection('products');
-
-    if (title) {
-      // Menggunakan pencarian teks parsial (partial match) untuk mencari produk yang mirip
-      query = query
-        .where('title', '>=', title)
-        .where('title', '<=', `${title}\uf8ff`);
-      if (category) {
-        query = query.where('category', '==', category);
-      }
-    } else {
+    if (!title) {
       const response = badResponse(
         400,
-        'Plese Enter a Word to search product',
+        'Please enter a word to search for a product',
       );
       return res.status(400).json(response);
     }
 
-    // Ambil data produk yang sesuai dengan query
-    const querySnapshot = await query.get();
-    const products = querySnapshot.docs.map((doc) => doc.data());
+    // Retrieve all product data from Firestore
+    const productsSnapshot = await db.collection('products').get();
+    const products = productsSnapshot.docs.map((doc) => doc.data());
 
-    // Format data produk yang diperlukan
+    // Create Fuse.js options
+    const fuseOptions = {
+      keys: ['title'],
+      threshold: 0.3,
+    };
+
+    // Create a Fuse instance with the product data and options
+    const fuse = new Fuse(products, fuseOptions);
+
+    // Perform search using Fuse.js
+    const searchResults = fuse.search(title);
+
+    // Filter by category and subCategory
+    const filteredResults = searchResults.filter((result) => {
+      if (category && subCategory) {
+        return result.item.category === category && result.item.sub_category === subCategory;
+      }
+      if (category) {
+        return result.item.category === category;
+      }
+      if (subCategory) {
+        return result.item.sub_category === subCategory;
+      }
+      return null;
+    });
+
+    // Retrieve only the necessary properties from the search results
     const formattedResults = await Promise.all(
-      products.map(async (product) => {
+      filteredResults.map(async (result) => {
         const lessorSnapshot = await db
           .collection('lessors')
-          .doc(product.lessor_id)
+          .doc(result.item.lessor_id)
           .get();
         const lessorData = lessorSnapshot.data();
         const { storeFullName, storeAddress, storePhone } = lessorData;
 
         const {
-          price,
-          quantity,
-          imageUrl,
-        } = product;
+          item: { price, quantity, imageUrl },
+        } = result;
 
         return {
-          product_id: product.product_id,
-          title: product.title,
-          category: product.category,
-          sub_category: product.sub_category,
+          product_id: result.item.product_id,
+          title: result.item.title,
+          category: result.item.category,
+          sub_category: result.item.sub_category,
           price,
           quantity,
           imageUrl,
@@ -110,13 +126,21 @@ const searchProduct = async (req, res) => {
       }),
     );
 
+    if (formattedResults.length === 0) {
+      const response = badResponse(
+        404,
+        'Product not found',
+      );
+      return res.status(404).json(response);
+    }
+
     const response = successResponse(
       200,
       'Product search successful',
       formattedResults,
     );
 
-    return res.json(response);
+    return res.status(200).json(response);
   } catch (error) {
     console.error('Error while searching products:', error);
 
@@ -140,7 +164,7 @@ const getAllCategories = async (req, res) => {
       categories.push({ id: doc.id, name: data.name });
     });
 
-    console.log('Working 6 Juni ');
+    console.log('Working 7 Juni 20.00');
 
     return res.status(200).json(categories);
   } catch (error) {

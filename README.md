@@ -49,7 +49,7 @@
 - [Getting Started](#toolbox-getting-started)
   * [Prerequisites](#bangbang-prerequisites)
   * [Run Locally With NPM](#running-run-locally-with-npm)
-  * [Run Locally With Docker](#whale2-run-locally-with-docker-coming-soon)
+  * [Run Locally With Docker](#whale2-run-locally-with-docker) (Recommended)
   * [Deployment](#cloud-deployment)
 - [Usage](#eyes-usage)
 - [Contributing](#wave-contributing)
@@ -132,8 +132,6 @@ This project uses NPM as package manager
     3. If there is any error with step 2 (install windows-build-tools), check [here](https://github.com/tensorflow/tfjs/blob/master/tfjs-node/WINDOWS_TROUBLESHOOTING.md#msbuildexe-exceptions).
     4. If there is any error when trying steps 3-4 (install Python & Visual C++ build tools), check [here](https://github.com/nodejs/node-gyp#on-windows).
     
-
-  
 * [Docker](https://www.docker.com/) (if you want to run this repostory with docker)
 * Google Cloud Platform Account (If You want to to deploy it in GCP)
   
@@ -143,31 +141,62 @@ This project uses NPM as package manager
 ### :running: Run Locally With NPM
 
 Follow this step to run this repostory code in your local device:
-  1. Clone the repo
+  1. Open git bash and Clone the repo
    ```sh
    git clone https://github.com/BangkitCapstone2023/BarKit-CC.git
    ```
-2. Go to project
-   ```sh
-   cd BarKit-CC
-   ```
-3. Install Package
-   ```sh
-   npm install
-   ```
-4. Make sure you already have the [Credential File](#key-credential-file) and store the credential *file name* in  `app/config/config-template.json` file.
-5. And also Change `projectID, bucketName, and databaseURL` value at `app/config/config-template.json` file, with your GCP project id, bucket name, and firestore database url, see the example [here](https://github-production-user-asset-6210df.s3.amazonaws.com/72277295/243223361-3196686f-7fa0-4ed5-a64a-d8fc5fdc9814.PNG) 
-6. Change `config-template.json` file name to `config.json`
-7. Start the server
+  2. Go to project folder 
+  ``` sh
+  cd BarKit-CC
+  ``` 
+3. Open the project at VS Code 
+  ``` sh
+  code . 
+  ``` 
+  4. open terminal & install Package
+  ``` sh
+  npm install
+  ``` 
+5. Make sure you already have the [Credential File](#key-credential-file) and store the credential *file name* in  `app/config/config-template.json` file.
+6. And also Change `projectID, bucketName, and databaseURL` value at `app/config/config-template.json` file, with your GCP project id, bucket name, and firestore database url, see the example [here](https://github-production-user-asset-6210df.s3.amazonaws.com/72277295/243223361-3196686f-7fa0-4ed5-a64a-d8fc5fdc9814.PNG) 
+7. Change `config-template.json` file name to `config.json`
+8. Start the server
    ```sh
    npm start, or
    npm run dev (using nodemon)
- 
+   ```
  _Note:_
-  1. Steps 4-6 are only performed if you do not have access to [Our Credential](https://drive.google.com/drive/folders/1nNdzHuIT3-UUD0rRbfC111-mpkefqcfc?usp=share_link). If you are someone we know, please request to obtain our credentials and config file.
+  1. Steps 5-7 are only performed if you do not have access to [Our Credential](https://drive.google.com/drive/folders/1nNdzHuIT3-UUD0rRbfC111-mpkefqcfc?usp=share_link). If you are someone we know, please request to obtain our credentials and config file. After you download our credential make sure to store it at app/config folder.
   2. If there are any errors with `tfjs-node`, try [this step](#tfjs-node-error) 
 
-### :whale2: Run Locally With Docker - Coming Soon
+### :whale2: Run Locally With Docker
+  Using Docker so you dont need to configure `node version` or get any error with `tfjs-node`
+  1. Open git bash and Clone the repo
+   ```sh
+   git clone https://github.com/BangkitCapstone2023/BarKit-CC.git
+   ```
+  2. Go to project folder 
+  ``` sh
+  cd BarKit-CC
+  ``` 
+  3. Open the project at VS Code 
+  ``` sh
+  code . 
+  ``` 
+  4. Make sure you already have the [Credential File](#key-credential-file) and store the credential *file name* in  `app/config/config-template.json` file.
+  5. And also Change `projectID, bucketName, and databaseURL` value at `app/config/config-template.json` file, with your GCP project id, bucket name, and firestore database url, see the example [here](https://github-production-user-asset-6210df.s3.amazonaws.com/72277295/243223361-3196686f-7fa0-4ed5-a64a-d8fc5fdc9814.PNG)
+  6. Change `config-template.json` file name to `config.json`
+  7. open terminal & build docker image
+  ``` sh
+  docker build -t barkit-backend .
+  ``` 
+  8. Run the docker image
+  ```sh
+  docker run -p 8080:8080 barkit-backend
+  ```
+   _Note:_
+  1. Steps 4-6 are only performed if you do not have access to [Our Credential](https://drive.google.com/drive/folders/1nNdzHuIT3-UUD0rRbfC111-mpkefqcfc?usp=share_link). If you are someone we know, please request to obtain our credentials and config file. After you download our credential make sure to store it at app/config folder.
+  2. You can use another name & add tag for the image
 
 <!-- Deployment -->
 ### :cloud: Deployment

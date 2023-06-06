@@ -1,5 +1,5 @@
 import { badResponse, successResponse } from '../utils/response.js';
-import { db } from '../config/configFirebase.js';
+import db from '../config/firebase.config.js';
 
 // Get All Lessor Hander
 const getAllLessors = async (req, res) => {
@@ -18,7 +18,7 @@ const getAllLessors = async (req, res) => {
     const response = successResponse(
       200,
       'Success Get All Lessor',
-      lessorsData
+      lessorsData,
     );
 
     return res.status(200).json(response);
@@ -27,7 +27,7 @@ const getAllLessors = async (req, res) => {
     const response = badResponse(
       500,
       'An error occurred while getting all lessor data',
-      error.message
+      error.message,
     );
     return res.status(500).json(response);
   }
@@ -52,51 +52,19 @@ const getLessorById = async (req, res) => {
     const response = successResponse(
       200,
       'Lessors retrieved successfully',
-      lessorData
+      lessorData,
     );
 
-    res.status(200).json(response);
+    return res.status(200).json(response);
   } catch (error) {
     console.error('Error while getting the Lessor', error);
 
     const response = badResponse(
       500,
       'An error occurred while getting the Lessor',
-      error.message
+      error.message,
     );
 
-    res.status(500).json(response);
-  }
-};
-
-//TODO: Still Error
-const getImageByName = async (req, res) => {
-  const { name } = req.params;
-
-  try {
-    // const productSnapshot = await db.collection('products').get();
-
-    const productSnapshot = await db.collection('products').get();
-    if (productSnapshot.empty) {
-      const response = badResponse(404, `Image ${name} not found`);
-      return res.status(404).json(response);
-    }
-
-    const productData = productSnapshot.docs[0].data();
-    const imageUrl = productData.imageUrl;
-    const image_id = productData.image_id;
-
-    const imageData = { image_id, name, imageUrl };
-    const response = successResponse(200, 'Success Get Image', imageData);
-
-    return res.status(200).json(response);
-  } catch (error) {
-    console.error('Error while retrieving image:', error);
-    const response = badResponse(
-      500,
-      'Error when getting image',
-      error.message
-    );
     return res.status(500).json(response);
   }
 };
@@ -111,11 +79,11 @@ const getAllImages = async (req, res) => {
     // Iterate through the products snapshot
     productsSnapshot.forEach((productDoc) => {
       const productData = productDoc.data();
-      const imageUrl = productData.imageUrl;
+      const { imageUrl } = productData;
 
       if (imageUrl) {
-        const image_id = productData.image_id; // Ambil data image_id dari field 'image_id' di dokument produk
-        allImages.push({ image_id, imageUrl });
+        const imageId = productData.image_id;
+        allImages.push({ image_id: imageId, imageUrl });
       }
     });
 
@@ -127,7 +95,7 @@ const getAllImages = async (req, res) => {
     const response = badResponse(
       500,
       'Error when get all images',
-      error.message
+      error.message,
     );
     return res.status(500).json(response);
   }
@@ -150,7 +118,7 @@ const getAllRenters = async (req, res) => {
     const response = successResponse(
       200,
       'Success Get All Renters',
-      rentersData
+      rentersData,
     );
 
     return res.status(200).json(response);
@@ -159,7 +127,7 @@ const getAllRenters = async (req, res) => {
     const response = badResponse(
       500,
       'An error occurred while getting all renters data',
-      error.message
+      error.message,
     );
     return res.status(500).json(response);
   }
@@ -184,20 +152,20 @@ const getRenterById = async (req, res) => {
     const response = successResponse(
       200,
       'Renter s retrieved successfully',
-      renterData
+      renterData,
     );
 
-    res.status(200).json(response);
+    return res.status(200).json(response);
   } catch (error) {
     console.error('Error while getting the Renter', error);
 
     const response = badResponse(
       500,
       'An error occurred while getting the Renter',
-      error.message
+      error.message,
     );
 
-    res.status(500).json(response);
+    return res.status(500).json(response);
   }
 };
 
@@ -257,7 +225,7 @@ const getAllProduct = async (req, res) => {
     const response = badResponse(
       500,
       'An error occurred while getting all products data',
-      error.message
+      error.message,
     );
     return res.status(500).json(response);
   }
@@ -282,20 +250,20 @@ const getProductById = async (req, res) => {
     const response = successResponse(
       200,
       'Products retrieved successfully',
-      orderData
+      orderData,
     );
 
-    res.status(200).json(response);
+    return res.status(200).json(response);
   } catch (error) {
     console.error('Error while getting the order:', error);
 
     const response = badResponse(
       500,
       'An error occurred while getting the order',
-      error.message
+      error.message,
     );
 
-    res.status(500).json(response);
+    return res.status(500).json(response);
   }
 };
 
@@ -314,7 +282,7 @@ const getAllOrders = async (req, res) => {
     const response = successResponse(
       200,
       'Orders retrieved successfully',
-      orders
+      orders,
     );
 
     res.status(200).json(response);
@@ -324,7 +292,7 @@ const getAllOrders = async (req, res) => {
     const response = badResponse(
       500,
       'An error occurred while getting  orders',
-      error.message
+      error.message,
     );
 
     res.status(500).json(response);
@@ -350,25 +318,24 @@ const getOrderById = async (req, res) => {
     const response = successResponse(
       200,
       'Orders retrieved successfully',
-      orderData
+      orderData,
     );
 
-    res.status(200).json(response);
+    return res.status(200).json(response);
   } catch (error) {
     console.error('Error while getting the order:', error);
 
     const response = badResponse(
       500,
       'An error occurred while getting the order',
-      error.message
+      error.message,
     );
 
-    res.status(500).json(response);
+    return res.status(500).json(response);
   }
 };
 
 export {
-  getImageByName,
   getAllImages,
   getAllLessors,
   getLessorById,

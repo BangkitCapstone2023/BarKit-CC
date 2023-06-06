@@ -1,5 +1,5 @@
 import { badResponse, successResponse } from '../utils/response.js';
-import { db } from '../config/configFirebase.js';
+import db from '../config/firebase.config.js';
 
 // Register Lessor Handler
 const registerLessor = async (req, res) => {
@@ -44,14 +44,14 @@ const registerLessor = async (req, res) => {
     if (renterSnapshot.empty) {
       const response = badResponse(
         404,
-        `User '${req.params.username}' not found`
+        `User '${req.params.username}' not found`,
       );
       return res.status(404).json(response);
     }
 
     // Check Auth Token
-    const renter_id = renterSnapshot.docs[0].id;
-    if (renter_id !== uid) {
+    const renterId = renterSnapshot.docs[0].id;
+    if (renterId !== uid) {
       const response = badResponse(403, 'Not allowed');
       return res.status(403).json(response);
     }
@@ -61,14 +61,14 @@ const registerLessor = async (req, res) => {
 
     const lessorSnapshot = await db
       .collection('lessors')
-      .where('renter_id', '==', renter_id)
+      .where('renter_id', '==', renterId)
       .get();
 
     // Check if renter already lessor
     if (!lessorSnapshot.empty) {
       const response = badResponse(
         409,
-        `User '${req.params.username}' is already a lessor`
+        `User '${req.params.username}' is already a lessor`,
       );
       return res.status(409).json(response);
     }
@@ -76,13 +76,13 @@ const registerLessor = async (req, res) => {
     // Save data to firestore
     const lessorDocRef = db.collection('lessors').doc();
 
-    const lessor_id = lessorDocRef.id;
+    const lessorId = lessorDocRef.id;
     const lessorData = {
-      lessor_id,
+      lessor_id: lessorId,
       email,
       username,
       fullName,
-      renter_id,
+      renter_id: renterId,
       storeFullName: lessor.storeFullName,
       storeAddress: lessor.storeAddress,
       storeEmail: lessor.storeEmail,
@@ -94,22 +94,22 @@ const registerLessor = async (req, res) => {
     await lessorDocRef.set(lessorData);
 
     // Update isLessor attribute in user document
-    const renterRef = db.collection('renters').doc(renter_id);
+    const renterRef = db.collection('renters').doc(renterId);
     await renterRef.update({ isLessor: true });
 
     const responseData = { ...lessorData, renter: renterData };
     const response = successResponse(
       201,
       `Success Create Lessor ${username}`,
-      responseData
+      responseData,
     );
-    res.status(201).json(response);
+    return res.status(201).json(response);
   } catch (error) {
     console.error(error);
     const response = badResponse(
       500,
       'Error while create lessor',
-      error.message
+      error.message,
     );
     return res.status(500).json(response);
   }
@@ -150,7 +150,7 @@ const getLessorProfile = async (req, res) => {
     const response = successResponse(
       200,
       'Success Get Lessor Profile',
-      responseData
+      responseData,
     );
 
     return res.status(200).json(response);
@@ -160,7 +160,7 @@ const getLessorProfile = async (req, res) => {
     const response = badResponse(
       500,
       'Error while getting lessor',
-      error.message
+      error.message,
     );
     return res.status(500).json(response);
   }
@@ -171,9 +171,13 @@ const updateLessor = async (req, res) => {
   try {
     const { username } = req.params;
     const { uid } = req.user;
-    const { storeFullName, storeAddress, storeEmail, storePhone, kurir } =
-      req.body;
-
+    const {
+      storeFullName,
+      storeAddress,
+      storeEmail,
+      storePhone,
+      kurir,
+    } = req.body;
     // Check if the lessor exists
     const lessorSnapshot = await db
       .collection('lessors')
@@ -203,7 +207,7 @@ const updateLessor = async (req, res) => {
         storeAddress,
         storeEmail,
         storePhone,
-        kurir: kurir ? kurir : lessorData.kurirId,
+        kurir: kurir || lessorData.kurirId,
       });
 
     const updateData = {
@@ -213,7 +217,7 @@ const updateLessor = async (req, res) => {
       storeAddress,
       storeEmail,
       storePhone,
-      kurir: kurir ? kurir : lessorData.kurirId,
+      kurir: kurir || lessorData.kurirId,
     };
 
     const renterSnapshot = await db
@@ -227,7 +231,7 @@ const updateLessor = async (req, res) => {
     const response = successResponse(
       200,
       'Success Update Lessor Data',
-      responseData
+      responseData,
     );
     return res.status(200).json(response);
   } catch (error) {
@@ -236,7 +240,7 @@ const updateLessor = async (req, res) => {
     const response = badResponse(
       500,
       'Error while updating lessor:',
-      error.message
+      error.message,
     );
     return res.status(500).json(response);
   }
@@ -278,15 +282,15 @@ const deleteLessorById = async (req, res) => {
 
     const response = successResponse(
       200,
-      'Lessor and associated products deleted successfully'
+      'Lessor and associated products deleted successfully',
     );
 
-    res.status(200).json(response);
+    return res.status(200).json(response);
   } catch (error) {
     console.error('Error deleting lessor:', error);
 
     const response = badResponse(500, 'Error deleting lessor', error.message);
-    res.status(500).json(response);
+    return res.status(500).json(response);
   }
 };
 
@@ -332,7 +336,7 @@ const getOrdersByLessor = async (req, res) => {
     const response = successResponse(
       200,
       'Orders retrieved successfully',
-      orders
+      orders,
     );
 
     return res.status(200).json(response);
@@ -342,7 +346,7 @@ const getOrdersByLessor = async (req, res) => {
     const response = badResponse(
       500,
       'Error while getting lessor orders',
-      error.message
+      error.message,
     );
 
     return res.status(500).json(response);
@@ -372,7 +376,7 @@ const getLessorOrderById = async (req, res) => {
     if (lessorData.renter_id !== uid) {
       const response = badResponse(
         403,
-        'Not allowed this order is not your order'
+        'Not allowed this order is not your order',
       );
       return res.status(403).json(response);
     }
@@ -401,7 +405,7 @@ const getLessorOrderById = async (req, res) => {
     const response = successResponse(
       200,
       'Order retrieved successfully',
-      resposeData
+      resposeData,
     );
 
     return res.status(200).json(response);
@@ -411,7 +415,7 @@ const getLessorOrderById = async (req, res) => {
     const response = badResponse(
       500,
       'Error while getting order',
-      error.message
+      error.message,
     );
     return res.status(500).json(response);
   }
@@ -441,7 +445,7 @@ const updateOrderStatusAndNotes = async (req, res) => {
     if (lessorData.renter_id !== uid) {
       const response = badResponse(
         403,
-        'Not allowed this order is not your order'
+        'Not allowed this order is not your order',
       );
       return res.status(403).json(response);
     }
@@ -460,7 +464,7 @@ const updateOrderStatusAndNotes = async (req, res) => {
     if (orderData.lessor_id !== lessorId) {
       const response = badResponse(
         403,
-        'Not allowed to modify antoher lessor order'
+        'Not allowed to modify antoher lessor order',
       );
       return res.status(403).json(response);
     }
@@ -509,7 +513,7 @@ const updateOrderStatusAndNotes = async (req, res) => {
     const response = successResponse(
       200,
       'Success Update Status Order',
-      updatedOrderData
+      updatedOrderData,
     );
     return res.status(200).json(response);
   } catch (error) {
@@ -518,7 +522,7 @@ const updateOrderStatusAndNotes = async (req, res) => {
     const response = badResponse(
       500,
       'Error while updating order status and notes',
-      error.message
+      error.message,
     );
 
     return res.status(500).json(response);

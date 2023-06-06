@@ -1,13 +1,12 @@
 import express from 'express';
-import { authMiddleware } from '../utils/validation.js';
+import { authMiddleware } from '../middlewares/auth.middlewares.js';
 
-const router = express.Router();
 import {
   getAllProductsByLessor,
   updateProductById,
   addProduct,
   deleteProductById,
-} from '../controllers/productHandler.js';
+} from '../controllers/product.controller.js';
 
 import {
   registerLessor,
@@ -17,8 +16,9 @@ import {
   getLessorOrderById,
   updateOrderStatusAndNotes,
   deleteLessorById,
-} from '../controllers/lessorHandler.js';
+} from '../controllers/lessor.controller.js';
 
+const router = express.Router();
 router.use(authMiddleware);
 
 // Lessor Register Route
@@ -38,9 +38,6 @@ router.delete('/lessors/:username/products/:productId', deleteProductById);
 // Lessor Orders Routes
 router.get('/lessors/:username/orders', getOrdersByLessor);
 router.get('/lessors/:username/orders/:orderId', getLessorOrderById);
-router.put(
-  '/lessors/:username/orders/:orderId/confirm',
-  updateOrderStatusAndNotes
-);
+router.put('/lessors/:username/orders/:orderId/confirm', updateOrderStatusAndNotes);
 
 export default router;

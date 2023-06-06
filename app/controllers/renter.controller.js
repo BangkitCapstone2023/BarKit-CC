@@ -1,5 +1,6 @@
+import db from '../config/firebase.config.js';
+import getRandomElements from '../utils/random.js';
 import { badResponse, successResponse } from '../utils/response.js';
-import { db } from '../config/configFirebase.js';
 
 // Dashboard Handler
 const getDashboardData = async (req, res) => {
@@ -10,22 +11,19 @@ const getDashboardData = async (req, res) => {
     const categoriesSnapshot = await db.collection('categories').get();
     const categories = [];
 
-    for (const categoryDoc of categoriesSnapshot.docs) {
+    categoriesSnapshot.docs.forEach(async (categoryDoc) => {
       const categoryData = categoryDoc.data();
       const category = { name: categoryData.name, subcategories: [] };
-
       const subcategoriesSnapshot = await categoryDoc.ref
         .collection('sub_categories')
         .get();
-
       subcategoriesSnapshot.forEach((subDoc) => {
         const subcategoryData = subDoc.data();
         const subcategory = { name: subcategoryData.name };
         category.subcategories.push(subcategory);
       });
-
       categories.push(category);
-    }
+    });
 
     // Randomly select 10 products
     const randomProducts = getRandomElements(products, 10);
@@ -38,7 +36,7 @@ const getDashboardData = async (req, res) => {
     const response = successResponse(
       200,
       'Dashboard data retrieved successfully',
-      responseData
+      responseData,
     );
 
     return res.status(200).json(response);
@@ -47,17 +45,11 @@ const getDashboardData = async (req, res) => {
     const response = badResponse(
       500,
       'An error occurred while fetching dashboard data',
-      error.message
+      error.message,
     );
     return res.status(500).json(response);
   }
 };
-
-// Helper function to get random elements from an array
-function getRandomElements(arr, count) {
-  const shuffled = arr.sort(() => 0.5 - Math.random());
-  return shuffled.slice(0, count);
-}
 
 // Search Products Handler
 const searchProduct = async (req, res) => {
@@ -71,7 +63,7 @@ const searchProduct = async (req, res) => {
       // Menggunakan pencarian teks parsial (partial match) untuk mencari produk yang mirip
       query = query
         .where('title', '>=', title)
-        .where('title', '<=', title + '\uf8ff');
+        .where('title', '<=', `${title}\uf8ff`);
       if (category) {
         query = query.where('category', '==', category);
       }
@@ -79,7 +71,6 @@ const searchProduct = async (req, res) => {
       const response = badResponse(
         400,
         'Plese Enter a Word to search product',
-        error.message
       );
       return res.status(400).json(response);
     }
@@ -99,20 +90,16 @@ const searchProduct = async (req, res) => {
         const { storeFullName, storeAddress, storePhone } = lessorData;
 
         const {
-          product_id,
-          title,
-          category,
-          sub_category,
           price,
           quantity,
           imageUrl,
         } = product;
 
         return {
-          product_id,
-          title,
-          category,
-          sub_category,
+          product_id: product.product_id,
+          title: product.title,
+          category: product.category,
+          sub_category: product.sub_category,
           price,
           quantity,
           imageUrl,
@@ -120,13 +107,13 @@ const searchProduct = async (req, res) => {
           storeAddress,
           storePhone,
         };
-      })
+      }),
     );
 
     const response = successResponse(
       200,
       'Product search successful',
-      formattedResults
+      formattedResults,
     );
 
     return res.json(response);
@@ -136,7 +123,7 @@ const searchProduct = async (req, res) => {
     const response = badResponse(
       500,
       'An error occurred while searching products',
-      error.message
+      error.message,
     );
     return res.status(500).json(response);
   }
@@ -153,7 +140,7 @@ const getAllCategories = async (req, res) => {
       categories.push({ id: doc.id, name: data.name });
     });
 
-    console.log('Working 5 Juni ');
+    console.log('Working 6 Juni ');
 
     return res.status(200).json(categories);
   } catch (error) {
@@ -197,12 +184,10 @@ const getSubCategoriesByCategory = async (req, res) => {
   }
 };
 
-// Get All Product By Subcategories Handler
 const getProductsBySubCategory = async (req, res) => {
   try {
     const { name } = req.params;
 
-    // Get Product Data
     const productsSnapshot = await db
       .collection('products')
       .where('sub_category', '==', name)
@@ -210,10 +195,9 @@ const getProductsBySubCategory = async (req, res) => {
 
     const products = [];
 
-    for (const doc of productsSnapshot.docs) {
+    const fetchLessors = async (doc) => {
       const productData = doc.data();
 
-      // Get lessor data
       const lessorSnapshot = await db
         .collection('lessors')
         .doc(productData.lessor_id)
@@ -236,14 +220,19 @@ const getProductsBySubCategory = async (req, res) => {
           storePhone,
         });
       }
-    }
+    };
 
-    const response = successResponse(
-      200,
-      'Products retrieved successfully',
-      products
-    );
+    const fetchProductData = async () => {
+      const promises = [];
+      productsSnapshot.docs.forEach((doc) => {
+        promises.push(fetchLessors(doc));
+      });
+      await Promise.all(promises);
+    };
 
+    await fetchProductData();
+
+    const response = successResponse(200, 'Products retrieved successfully', products);
     return res.status(200).json(response);
   } catch (error) {
     console.error('Error while getting products by subcategory:', error);
@@ -251,7 +240,6 @@ const getProductsBySubCategory = async (req, res) => {
     const response = badResponse(
       500,
       'An error occurred while getting products by subcategory',
-      error.message
     );
 
     return res.status(500).json(response);
@@ -299,7 +287,7 @@ const getProductById = async (req, res) => {
     const response = successResponse(
       200,
       'Product details retrieved successfully',
-      responseData
+      responseData,
     );
 
     return res.status(200).json(response);
@@ -308,7 +296,7 @@ const getProductById = async (req, res) => {
     const response = badResponse(
       500,
       'Error while getting product details',
-      error.message
+      error.message,
     );
 
     return res.status(500).json(response);
@@ -348,7 +336,7 @@ const getUserProfile = async (req, res) => {
     const response = successResponse(
       200,
       'Profile retrieved successfully',
-      responseData
+      responseData,
     );
 
     return res.status(200).json(response);
@@ -357,7 +345,7 @@ const getUserProfile = async (req, res) => {
     const response = badResponse(
       500,
       'An error occurred while getting user profile',
-      error.message
+      error.message,
     );
 
     return res.status(500).json(response);
@@ -369,7 +357,12 @@ const updateProfile = async (req, res) => {
   try {
     const { username } = req.params;
     const { uid } = req.user;
-    const { name, address, phone, gender } = req.body;
+    const {
+      name,
+      address,
+      phone,
+      gender,
+    } = req.body;
 
     // Check renters
     const renterSnapshot = await db
@@ -413,7 +406,7 @@ const updateProfile = async (req, res) => {
       const response = successResponse(
         200,
         'Berhasil update profile tapi tidak ada data yang diupdate',
-        renterData
+        renterData,
       );
       return res.status(200).json(response);
     }
@@ -430,7 +423,7 @@ const updateProfile = async (req, res) => {
     const response = successResponse(
       200,
       'Profile updated successfully',
-      updatedProfileData
+      updatedProfileData,
     );
     return res.status(200).json(response);
   } catch (error) {
@@ -439,7 +432,7 @@ const updateProfile = async (req, res) => {
     const response = badResponse(
       500,
       'An error occurred while updating user profile',
-      error.message
+      error.message,
     );
 
     return res.status(500).json(response);
@@ -456,7 +449,7 @@ const deleteRenterById = async (req, res) => {
     const renterDoc = await renterRef.get();
 
     if (!renterDoc.exists) {
-      const response = badResponse(404, `Renter not found`);
+      const response = badResponse(404, 'Renter not found');
       return res.status(404).json(response);
     }
 
@@ -479,7 +472,7 @@ const deleteRenterById = async (req, res) => {
 
     const response = successResponse(
       200,
-      'Renter and associated lessor deleted successfully'
+      'Renter and associated lessor deleted successfully',
     );
     return res.json(response);
   } catch (error) {
@@ -488,7 +481,7 @@ const deleteRenterById = async (req, res) => {
     const response = badResponse(
       500,
       'An error occurred while deleting renter',
-      error.message
+      error.message,
     );
 
     return res.status(500).json(response);
@@ -501,11 +494,11 @@ const createOrder = async (req, res) => {
     const { username, productId } = req.params;
     const { uid } = req.user;
     const {
-      delivery_address,
-      start_rent_date,
-      end_rent_date,
-      payment_use,
-      quantity_order,
+      deliveryAddress,
+      startRentDate,
+      endRentDate,
+      paymentUse,
+      quantityOrder,
       kurir,
     } = req.body;
 
@@ -520,7 +513,7 @@ const createOrder = async (req, res) => {
       return res.status(404).json(response);
     }
     const renterData = renterSnapshot.docs[0].data();
-    const renter_id = renterData.renter_id;
+    const renterId = renterData.renter_id;
 
     // Check Product
     const productSnapshot = await db
@@ -533,45 +526,51 @@ const createOrder = async (req, res) => {
     }
 
     // Check Auth Token
-    if (renterData.renter_id !== uid) {
+    if (renterId !== uid) {
       const response = badResponse(403, 'Not allowed');
       return res.status(403).json(response);
     }
     const productData = productSnapshot.data();
-    const lessor_id = productData.lessor_id;
-    const product_id = productId;
+    const lessorId = productData.lessor_id;
 
-    if (productData.quantity < quantity_order) {
+    if (productData.quantity < quantityOrder) {
       const response = badResponse(
         400,
-        `The maximum order quantity for this product is ${productData.quantity}`
+        `The maximum order quantity for this product is ${productData.quantity}`,
       );
       return res.status(400).json(response);
     }
 
-    const lessorSnapshot = await db.collection('lessors').doc(lessor_id).get();
+    const lessorSnapshot = await db.collection('lessors').doc(lessorId).get();
 
     const lessorData = lessorSnapshot.data();
 
-    if (lessorData.username == username) {
+    if (lessorData.username === username) {
       const response = badResponse(403, 'You cant order your own product');
       return res.status(403).json(response);
     }
 
+    if (quantityOrder < 1) {
+      const response = badResponse(
+        400,
+        'The minimum order quantity for this product is 1',
+      );
+      return res.status(400).json(response);
+    }
     // Generate document reference baru
     const orderRef = db.collection('orders').doc();
 
     // Buat Order Baru
     const newOrder = {
       order_id: orderRef.id,
-      renter_id,
-      lessor_id,
-      product_id,
-      delivery_address,
-      start_rent_date,
-      end_rent_date,
-      quantity_order,
-      payment_use,
+      renter_id: renterId,
+      lessor_id: lessorId,
+      product_id: productId,
+      delivery_address: deliveryAddress,
+      start_rent_date: startRentDate,
+      end_rent_date: endRentDate,
+      quantity_order: quantityOrder,
+      payment_use: paymentUse,
       kurir,
       status: 'pending',
     };
@@ -588,18 +587,18 @@ const createOrder = async (req, res) => {
 
     delete responseData.renter.userRecordData;
     const response = successResponse(
-      200,
+      201,
       'Order Created successfully',
-      responseData
+      responseData,
     );
 
-    res.json(response);
+    return res.status(201).json(response);
   } catch (error) {
     console.error('Error while creating the order:', error);
     const response = badResponse(
       500,
       'An error occurred while creating the order',
-      error.message
+      error.message,
     );
 
     return res.status(500).json(response);
@@ -644,10 +643,7 @@ const getOrdersByRenter = async (req, res) => {
       return res.status(404).json(response);
     }
 
-    const orders = [];
-
-    // Mengambil seluruh order by renter
-    for (const doc of orderRenter.docs) {
+    const ordersPromises = orderRenter.docs.map(async (doc) => {
       const orderData = doc.data();
 
       // Mengambil data produk terkait
@@ -660,7 +656,7 @@ const getOrdersByRenter = async (req, res) => {
       if (productSnapshot.exists) {
         const productData = productSnapshot.data();
 
-        orders.push({
+        return {
           order_id: doc.id,
           delivery_address: orderData.delivery_address,
           start_rent_date: orderData.start_rent_date,
@@ -675,14 +671,21 @@ const getOrdersByRenter = async (req, res) => {
           imageUrl: productData.imageUrl,
           categori: productData.categori,
           sub_category: productData.sub_category,
-        });
+        };
       }
-    }
+      const response = badResponse(
+        500,
+        'An error occurred while getting orders by renter',
+      );
+      return res.status(500).json(response);
+    });
+
+    const orders = await Promise.all(ordersPromises);
 
     const response = successResponse(
       200,
       'Orders retrieved successfully',
-      orders
+      orders.filter((order) => order !== undefined),
     );
 
     return res.status(200).json(response);
@@ -691,7 +694,7 @@ const getOrdersByRenter = async (req, res) => {
     const response = badResponse(
       500,
       'An error occurred while getting orders by renter',
-      error.message
+      error.message,
     );
 
     return res.status(500).json(response);
@@ -703,8 +706,12 @@ const updateOrder = async (req, res) => {
   try {
     const { uid } = req.user;
     const { username, orderId } = req.params;
-    const { delivery_address, kurir, start_rent_date, end_rent_date } =
-      req.body;
+    const {
+      deliveryAddress,
+      kurir,
+      startRentDate,
+      endRentDate,
+    } = req.body;
 
     // Mengambil data order berdasarkan orderId
     const orderSnapshoot = db.collection('orders').doc(orderId);
@@ -727,7 +734,7 @@ const updateOrder = async (req, res) => {
     if (renterData.username !== username || renterData.renter_id !== uid) {
       const response = badResponse(
         403,
-        'Access denied. Order does not belong to the renter'
+        'Access denied. Order does not belong to the renter',
       );
       return res.status(403).json(response);
     }
@@ -736,17 +743,17 @@ const updateOrder = async (req, res) => {
     if (orderData.status !== 'pending') {
       const response = badResponse(
         403,
-        'Order cannot be edited , because is not in pending status'
+        'Order cannot be edited , because is not in pending status',
       );
       return res.status(403).json(response);
     }
 
     // Update data order dengan atribut yang dapat diubah
     await orderSnapshoot.update({
-      delivery_address: delivery_address || orderData.delivery_address,
+      delivery_address: deliveryAddress || orderData.delivery_address,
       kurir: kurir || orderData.kurir,
-      start_rent_date: start_rent_date || orderData.start_rent_date,
-      end_rent_date: end_rent_date || orderData.end_rent_date,
+      start_rent_date: startRentDate || orderData.start_rent_date,
+      end_rent_date: endRentDate || orderData.end_rent_date,
     });
 
     // Mengambil data terbaru dari order setelah pembaruan
@@ -756,7 +763,7 @@ const updateOrder = async (req, res) => {
     const response = successResponse(
       200,
       'Order updated successfully',
-      updatedOrderData
+      updatedOrderData,
     );
 
     return res.status(200).json(response);
@@ -766,7 +773,7 @@ const updateOrder = async (req, res) => {
     const response = badResponse(
       500,
       'An error occurred while editing the order',
-      error.message
+      error.message,
     );
 
     return res.status(500).json(response);
@@ -814,7 +821,7 @@ const getDetailOrdersByRenter = async (req, res) => {
     if (renterData.username !== username || renterData.renter_id !== uid) {
       const response = badResponse(
         403,
-        'Access denied. Order does not belong to the renter'
+        'Access denied. Order does not belong to the renter',
       );
       return res.status(403).json(response);
     }
@@ -827,7 +834,7 @@ const getDetailOrdersByRenter = async (req, res) => {
     const response = successResponse(
       200,
       'Order retrieved successfully',
-      reponseData
+      reponseData,
     );
 
     return res.status(200).json(response);
@@ -837,7 +844,7 @@ const getDetailOrdersByRenter = async (req, res) => {
     const response = badResponse(
       500,
       'An error occurred while getting the order',
-      error.message
+      error.message,
     );
 
     return res.status(500).json(response);

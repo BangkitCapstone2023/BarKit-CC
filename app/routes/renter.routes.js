@@ -1,6 +1,6 @@
 import express from 'express';
-import { authMiddleware } from '../utils/validation.js';
-const router = express.Router();
+import { authMiddleware } from '../middlewares/auth.middlewares.js';
+
 import {
   getDashboardData,
   searchProduct,
@@ -15,15 +15,16 @@ import {
   getOrdersByRenter,
   getDetailOrdersByRenter,
   updateOrder,
-} from '../controllers/renterHandler.js';
+} from '../controllers/renter.controller.js';
 
 import {
   addProductToCart,
   getCartProductsByRenter,
   updateCartProductQuantity,
   deleteCartProduct,
-} from '../controllers/productHandler.js';
+} from '../controllers/product.controller.js';
 
+const router = express.Router();
 // Rute-rute yang tidak membutuhkan otentikasi
 // Explore Product Routes
 router.get('/', getDashboardData);

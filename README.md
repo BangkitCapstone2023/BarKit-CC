@@ -49,7 +49,7 @@
 - [Getting Started](#toolbox-getting-started)
   * [Prerequisites](#bangbang-prerequisites)
   * [Run Locally With NPM](#running-run-locally-with-npm)
-  * [Run Locally With Docker](#whale2-run-locally-with-docker-coming-soon)
+  * [Run Locally With Docker](#whale2-run-locally-with-docker) (Recommended)
   * [Deployment](#cloud-deployment)
 - [Usage](#eyes-usage)
 - [Contributing](#wave-contributing)
@@ -92,21 +92,14 @@ You can see all api feature at our [API documentation](https://documenter.getpos
 <!-- Env Variables -->
 ### :key: Credential File 
 
-To run this project, you will need to add the following credential file to `app/config` folder
-
+To run this project, you will need the following credential file:
   <ul>
-    <li><a href="https://firebase.google.com/docs/admin/setup">Firebase Admin SDK</a> <br /> Go to firebase console -> pick your project -> project setting -> service account tab -> genereate new private key -> change the file to firebaseAccountKey2.json</li>
-    <li><a href="https://firebase.google.com/docs/web/setup">Firebase Config/Client</a> <br /> Go to firebase console -> pick your project -> project setting -> in general tab scroll down -> click add app button -> pick web logo "<\>" -> fill app nickname & click register app -> copy all <em>const firebaseConfig</em> variabel value -> make a new notepad and name it with firebaseClientConfig2.json -> paste value from firebaseConfig variabel before</li>
-    <li><a href="https://cloud.google.com/storage/docs/apis">Cloud Storage Credential</a> <br /> Go to google cloud console -> go to IAM & Admin tab -> service account -> create service account -> fill service account name (ex: cloud-storage-barkit-admin) -> select the role to cloud storage admin -> click done -> click your service account you already created -> go to KEYS tab -> click add key -> create new key -> pick json -> create -> and rename it to cloudStorageKey2.json </li>
+    <li><a href="https://firebase.google.com/docs/admin/setup">Firebase Admin SDK</a> <br /> Go to firebase console -> pick your project -> project setting -> service account tab -> genereate new private key</li>
+    <li><a href="https://firebase.google.com/docs/web/setup">Firebase Config/Client</a> <br /> Go to firebase console -> pick your project -> project setting -> in general tab scroll down -> click add app button -> pick web logo "<\>" -> fill app nickname & click register app -> copy all <em>const firebaseConfig</em> variabel value -> make a new notepad -> paste value from firebaseConfig variabel before</li>
+    <li><a href="https://cloud.google.com/storage/docs/apis">Cloud Storage Credential</a> <br /> Go to google cloud console -> go to IAM & Admin tab -> service account -> create service account -> fill service account name (ex: cloud-storage-barkit-admin) -> select the role to cloud storage admin -> click done -> click your service account you already created -> go to KEYS tab -> click add key -> create new key -> pick json -> create </li>
   </ul>
   
-_Note:_ Change the name file
-  <ul>
-    <li>Firebase Admin SDK = firebaseAccountKey2.json</li>
-    <li>Firebase Config = firebaseClientConfig2.json</li>
-    <li>Cloud Storage Credential = cloudStorageKey2.json</li>
-  </ul>
-  
+_Note:_ 
   <em>Note: if you are someone i know, request & <strong>download our credential</strong> <a href="https://drive.google.com/drive/folders/1nNdzHuIT3-UUD0rRbfC111-mpkefqcfc?usp=sharing">Here</a></em>
   
 <!-- Getting Started -->
@@ -123,38 +116,87 @@ This project uses NPM as package manager
   node -v
   npm -v
   ```
-  _Note: In development we are using Windows 10 pro, Visual studio code, **node version 14.21.3** ,and **npm version 6.14.18**_
+   _**Note: In development we are using `Windows 10 pro`, `Visual Studio Code`, `node version 14.21.3`, and `npm version 6.14.18`.**_
   
+ * If there are **any error with tfjs-node** when running at local using NPM **(if you are not clone/run the server yet,ignore this step)**, try this step 1 by 1: <a name="tfjs-node-error"></a>
+    1. `npm install -g node-gyp`
+    2. Go to powershell -> Run as administrator -> `npm install -g --production windows-build-tools`
+    3. `Install the current version of Python` from the [Microsoft Store package](https://www.microsoft.com/en-us/p/python-310/9pjpw5ldxlz5).
+    4. `Install Visual C++ Build Environment`: [Visual Studio Build Tools](https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=BuildTools)
+    (using "Visual C++ build tools" workload) or [Visual Studio Community](https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=Community)
+   (using the "Desktop development with C++" workload)
+  
+     _Note_ : **For TFJS-Node Error**
+    1. If you _already done with 1 step (ex: install node-gcp), try running the server again_. If the error persists, move on to the next step.
+    2. If there is any error with node-gyp, try going [here](https://github.com/nodejs/node-gyp/issues/809).
+    3. If there is any error with step 2 (install windows-build-tools), check [here](https://github.com/tensorflow/tfjs/blob/master/tfjs-node/WINDOWS_TROUBLESHOOTING.md#msbuildexe-exceptions).
+    4. If there is any error when trying steps 3-4 (install Python & Visual C++ build tools), check [here](https://github.com/nodejs/node-gyp#on-windows).
+    
 * [Docker](https://www.docker.com/) (if you want to run this repostory with docker)
 * Google Cloud Platform Account (If You want to to deploy it in GCP)
+  
+  _Note: We already deploy our API but the database we are using is still free tier (firebase spark), not the final delivery databases, and for cloud run we are setting to maximun 2 instances, this for saving GCP money, we will update the credetail to "real credential" and higher cloud run instaces and cpu capacity , no later than 11 June 2023_
 
 <!-- Installation -->
 ### :running: Run Locally With NPM
 
 Follow this step to run this repostory code in your local device:
-  1. Clone the repo
+  1. Open git bash and Clone the repo
    ```sh
    git clone https://github.com/BangkitCapstone2023/BarKit-CC.git
    ```
-2. Go to project
-   ```sh
-   cd BarKit-CC
-   ```
-3. Install Package
-   ```sh
-   npm install
-   ```
-4. Make sure you already have the [Credential File](#key-credential-file) and store it in the `app/config` folder.
-5. Change databaseURL value at app/config/configFirebase.js file, to your databaseURL (ex : https://{projectName}.firebaseio.com)
-5. Change projectId and bucketName value at app/configCloudStorage.js file, to your GCP project id and bucket name 
-6. Start the server
+  2. Go to project folder 
+  ``` sh
+  cd BarKit-CC
+  ``` 
+3. Open the project at VS Code 
+  ``` sh
+  code . 
+  ``` 
+  4. open terminal & install Package
+  ``` sh
+  npm install
+  ``` 
+5. Make sure you already have the [Credential File](#key-credential-file) and store the credential *file name* in  `app/config/config-template.json` file.
+6. And also Change `projectID, bucketName, and databaseURL` value at `app/config/config-template.json` file, with your GCP project id, bucket name, and firestore database url, see the example [here](https://github-production-user-asset-6210df.s3.amazonaws.com/72277295/243223361-3196686f-7fa0-4ed5-a64a-d8fc5fdc9814.PNG) 
+7. Change `config-template.json` file name to `config.json`
+8. Start the server
    ```sh
    npm start, or
    npm run dev (using nodemon)
- 
- _Note: Steps 4-6 are only performed if you do not have access to [Our Credential](https://drive.google.com/drive/folders/1nNdzHuIT3-UUD0rRbfC111-mpkefqcfc?usp=share_link). If you are someone we know, please request to obtain our credentials._
+   ```
+ _Note:_
+  1. Steps 5-7 are only performed if you do not have access to [Our Credential](https://drive.google.com/drive/folders/1nNdzHuIT3-UUD0rRbfC111-mpkefqcfc?usp=share_link). If you are someone we know, please request to obtain our credentials and config file. After you download our credential make sure to store it at app/config folder.
+  2. If there are any errors with `tfjs-node`, try [this step](#tfjs-node-error) 
 
-### :whale2: Run Locally With Docker - Coming Soon
+### :whale2: Run Locally With Docker
+  Using Docker so you dont need to configure `node version` or get any error with `tfjs-node`
+  1. Open git bash and Clone the repo
+   ```sh
+   git clone https://github.com/BangkitCapstone2023/BarKit-CC.git
+   ```
+  2. Go to project folder 
+  ``` sh
+  cd BarKit-CC
+  ``` 
+  3. Open the project at VS Code 
+  ``` sh
+  code . 
+  ``` 
+  4. Make sure you already have the [Credential File](#key-credential-file) and store the credential *file name* in  `app/config/config-template.json` file.
+  5. And also Change `projectID, bucketName, and databaseURL` value at `app/config/config-template.json` file, with your GCP project id, bucket name, and firestore database url, see the example [here](https://github-production-user-asset-6210df.s3.amazonaws.com/72277295/243223361-3196686f-7fa0-4ed5-a64a-d8fc5fdc9814.PNG)
+  6. Change `config-template.json` file name to `config.json`
+  7. open terminal & build docker image
+  ``` sh
+  docker build -t barkit-backend .
+  ``` 
+  8. Run the docker image
+  ```sh
+  docker run -p 8080:8080 barkit-backend
+  ```
+   _Note:_
+  1. Steps 4-6 are only performed if you do not have access to [Our Credential](https://drive.google.com/drive/folders/1nNdzHuIT3-UUD0rRbfC111-mpkefqcfc?usp=share_link). If you are someone we know, please request to obtain our credentials and config file. After you download our credential make sure to store it at app/config folder.
+  2. You can use another name & add tag for the image
 
 <!-- Deployment -->
 ### :cloud: Deployment

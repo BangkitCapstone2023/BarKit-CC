@@ -96,7 +96,6 @@ const searchProduct = async (req, res) => {
       }
       return null;
     });
-    console.log(filteredResults);
 
     // Retrieve only the necessary properties from the search results
     const formattedResults = await Promise.all(
@@ -165,7 +164,7 @@ const getAllCategories = async (req, res) => {
       categories.push({ id: doc.id, name: data.name });
     });
 
-    console.log('Working 7 Juni');
+    console.log('Working 7 Juni 18.00');
 
     return res.status(200).json(categories);
   } catch (error) {

@@ -57,37 +57,48 @@ const getDashboardData = async (req, res) => {
 // Search Products Handler
 const searchProduct = async (req, res) => {
   try {
-    const { title, category } = req.query;
+    const { title, category, subCategory } = req.query;
 
     if (!title) {
       const response = badResponse(
         400,
-        'Plese Enter a Word to search product',
+        'Please enter a word to search for a product',
       );
       return res.status(400).json(response);
     }
 
-    // Ambil semua data produk dari Firestore
+    // Retrieve all product data from Firestore
     const productsSnapshot = await db.collection('products').get();
     const products = productsSnapshot.docs.map((doc) => doc.data());
 
-    // Buat opsi Fuse.js
+    // Create Fuse.js options
     const fuseOptions = {
       keys: ['title'],
       threshold: 0.3,
     };
 
-    // Buat instance Fuse dengan data produk dan opsi
+    // Create a Fuse instance with the product data and options
     const fuse = new Fuse(products, fuseOptions);
 
-    // Lakukan pencarian menggunakan Fuse.js
+    // Perform search using Fuse.js
     const searchResults = fuse.search(title);
 
-    // Filter berdasarkan kategori
-    // eslint-disable-next-line max-len
-    const filteredResults = searchResults.filter((result) => (category ? result.item.category === category : true));
+    // Filter by category and subCategory
+    const filteredResults = searchResults.filter((result) => {
+      if (category && subCategory) {
+        return result.item.category === category && result.item.sub_category === subCategory;
+      }
+      if (category) {
+        return result.item.category === category;
+      }
+      if (subCategory) {
+        return result.item.sub_category === subCategory;
+      }
+      return null;
+    });
+    console.log(filteredResults);
 
-    // Ambil hanya properti yang diperlukan dari hasil pencarian
+    // Retrieve only the necessary properties from the search results
     const formattedResults = await Promise.all(
       filteredResults.map(async (result) => {
         const lessorSnapshot = await db
@@ -98,11 +109,7 @@ const searchProduct = async (req, res) => {
         const { storeFullName, storeAddress, storePhone } = lessorData;
 
         const {
-          item: {
-            price,
-            quantity,
-            imageUrl,
-          },
+          item: { price, quantity, imageUrl },
         } = result;
 
         return {

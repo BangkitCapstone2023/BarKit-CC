@@ -5,17 +5,17 @@ import { dirname, join } from 'path';
 
 const { Storage } = pkg;
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const filename = fileURLToPath(import.meta.url);
+const filedirname = dirname(filename);
 
-const configPath = join(__dirname, 'config.json');
+const configPath = join(filedirname, 'config.json');
 const config = JSON.parse(readFileSync(configPath));
 
-const serviceKey = join(__dirname, config.cloudStorageCredential);
+const serviceKey = join(filedirname, config.cloudStorageCredential);
 const storage = new Storage({
   projectId: config.projectId,
   keyFilename: serviceKey,
 });
-const bucketName = config.bucketName;
+const { bucketName } = config;
 
 export { storage, bucketName };

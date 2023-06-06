@@ -1,5 +1,5 @@
 import admin from 'firebase-admin';
-import { db } from '../config/configFirebase.js';
+import db from '../config/firebase.config.js';
 
 const authMiddleware = async (req, res, next) => {
   const { authorization } = req.headers;
@@ -30,7 +30,7 @@ const authMiddleware = async (req, res, next) => {
     next();
   } catch (error) {
     console.error(error.message);
-    return res.status(401).json({ status: 401, message: 'Unauthorized' });
+    res.status(401).json({ status: 401, message: 'Unauthorized' });
   }
 };
 
@@ -38,24 +38,25 @@ const adminMiddleware = async (req, res, next) => {
   const { authorization } = req.headers;
   try {
     if (!authorization) {
-      return res.status(403).json({ status: 403, message: 'Forbidden' });
-    } else {
-      const token = authorization.split('Bearer ')[1];
-      const decodedToken = await admin.auth().verifyIdToken(token);
-      req.user = decodedToken;
+      res.status(403).json({ status: 403, message: 'Forbidden' });
+      return;
+    }
+    const token = authorization.split('Bearer ')[1];
+    const decodedToken = await admin.auth().verifyIdToken(token);
+    req.user = decodedToken;
 
-      const adminSnapshot = await db
-        .collection('renters')
-        .where('fullName', '==', 'Admin Barkit')
-        .get();
-      const adminData = adminSnapshot.docs[0].data();
-      if (adminData.admin_id !== decodedToken.uid) {
-        return res.status(403).json({ status: 403, message: 'Forbidden' });
-      }
+    const adminSnapshot = await db
+      .collection('renters')
+      .where('fullName', '==', 'Admin Barkit')
+      .get();
+    const adminData = adminSnapshot.docs[0].data();
+    if (adminData.admin_id !== decodedToken.uid) {
+      res.status(403).json({ status: 403, message: 'Forbidden' });
+      return;
     }
     next();
-  } catch {
-    return res.status(403).json({ status: 403, message: 'Forbidden' });
+  } catch (error) {
+    res.status(403).json({ status: 403, message: 'Forbidden' });
   }
 };
 

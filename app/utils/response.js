@@ -1,7 +1,7 @@
 const badResponse = (statusCode, message, error = null) => {
   const response = {
     status: statusCode,
-    message: message,
+    message,
   };
 
   if (error) {
@@ -15,15 +15,14 @@ const successResponse = (statusCode, message, data) => {
   if (data) {
     return {
       status: statusCode,
-      message: message,
-      data: data,
-    };
-  } else {
-    return {
-      status: statusCode,
-      message: message,
+      message,
+      data,
     };
   }
+  return {
+    status: statusCode,
+    message,
+  };
 };
 
 export { badResponse, successResponse };

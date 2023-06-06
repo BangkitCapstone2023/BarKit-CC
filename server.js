@@ -1,8 +1,8 @@
 import express from 'express';
-import authRouter from './app/routes/authRoute.js';
-import lessorRouter from './app/routes/lessorRoute.js';
-import generalRouter from './app/routes/generalRoute.js';
-import renterRouter from './app/routes/renterRoute.js';
+import authRouter from './app/routes/auth.routes.js';
+import lessorRouter from './app/routes/lessor.routes.js';
+import generalRouter from './app/routes/admin.routes.js';
+import renterRouter from './app/routes/renter.routes.js';
 
 const app = express();
 const port = 8080;

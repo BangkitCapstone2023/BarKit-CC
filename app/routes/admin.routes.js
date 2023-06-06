@@ -1,10 +1,7 @@
 import express from 'express';
-import { adminMiddleware } from '../utils/validation.js';
-
-const router = express.Router();
+import { adminMiddleware } from '../middlewares/auth.middlewares.js';
 
 import {
-  getImageByName,
   getAllImages,
   getAllLessors,
   getLessorById,
@@ -16,9 +13,11 @@ import {
   getProductById,
   getAllOrders,
   getOrderById,
-} from '../controllers/generalHandler.js';
+} from '../controllers/admin.controller.js';
 
-import predictionModel from '../models/model.js';
+import predictionModel from '../models/image.model.js';
+
+const router = express.Router();
 
 // Model Router
 router.post('/predict', predictionModel);
@@ -35,11 +34,7 @@ router.get('/admin/products', adminMiddleware, getAllProduct);
 router.get('/admin/products/:productId', getProductById);
 
 router.post('/admin/category', adminMiddleware, addCategory);
-router.post(
-  '/admin/category/:categoryId/subcategory',
-  adminMiddleware,
-  addSubCategory
-);
+router.post('/admin/category/:categoryId/subcategory', adminMiddleware, addSubCategory);
 
 // Order Routers
 router.get('/admin/orders', adminMiddleware, getAllOrders);

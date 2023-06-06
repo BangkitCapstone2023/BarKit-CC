@@ -1,16 +1,12 @@
 import sharp from 'sharp';
 import * as tf from '@tensorflow/tfjs-node';
-import multer from 'multer';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
-const multerStorage = multer.memoryStorage();
-const upload = multer({ storage: multerStorage });
-
 // File paths
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const modelPath = join(__dirname, 'model', 'model.json');
+const filename = fileURLToPath(import.meta.url);
+const filedirname = dirname(filename);
+const modelPath = join(filedirname, 'model', 'model.json');
 
 // List of subCategories
 const subCategories = [
@@ -24,7 +20,7 @@ const subCategories = [
   'tenda',
 ];
 
-const predictionModel = async (file, sub_category) => {
+const predictionModel = async (file, subCategory) => {
   try {
     // Proses gambar yang diunggah menggunakan sharp
     const image = sharp(file.buffer).resize(150, 150);
@@ -49,14 +45,13 @@ const predictionModel = async (file, sub_category) => {
     const predictedSubCategorie = subCategories[predictedClass];
 
     // Bandingkan kategori prediksi dengan kategori yang diberikan
-    if (predictedSubCategorie === sub_category) {
+    if (predictedSubCategorie === subCategory) {
       // Prediksi sesuai dengan kategori yang diberikan
       return { success: true, predictedSubCategorie };
-    } else {
-      // Prediksi tidak sesuai dengan kategori yang diberikan
-      const errorMessage = `Failed, the image is ${predictedSubCategorie}, not ${sub_category}`;
-      return { success: false, errorMessage };
     }
+    // Prediksi tidak sesuai dengan kategori yang diberikan
+    const errorMessage = `Failed, the image is ${predictedSubCategorie}, not ${subCategory}`;
+    return { success: false, errorMessage };
   } catch (error) {
     console.error(error.message);
     return { success: false, errorMessage: error.message };

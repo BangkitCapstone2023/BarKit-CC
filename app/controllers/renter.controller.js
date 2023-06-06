@@ -164,7 +164,7 @@ const getAllCategories = async (req, res) => {
       categories.push({ id: doc.id, name: data.name });
     });
 
-    console.log('Working 7 Juni 18.00');
+    console.log('Working 7 Juni 20.00');
 
     return res.status(200).json(categories);
   } catch (error) {

@@ -384,7 +384,8 @@ const updateProductById = async (req, res) => {
           return res.status(413).json(response);
         }
 
-        const { category, subCategory } = itemData;
+        const { category } = itemData;
+        const subCategory = itemData.sub_category;
 
         const predictionResult = await predictionModel(file, subCategory);
 

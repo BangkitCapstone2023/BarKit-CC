@@ -214,7 +214,7 @@ To deploy this project we are using cloud run at GCP (you can use another servic
  3. Make a <a href="https://cloud.google.com/artifact-registry/docs/repositories/create-repos">repostory at artifact registery</a>
  4. Push the <a href="https://cloud.google.com/artifact-registry/docs/docker/pushing-and-pulling">Docker image to a artifact registery</a>
    ```bash
-  docker tag barkit-image docker tag SOURCE-IMAGE LOCATION-docker.pkg.dev/PROJECT-ID/REPOSITORY/IMAGE:TAG
+  docker tag SOURCE-IMAGE LOCATION-docker.pkg.dev/PROJECT-ID/REPOSITORY/IMAGE:TAG
   docker push YOUR-TAGGED-IMAGE-NAME
   ```
   5. Create a <a href="https://cloud.google.com/run/docs/deploying">cloud run service </a> and use your image at artifac registery repostory

@@ -19,6 +19,7 @@ const verifyRenter = async (username, uid) => {
     }
 
     const renterData = renterSnapshot.docs[0].data();
+
     const renterRef = renterSnapshot.docs[0].ref;
 
     // Check Auth Token

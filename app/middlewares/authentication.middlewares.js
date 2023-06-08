@@ -20,7 +20,6 @@ const authMiddleware = async (req, res, next) => {
 
     const decodedToken = await admin.auth().verifyIdToken(token);
     req.user = decodedToken;
-    console.log(decodedToken);
 
     const docRef = db.collection('tokens').doc(token);
     const doc = await docRef.get();

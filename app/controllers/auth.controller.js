@@ -31,6 +31,7 @@ const createUser = async (
   address = '',
   phone = '',
   gender = 'male',
+  isLessor = false,
 ) => {
   try {
     // Validating required fields
@@ -57,10 +58,7 @@ const createUser = async (
     const userRecord = await admin.auth().createUser({ email, password });
 
     const userRecordData = {
-      emailVerified: userRecord.emailVerified,
-      lastRefreshTime: userRecord.metadata.lastRefreshTime,
       creationTime: userRecord.metadata.creationTime,
-      lastSignInTime: userRecord.metadata.lastSignInTime,
     };
 
     const userDocRef = db.collection('renters').doc(userRecord.uid);
@@ -73,6 +71,7 @@ const createUser = async (
       phone,
       address,
       gender,
+      isLessor,
     };
 
     delete userData.password;

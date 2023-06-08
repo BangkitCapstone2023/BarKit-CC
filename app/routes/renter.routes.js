@@ -1,5 +1,5 @@
 import express from 'express';
-import { authMiddleware } from '../middlewares/auth.middlewares.js';
+import { authMiddleware } from '../middlewares/authentication.middlewares.js';
 
 import {
   getDashboardData,
@@ -39,7 +39,7 @@ router.use(authMiddleware);
 // Profile Renter Routes
 router.get('/:username/profile', getUserProfile);
 router.put('/:username/profile', updateProfile);
-router.delete('/renters/:renterId/profile', deleteRenterById);
+router.delete('/renters/:username/profile', deleteRenterById);
 
 // Cart Routes
 router.post('/:username/products/:productId/carts', addProductToCart);

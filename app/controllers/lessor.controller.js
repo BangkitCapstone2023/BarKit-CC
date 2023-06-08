@@ -1,6 +1,18 @@
 import { badResponse, successResponse } from '../utils/response.js';
 import db from '../config/firebase.config.js';
 
+import {
+  verifyRenter,
+  verifyLessor,
+} from '../middlewares/authorization.middleware.js';
+
+import {
+  checkLessor,
+  checkOrder,
+  checkRenter,
+  checkProduct,
+} from '../utils/snapshot.js';
+
 // Register Lessor Handler
 const registerLessor = async (req, res) => {
   const lessor = {
@@ -37,28 +49,18 @@ const registerLessor = async (req, res) => {
     }
 
     // Check renters exist
-    const renterSnapshot = await db
-      .collection('renters')
-      .where('username', '==', req.params.username)
-      .get();
-    if (renterSnapshot.empty) {
-      const response = badResponse(
-        404,
-        `User '${req.params.username}' not found`,
-      );
-      return res.status(404).json(response);
-    }
+    const {
+      errorRenter,
+      statusRenter,
+      checkResponseRenter,
+      renterData,
+    } = await verifyRenter(req.params.username, uid);
 
-    // Check Auth Token
-    const renterId = renterSnapshot.docs[0].id;
-    if (renterId !== uid) {
-      const response = badResponse(403, 'Not allowed');
-      return res.status(403).json(response);
+    if (errorRenter) {
+      return res.status(statusRenter).json(checkResponseRenter);
     }
-
-    const renterData = renterSnapshot.docs[0].data();
     const { fullName, username, email } = renterData;
-
+    const renterId = renterData.renter_id;
     const lessorSnapshot = await db
       .collection('lessors')
       .where('renter_id', '==', renterId)
@@ -121,32 +123,18 @@ const getLessorProfile = async (req, res) => {
     const { username } = req.params;
     const { uid } = req.user;
     // Check if the lessor exists
-    const lessorSnapshot = await db
-      .collection('lessors')
-      .where('username', '==', username)
-      .get();
+    const {
+      errorLessor,
+      statusLessor,
+      checkResponseLessor,
+      lessorData,
+    } = await verifyLessor(username, uid);
 
-    if (lessorSnapshot.empty) {
-      const response = badResponse(404, `Lessor '${username}' not found`);
-      return res.status(404).json(response);
+    if (errorLessor) {
+      return res.status(statusLessor).json(checkResponseLessor);
     }
 
-    const lessorData = lessorSnapshot.docs[0].data();
-
-    // Check Auth Token
-    if (lessorData.renter_id !== uid) {
-      const response = badResponse(403, 'Not allowed');
-      return res.status(403).json(response);
-    }
-
-    const renterSnapshot = await db
-      .collection('renters')
-      .where('username', '==', username)
-      .get();
-
-    const renterData = renterSnapshot.docs[0].data();
-
-    const responseData = { ...lessorData, renter: renterData };
+    const responseData = lessorData;
     const response = successResponse(
       200,
       'Success Get Lessor Profile',
@@ -178,25 +166,19 @@ const updateLessor = async (req, res) => {
       storePhone,
       kurir,
     } = req.body;
+
     // Check if the lessor exists
-    const lessorSnapshot = await db
-      .collection('lessors')
-      .where('username', '==', username)
-      .get();
+    const {
+      errorLessor,
+      statusLessor,
+      checkResponseLessor,
+      lessorData,
+    } = await verifyLessor(username, uid);
 
-    if (lessorSnapshot.empty) {
-      const response = badResponse(404, `Lessor '${username}' not found`);
-      return res.status(404).json(response);
+    if (errorLessor) {
+      return res.status(statusLessor).json(checkResponseLessor);
     }
-
-    const lessorData = lessorSnapshot.docs[0].data();
-
-    // Check Auth Token
-    if (lessorData.renter_id !== uid) {
-      const response = badResponse(403, 'Not allowed');
-      return res.status(403).json(response);
-    }
-    const lessorId = lessorSnapshot.docs[0].id;
+    const lessorId = lessorData.lessor_id;
 
     // Update  lessor data
     await db
@@ -220,14 +202,7 @@ const updateLessor = async (req, res) => {
       kurir: kurir || lessorData.kurir,
     };
 
-    const renterSnapshot = await db
-      .collection('renters')
-      .where('username', '==', username)
-      .get();
-
-    const renterData = renterSnapshot.docs[0].data();
-
-    const responseData = { ...updateData, renter: renterData };
+    const responseData = updateData;
     const response = successResponse(
       200,
       'Success Update Lessor Data',
@@ -252,18 +227,19 @@ const deleteLessorById = async (req, res) => {
 
   try {
     // Get the lessor document
-    const lessorSnapshot = await db.collection('lessors').doc(lessorId).get();
+    const {
+      errorLessor,
+      statusLessor,
+      checkResponseLessor,
+      lessorData,
+      lessorRef,
+    } = await checkLessor(lessorId);
 
-    if (!lessorSnapshot.exists) {
-      const response = badResponse(500, `Lessor '${lessorId}' not found`);
-      return res.status(500).json(response);
+    if (errorLessor) {
+      return res.status(statusLessor).json(checkResponseLessor);
     }
-
-    // Get the lessor's username
-    const lessorData = lessorSnapshot.data();
     const lessorUsername = lessorData.username;
 
-    const lessorRef = db.collection('lessors').doc(lessorId);
     await lessorRef.delete();
 
     // Delete all products uploaded by the lessor
@@ -300,24 +276,18 @@ const getOrdersByLessor = async (req, res) => {
     const { username } = req.params;
     const { uid } = req.user;
     // Check if lessor is exits
-    const lessorSnapshot = await db
-      .collection('lessors')
-      .where('username', '==', username)
-      .get();
+    const {
+      errorLessor,
+      statusLessor,
+      checkResponseLessor,
+      lessorData,
+    } = await verifyLessor(username, uid);
 
-    if (lessorSnapshot.empty) {
-      const response = badResponse(404, `Lessor '${username}' not found`);
-      return res.status(404).json(response);
+    if (errorLessor) {
+      return res.status(statusLessor).json(checkResponseLessor);
     }
 
-    const lessorData = lessorSnapshot.docs[0].data();
-
-    if (lessorData.renter_id !== uid) {
-      const response = badResponse(403, 'Not allowed');
-      return res.status(403).json(response);
-    }
-
-    const lessorId = lessorSnapshot.docs[0].id;
+    const lessorId = lessorData.lessor_id;
 
     // Mencari orderan berdasarkan lessor_id
     const orderSnapshot = await db
@@ -359,27 +329,29 @@ const getLessorOrderById = async (req, res) => {
     const { username, orderId } = req.params;
     const { uid } = req.user;
     // Check if lessor is exits
-    const lessorSnapshot = await db
-      .collection('lessors')
-      .where('username', '==', username)
-      .get();
+    const {
+      errorLessor,
+      statusLessor,
+      checkResponseLessor,
+      lessorData,
+    } = await verifyLessor(username, uid);
 
-    if (lessorSnapshot.empty) {
-      const response = badResponse(404, `Lessor '${username}' not found`);
-      return res.status(404).json(response);
+    if (errorLessor) {
+      return res.status(statusLessor).json(checkResponseLessor);
+    }
+    const lessorId = lessorData.lessor_id;
+
+    const {
+      errorRenter,
+      statusRenter,
+      checkResponseRenter,
+      renterData,
+    } = await checkRenter(lessorData.renter_id);
+
+    if (errorRenter) {
+      return res.status(statusRenter).json(checkResponseRenter);
     }
 
-    const lessorId = lessorSnapshot.docs[0].id;
-
-    const lessorData = lessorSnapshot.docs[0].data();
-
-    if (lessorData.renter_id !== uid) {
-      const response = badResponse(
-        403,
-        'Not allowed this order is not your order',
-      );
-      return res.status(403).json(response);
-    }
     // Mencari order berdasarkan lessor_id dan order_id
     const orderSnapshot = await db
       .collection('orders')
@@ -394,14 +366,20 @@ const getLessorOrderById = async (req, res) => {
 
     const orderData = orderSnapshot.docs[0].data();
 
-    const renterSnapshot = await db
-      .collection('renters')
-      .where('renter_id', '==', orderData.renter_id)
-      .get();
+    const {
+      errorProduct,
+      statusProduct,
+      checkResponseProduct,
+      productData,
+    } = await checkProduct(orderData.product_id);
 
-    const renterData = renterSnapshot.docs[0].data();
+    if (errorProduct) {
+      return res.status(statusProduct).json(checkResponseProduct);
+    }
 
-    const resposeData = { ...orderData, renter: renterData };
+    delete renterData.renter_id;
+
+    const resposeData = { ...orderData, product: productData, renter: renterData };
     const response = successResponse(
       200,
       'Order retrieved successfully',
@@ -428,37 +406,30 @@ const updateOrderStatusAndNotes = async (req, res) => {
     const { status, notes } = req.body;
     const { uid } = req.user;
 
-    const lessorSnapshot = await db
-      .collection('lessors')
-      .where('username', '==', username)
-      .get();
+    const {
+      errorLessor,
+      statusLessor,
+      checkResponseLessor,
+      lessorData,
+    } = await verifyLessor(username, uid);
 
-    if (lessorSnapshot.empty) {
-      const response = badResponse(404, `Lessor '${username}' not found`);
-      return res.status(404).json(response);
+    if (errorLessor) {
+      return res.status(statusLessor).json(checkResponseLessor);
     }
 
-    const lessorId = lessorSnapshot.docs[0].id;
+    const lessorId = lessorData.lessor_id;
 
-    const lessorData = lessorSnapshot.docs[0].data();
+    const {
+      errorOrder,
+      statusOrder,
+      checkResponseOrder,
+      orderData,
+      orderRef,
+    } = await checkOrder(orderId);
 
-    if (lessorData.renter_id !== uid) {
-      const response = badResponse(
-        403,
-        'Not allowed this order is not your order',
-      );
-      return res.status(403).json(response);
+    if (errorOrder) {
+      return res.status(statusOrder).json(checkResponseOrder);
     }
-
-    const orderRef = db.collection('orders').doc(orderId);
-    const orderDoc = await orderRef.get();
-
-    if (!orderDoc.exists) {
-      const response = badResponse(404, 'Order not found');
-      return res.status(404).json(response);
-    }
-
-    const orderData = orderDoc.data();
 
     // Pastikan lessor_id pada orderan sesuai dengan lessor yang mengirim permintaan
     if (orderData.lessor_id !== lessorId) {

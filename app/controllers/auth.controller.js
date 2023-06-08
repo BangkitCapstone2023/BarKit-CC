@@ -31,6 +31,7 @@ const createUser = async (
   address = '',
   phone = '',
   gender = 'male',
+  isLessor = false,
 ) => {
   try {
     // Validating required fields
@@ -42,7 +43,17 @@ const createUser = async (
       const errorMessage = missingFields
         .map((field) => `${field} is required`)
         .join('. ');
-      throw new Error(errorMessage);
+      const error = new Error(errorMessage);
+      error.statusCode = 404;
+      throw error;
+    }
+
+    // Check if email contains "@gmail.com"
+    if (!email.includes('@gmail.com')) {
+      const errorMessage = 'Invalid Gmail Format';
+      const error = new Error(errorMessage);
+      error.statusCode = 404;
+      throw error;
     }
 
     // Validating username uniqueness
@@ -51,16 +62,16 @@ const createUser = async (
       .where('username', '==', username)
       .get();
     if (!usernameSnapshot.empty) {
-      throw new Error(`Username '${username}' is already taken`);
+      const errorMessage = `Username '${username}' is already taken`;
+      const error = new Error(errorMessage);
+      error.statusCode = 409;
+      throw error;
     }
 
     const userRecord = await admin.auth().createUser({ email, password });
 
     const userRecordData = {
-      emailVerified: userRecord.emailVerified,
-      lastRefreshTime: userRecord.metadata.lastRefreshTime,
       creationTime: userRecord.metadata.creationTime,
-      lastSignInTime: userRecord.metadata.lastSignInTime,
     };
 
     const userDocRef = db.collection('renters').doc(userRecord.uid);
@@ -73,6 +84,7 @@ const createUser = async (
       phone,
       address,
       gender,
+      isLessor,
     };
 
     delete userData.password;
@@ -116,12 +128,13 @@ const register = async (req, res) => {
     );
     res.status(201).json(response);
   } catch (error) {
+    const statusCode = error.statusCode || 500;
     const response = badResponse(
-      500,
+      statusCode,
       'Error While Creating User',
       error.message,
     );
-    res.json(response);
+    res.status(statusCode).json(response);
   }
 };
 
@@ -151,6 +164,15 @@ const login = async (req, res) => {
   const { email, password } = req.body;
 
   try {
+    if (email.length === 0) {
+      const response = badResponse(400, 'Email is required');
+      return res.status(400).json(response);
+    }
+
+    if (password.length === 0) {
+      const response = badResponse(400, 'Passord is required');
+      return res.status(400).json(response);
+    }
     const { token, loginTime } = await loginUser(email, password);
     const renterSnapshot = await db
       .collection('renters')
@@ -159,16 +181,17 @@ const login = async (req, res) => {
 
     const renterData = renterSnapshot.docs[0].data();
 
-    const userLoginData = {
-      email,
-      token,
-    };
-
     const renterDocRef = renterSnapshot.docs[0].ref;
     // Update Last Sign Time
     await renterDocRef.update({
       'userRecordData.lastSignInTime': loginTime,
     });
+    const userLoginData = {
+      renter_id: renterData.renter_id,
+      email,
+      token,
+    };
+
     const resposeData = {
       ...userLoginData,
       renter: {
@@ -179,22 +202,28 @@ const login = async (req, res) => {
         },
       },
     };
+
     const response = successResponse(200, 'User Success Login', resposeData);
-    res.status(200).json(response);
+    return res.status(200).json(response);
   } catch (error) {
     let errorMessage = '';
+    let status = null;
 
     if (error.code === 'auth/wrong-password') {
+      status = 400;
       errorMessage = 'Password yang dimasukkan salah';
     } else if (error.code === 'auth/invalid-email') {
+      status = 400;
       errorMessage = 'Email pengguna tidak valid';
     } else if (error.code === 'auth/user-not-found') {
+      status = 404;
       errorMessage = 'User tidak ditemukan';
     } else {
+      status = 500;
       errorMessage = `Error logging in user: ${error}`;
     }
-    const response = badResponse(401, errorMessage);
-    res.status(401).json(response);
+    const response = badResponse(status, errorMessage);
+    return res.status(status).json(response);
   }
 };
 

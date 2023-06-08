@@ -1,19 +1,32 @@
 import Fuse from 'fuse.js';
 import db from '../config/firebase.config.js';
+
+import {
+  verifyRenter,
+} from '../middlewares/authorization.middleware.js';
+
 import getRandomElements from '../utils/random.js';
 import { badResponse, successResponse } from '../utils/response.js';
+import {
+  checkLessor,
+  checkOrder,
+  checkProduct,
+  checkAllProduct,
+  checkAllCategory,
+} from '../utils/snapshot.js';
 
 // Dashboard Handler
 const getDashboardData = async (req, res) => {
   try {
-    const productsSnapshot = await db.collection('products').get();
-    const products = productsSnapshot.docs.map((doc) => doc.data());
+    const allProduct = await checkAllProduct();
 
-    const categoriesSnapshot = await db.collection('categories').get();
+    const products = allProduct.docs.map((doc) => doc.data());
+
+    const allCategory = await checkAllCategory();
     const categories = [];
 
     await Promise.all(
-      categoriesSnapshot.docs.map(async (categoryDoc) => {
+      allCategory.docs.map(async (categoryDoc) => {
         const categoryData = categoryDoc.data();
         const category = { name: categoryData.name, subcategories: [] };
         const subcategoriesSnapshot = await categoryDoc.ref
@@ -68,8 +81,8 @@ const searchProduct = async (req, res) => {
     }
 
     // Retrieve all product data from Firestore
-    const productsSnapshot = await db.collection('products').get();
-    const products = productsSnapshot.docs.map((doc) => doc.data());
+    const allProduct = await checkAllProduct();
+    const products = allProduct.docs.map((doc) => doc.data());
 
     // Create Fuse.js options
     const fuseOptions = {
@@ -100,11 +113,16 @@ const searchProduct = async (req, res) => {
     // Retrieve only the necessary properties from the search results
     const formattedResults = await Promise.all(
       filteredResults.map(async (result) => {
-        const lessorSnapshot = await db
-          .collection('lessors')
-          .doc(result.item.lessor_id)
-          .get();
-        const lessorData = lessorSnapshot.data();
+        const {
+          errorLessor,
+          statusLessor,
+          checkResponseLessor,
+          lessorData,
+        } = await checkLessor(result.item.lessor_id);
+
+        if (errorLessor) {
+          return res.status(statusLessor).json(checkResponseLessor);
+        }
         const { storeFullName, storeAddress, storePhone } = lessorData;
 
         const {
@@ -156,15 +174,15 @@ const searchProduct = async (req, res) => {
 // Get All Categories Handler
 const getAllCategories = async (req, res) => {
   try {
-    const snapshot = await db.collection('categories').get();
+    const allCategory = await checkAllCategory();
     const categories = [];
 
-    snapshot.forEach((doc) => {
+    allCategory.forEach((doc) => {
       const data = doc.data();
-      categories.push({ id: doc.id, name: data.name });
+      categories.push({ id: doc.id, name: data.name, iconUrl: data.iconUrl });
     });
 
-    console.log('Working update to node version 18');
+    console.log('Working update 9 Juni ');
 
     return res.status(200).json(categories);
   } catch (error) {
@@ -178,16 +196,17 @@ const getSubCategoriesByCategory = async (req, res) => {
   const { name } = req.params;
 
   try {
-    const categorySnapshoot = await db
+    const categorySnapshot = await db
       .collection('categories')
       .where('name', '==', name)
       .get();
 
-    if (categorySnapshoot.empty) {
-      return res.status(404).json({ error: 'Category not found' });
+    if (categorySnapshot.empty) {
+      const response = badResponse(404, 'Cannot find category');
+      return res.status(404).json(response);
     }
 
-    const categoryId = categorySnapshoot.docs[0].id;
+    const categoryId = categorySnapshot.docs[0].id;
     const subCategoriesSnapshot = await db
       .collection('categories')
       .doc(categoryId)
@@ -198,7 +217,7 @@ const getSubCategoriesByCategory = async (req, res) => {
 
     subCategoriesSnapshot.forEach((doc) => {
       const data = doc.data();
-      subCategories.push({ id: doc.id, name: data.name });
+      subCategories.push({ id: doc.id, name: data.name, iconUrl: data.iconUrl });
     });
 
     return res.status(200).json(subCategories);
@@ -217,33 +236,39 @@ const getProductsBySubCategory = async (req, res) => {
       .where('sub_category', '==', name)
       .get();
 
+    if (productsSnapshot.empty) {
+      const reponse = badResponse(404, 'Sub category not found');
+      return res.status(404).json(reponse);
+    }
+
     const products = [];
 
     const fetchLessors = async (doc) => {
       const productData = doc.data();
 
-      const lessorSnapshot = await db
-        .collection('lessors')
-        .doc(productData.lessor_id)
-        .get();
+      const { lessorData } = await checkLessor(productData.lessor_id);
 
-      if (lessorSnapshot.exists) {
-        const lessorData = lessorSnapshot.data();
-        const { storeFullName, storeAddress, storePhone } = lessorData;
+      const {
+        storeFullName,
+        storeAddress,
+        storePhone,
+        storeEmail,
+      } = lessorData;
 
-        products.push({
-          product_id: productData.product_id,
-          title: productData.title,
-          description: productData.description,
-          category: productData.category,
-          quantity: productData.quantity,
-          price: productData.price,
-          imageUrl: productData.imageUrl,
-          storeFullName,
-          storeAddress,
-          storePhone,
-        });
-      }
+      products.push({
+        product_id: productData.product_id,
+        title: productData.title,
+        description: productData.description,
+        category: productData.category,
+        quantity: productData.quantity,
+        price: productData.price,
+        imageUrl: productData.imageUrl,
+        lessor_id: productData.lessor_id,
+        storeFullName,
+        storeAddress,
+        storePhone,
+        storeEmail,
+      });
     };
 
     const fetchProductData = async () => {
@@ -275,20 +300,19 @@ const getProductById = async (req, res) => {
   try {
     const { productId } = req.params;
 
-    const productDoc = await db.collection('products').doc(productId).get();
+    const {
+      errorProduct,
+      statusProduct,
+      checkResponseProduct,
+      productData,
+    } = await checkProduct(productId);
 
-    if (!productDoc.exists) {
-      const response = badResponse(404, 'Product not found');
-
-      return res.status(404).json(response);
+    if (errorProduct) {
+      return res.status(statusProduct).json(checkResponseProduct);
     }
 
-    const productData = productDoc.data();
-    const lessorDoc = await db
-      .collection('lessors')
-      .doc(productData.lessor_id)
-      .get();
-    const lessorData = lessorDoc.data();
+    const { lessorData } = await checkLessor(productData.lessor_id);
+
     const {
       fullName,
       storeFullName,
@@ -333,29 +357,17 @@ const getUserProfile = async (req, res) => {
     const { username } = req.params;
     const { uid } = req.user;
 
-    // Check Renter
-    const profileSnapshot = await db
-      .collection('renters')
-      .where('username', '==', username)
-      .limit(1)
-      .get();
+    const {
+      errorRenter,
+      statusRenter,
+      checkResponseRenter,
+      renterData,
+    } = await verifyRenter(username, uid);
 
-    if (profileSnapshot.empty) {
-      const response = badResponse(404, 'Profile not found');
-      return res.status(404).json(response);
+    if (errorRenter) {
+      return res.status(statusRenter).json(checkResponseRenter);
     }
-
-    const renterData = profileSnapshot.docs[0].data();
-
-    // Check Auth Token
-    if (renterData.renter_id !== uid) {
-      const response = badResponse(403, 'Not allowed');
-      return res.status(403).json(response);
-    }
-
     const responseData = renterData;
-
-    delete responseData.userRecordData;
 
     const response = successResponse(
       200,
@@ -388,26 +400,18 @@ const updateProfile = async (req, res) => {
       gender,
     } = req.body;
 
-    // Check renters
-    const renterSnapshot = await db
-      .collection('renters')
-      .where('username', '==', username)
-      .get();
+    const {
+      errorRenter,
+      statusRenter,
+      checkResponseRenter,
+      renterData,
+      renterRef,
+    } = await verifyRenter(username, uid);
 
-    if (renterSnapshot.empty) {
-      const response = badResponse(404, 'Profile not found');
-      return res.status(404).json(response);
+    if (errorRenter) {
+      return res.status(statusRenter).json(checkResponseRenter);
     }
-
-    // Check Auth Token
-    const renterData = renterSnapshot.docs[0].data();
-    if (renterData.renter_id !== uid) {
-      const response = badResponse(403, 'Not allowed');
-      return res.status(403).json(response);
-    }
-
     // Check Input Data For Edit
-    const renterRef = renterSnapshot.docs[0].ref;
     const renterUpdateData = {};
 
     if (name !== undefined && name !== '') {
@@ -466,18 +470,20 @@ const updateProfile = async (req, res) => {
 // Delete Account Renter Handler
 const deleteRenterById = async (req, res) => {
   try {
-    const { renterId } = req.params;
+    const { username } = req.params;
+    const { uid } = req.user;
 
-    // Check renters
-    const renterRef = db.collection('renters').doc(renterId);
-    const renterDoc = await renterRef.get();
+    const {
+      errorRenter,
+      statusRenter,
+      checkResponseRenter,
+      renterData,
+      renterRef,
+    } = await verifyRenter(username, uid);
 
-    if (!renterDoc.exists) {
-      const response = badResponse(404, 'Renter not found');
-      return res.status(404).json(response);
+    if (errorRenter) {
+      return res.status(statusRenter).json(checkResponseRenter);
     }
-
-    const renterData = renterDoc.data();
 
     // Hapus renter
     await renterRef.delete();
@@ -526,35 +532,29 @@ const createOrder = async (req, res) => {
       kurir,
     } = req.body;
 
-    // Check Renter
-    const renterSnapshot = await db
-      .collection('renters')
-      .where('username', '==', username)
-      .get();
+    const {
+      errorRenter,
+      statusRenter,
+      checkResponseRenter,
+      renterData,
+    } = await verifyRenter(username, uid);
 
-    if (renterSnapshot.empty) {
-      const response = badResponse(404, 'Renter not found');
-      return res.status(404).json(response);
+    if (errorRenter) {
+      return res.status(statusRenter).json(checkResponseRenter);
     }
-    const renterData = renterSnapshot.docs[0].data();
-    const renterId = renterData.renter_id;
 
     // Check Product
-    const productSnapshot = await db
-      .collection('products')
-      .doc(productId)
-      .get();
-    if (!productSnapshot.exists) {
-      const response = badResponse(404, 'Product not found');
-      return res.status(404).json(response);
+    const {
+      errorProduct,
+      statusProduct,
+      checkResponseProduct,
+      productData,
+    } = await checkProduct(productId);
+    const renterId = renterData.renter_id;
+    if (errorProduct) {
+      return res.status(statusProduct).json(checkResponseProduct);
     }
 
-    // Check Auth Token
-    if (renterId !== uid) {
-      const response = badResponse(403, 'Not allowed');
-      return res.status(403).json(response);
-    }
-    const productData = productSnapshot.data();
     const lessorId = productData.lessor_id;
 
     if (productData.quantity < quantityOrder) {
@@ -565,9 +565,16 @@ const createOrder = async (req, res) => {
       return res.status(400).json(response);
     }
 
-    const lessorSnapshot = await db.collection('lessors').doc(lessorId).get();
+    const {
+      errorLessor,
+      statusLessor,
+      checkResponseLessor,
+      lessorData,
+    } = await checkLessor(lessorId);
 
-    const lessorData = lessorSnapshot.data();
+    if (errorLessor) {
+      return res.status(statusLessor).json(checkResponseLessor);
+    }
 
     if (lessorData.username === username) {
       const response = badResponse(403, 'You cant order your own product');
@@ -581,6 +588,23 @@ const createOrder = async (req, res) => {
       );
       return res.status(400).json(response);
     }
+
+    // Check Existing Orders
+    const existingOrders = await db
+      .collection('orders')
+      .where('renter_id', '==', renterId)
+      .where('product_id', '==', productId)
+      .where('status', 'in', ['pending', 'progress'])
+      .get();
+
+    if (!existingOrders.empty) {
+      const response = badResponse(
+        400,
+        'You already have a pending/progress order for this product. Please edit your existing order.',
+      );
+      return res.status(400).json(response);
+    }
+
     // Generate document reference baru
     const orderRef = db.collection('orders').doc();
 
@@ -601,6 +625,13 @@ const createOrder = async (req, res) => {
 
     // Insert order baru ke database
     await orderRef.set(newOrder);
+    delete lessorData.username;
+    delete lessorData.lessor_id;
+    delete lessorData.renter_id;
+    delete productData.username;
+    delete productData.product_id;
+    delete productData.lessor_id;
+    delete renterData.renter_id;
 
     const responseData = {
       ...newOrder,
@@ -635,25 +666,18 @@ const getOrdersByRenter = async (req, res) => {
     const { username } = req.params;
     const { uid } = req.user;
 
-    const renterSnapshot = await db
-      .collection('renters')
-      .where('username', '==', username)
-      .get();
+    const {
+      errorRenter,
+      statusRenter,
+      checkResponseRenter,
+      renterData,
+    } = await verifyRenter(username, uid);
 
-    // Check Renter
-    if (renterSnapshot.empty) {
-      const response = badResponse(404, 'Renter not found');
-      return res.status(404).json(response);
+    if (errorRenter) {
+      return res.status(statusRenter).json(checkResponseRenter);
     }
 
-    const renterData = renterSnapshot.docs[0].data();
-    // Check Auth Token
-    if (renterData.renter_id !== uid) {
-      const response = badResponse(403, 'Not allowed');
-      return res.status(403).json(response);
-    }
-
-    const renterId = renterSnapshot.docs[0].id;
+    const renterId = renterData.renter_id;
 
     // Mengambil seluruh order berdasarkan renter_id
     const orderRenter = await db
@@ -663,8 +687,8 @@ const getOrdersByRenter = async (req, res) => {
 
     // Check Orders By Renter
     if (orderRenter.empty) {
-      const response = badResponse(404, 'Renter does not have any orders yet');
-      return res.status(404).json(response);
+      const response = successResponse(200, 'Renter does not have any orders yet', null);
+      return res.status(200).json(response);
     }
 
     const ordersPromises = orderRenter.docs.map(async (doc) => {
@@ -689,12 +713,7 @@ const getOrdersByRenter = async (req, res) => {
           payment_use: orderData.payment_use,
           kurir: orderData.kurir,
           status: orderData.status,
-          title: productData.title,
-          description: productData.description,
-          price: productData.price,
-          imageUrl: productData.imageUrl,
-          categori: productData.categori,
-          sub_category: productData.sub_category,
+          product_id: productData.product_id,
         };
       }
       const response = badResponse(
@@ -706,10 +725,14 @@ const getOrdersByRenter = async (req, res) => {
 
     const orders = await Promise.all(ordersPromises);
 
+    const ordersData = orders.filter((order) => order !== undefined);
+
+    const responseData = { ordersData, renter: renterData };
+
     const response = successResponse(
       200,
       'Orders retrieved successfully',
-      orders.filter((order) => order !== undefined),
+      responseData,
     );
 
     return res.status(200).json(response);
@@ -738,24 +761,31 @@ const updateOrder = async (req, res) => {
     } = req.body;
 
     // Mengambil data order berdasarkan orderId
-    const orderSnapshoot = db.collection('orders').doc(orderId);
-    const orderRef = await orderSnapshoot.get();
+    const {
+      errorOrder,
+      statusOrder,
+      checkResponseOrder,
+      orderData,
+    } = await checkOrder(orderId);
 
-    if (!orderRef.exists) {
-      const response = badResponse(404, 'Order not found');
-      return res.status(404).json(response);
+    if (errorOrder) {
+      return res.status(statusOrder).json(checkResponseOrder);
     }
-    const orderData = orderRef.data();
 
-    const renterSnapshot = await db
-      .collection('renters')
-      .doc(orderData.renter_id)
-      .get();
+    // Check Renter
+    const {
+      errorRenter,
+      statusRenter,
+      checkResponseRenter,
+      renterData,
+    } = await verifyRenter(username, uid);
 
-    const renterData = renterSnapshot.data();
+    if (errorRenter) {
+      return res.status(statusRenter).json(checkResponseRenter);
+    }
 
     // Memastikan order tersebut dimiliki oleh renter yang sesuai
-    if (renterData.username !== username || renterData.renter_id !== uid) {
+    if (renterData.username !== username) {
       const response = badResponse(
         403,
         'Access denied. Order does not belong to the renter',
@@ -767,13 +797,13 @@ const updateOrder = async (req, res) => {
     if (orderData.status !== 'pending') {
       const response = badResponse(
         403,
-        'Order cannot be edited , because is not in pending status',
+        'Order cannot be edited, because it is not in pending status',
       );
       return res.status(403).json(response);
     }
 
     // Update data order dengan atribut yang dapat diubah
-    await orderSnapshoot.update({
+    await db.collection('orders').doc(orderId).update({
       delivery_address: deliveryAddress || orderData.delivery_address,
       kurir: kurir || orderData.kurir,
       start_rent_date: startRentDate || orderData.start_rent_date,
@@ -781,13 +811,14 @@ const updateOrder = async (req, res) => {
     });
 
     // Mengambil data terbaru dari order setelah pembaruan
-    const updatedOrderDoc = await orderSnapshoot.get();
-    const updatedOrderData = updatedOrderDoc.data();
+    const {
+      orderData: updateData,
+    } = await checkOrder(orderId);
 
     const response = successResponse(
       200,
       'Order updated successfully',
-      updatedOrderData,
+      updateData,
     );
 
     return res.status(200).json(response);
@@ -811,35 +842,28 @@ const getDetailOrdersByRenter = async (req, res) => {
     const { uid } = req.user;
 
     // Check Order
-    const orderSnapshot = await db.collection('orders').doc(orderId).get();
+    const {
+      errorOrder,
+      statusOrder,
+      checkResponseOrder,
+      orderData,
+    } = await checkOrder(orderId);
 
-    if (!orderSnapshot.exists) {
-      const response = badResponse(404, 'Order not found');
-      return res.status(404).json(response);
+    if (errorOrder) {
+      return res.status(statusOrder).json(checkResponseOrder);
     }
 
-    const orderData = orderSnapshot.data();
+    // Check Renter
+    const {
+      errorRenter,
+      statusRenter,
+      checkResponseRenter,
+      renterData,
+    } = await verifyRenter(username, uid);
 
-    const productSnapshot = await db
-      .collection('products')
-      .doc(orderData.product_id)
-      .get();
-
-    const productData = productSnapshot.data();
-
-    const lessorSnapshot = await db
-      .collection('lessors')
-      .doc(orderData.lessor_id)
-      .get();
-
-    const lessorData = lessorSnapshot.data();
-
-    const renterSnapshot = await db
-      .collection('renters')
-      .doc(orderData.renter_id)
-      .get();
-
-    const renterData = renterSnapshot.data();
+    if (errorRenter) {
+      return res.status(statusRenter).json(checkResponseRenter);
+    }
 
     // Memastikan order tersebut dimiliki oleh renter yang sesuai
     if (renterData.username !== username || renterData.renter_id !== uid) {
@@ -849,6 +873,32 @@ const getDetailOrdersByRenter = async (req, res) => {
       );
       return res.status(403).json(response);
     }
+
+    const {
+      errorProduct,
+      statusProduct,
+      checkResponseProduct,
+      productData,
+    } = await checkProduct(orderData.product_id);
+
+    if (errorProduct) {
+      return res.status(statusProduct).json(checkResponseProduct);
+    }
+
+    const {
+      errorLessor,
+      statusLessor,
+      checkResponseLessor,
+      lessorData,
+    } = await checkLessor(orderData.lessor_id);
+
+    if (errorLessor) {
+      return res.status(statusLessor).json(checkResponseLessor);
+    }
+    delete productData.username;
+    delete productData.lessor_id;
+    delete lessorData.renter_id;
+    delete lessorData.lessr_id;
 
     const reponseData = {
       ...orderData,

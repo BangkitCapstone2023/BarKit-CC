@@ -1,5 +1,5 @@
 import express from 'express';
-import { authMiddleware } from '../middlewares/auth.middlewares.js';
+import { authMiddleware } from '../middlewares/authentication.middlewares.js';
 
 import {
   getAllProductsByLessor,

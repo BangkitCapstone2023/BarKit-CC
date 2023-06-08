@@ -1,5 +1,5 @@
 import express from 'express';
-import { adminMiddleware } from '../middlewares/auth.middlewares.js';
+import { adminMiddleware } from '../middlewares/authentication.middlewares.js';
 
 import {
   getAllImages,
@@ -15,12 +15,11 @@ import {
   getOrderById,
 } from '../controllers/admin.controller.js';
 
-import predictionModel from '../models/image.model.js';
+import {
+  deleteProductById,
+} from '../controllers/product.controller.js';
 
 const router = express.Router();
-
-// Model Router
-router.post('/predict', predictionModel);
 
 // User Routers
 router.get('/admin/lessors', adminMiddleware, getAllLessors);
@@ -31,7 +30,8 @@ router.get('/admin/renters/:renterId', adminMiddleware, getRenterById);
 
 // Product Routers
 router.get('/admin/products', adminMiddleware, getAllProduct);
-router.get('/admin/products/:productId', getProductById);
+router.get('/admin/products/:productId', adminMiddleware, getProductById);
+router.delete('/admin/products/:productId', adminMiddleware, deleteProductById);
 
 router.post('/admin/category', adminMiddleware, addCategory);
 router.post('/admin/category/:categoryId/subcategory', adminMiddleware, addSubCategory);

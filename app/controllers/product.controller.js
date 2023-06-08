@@ -4,10 +4,21 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { storage, bucketName } from '../config/storage.config.js';
 import db from '../config/firebase.config.js';
+
+import {
+  verifyRenter,
+} from '../middlewares/authorization.middleware.js';
+
 import predictionModel from '../models/image.model.js';
 import { badResponse, successResponse } from '../utils/response.js';
 
 import formattedTimestamp from '../utils/time.js';
+
+import {
+  checkLessor,
+  checkProduct,
+  checkCart,
+} from '../utils/snapshot.js';
 
 const multerStorage = multer.memoryStorage();
 const upload = multer({ storage: multerStorage });
@@ -36,27 +47,21 @@ const addProduct = async (req, res) => {
       const { username } = req.params;
 
       // Check Renters
-      const userSnapshot = await db
-        .collection('renters')
-        .where('username', '==', username)
-        .get();
-      if (userSnapshot.empty) {
-        const response = badResponse(404, `User '${username}' not found`);
-        return res.status(404).json(response);
-      }
+      const {
+        errorRenter,
+        statusRenter,
+        checkResponseRenter,
+        renterData,
+      } = await verifyRenter(username, uid);
 
-      const renterData = userSnapshot.docs[0].data();
+      if (errorRenter) {
+        return res.status(statusRenter).json(checkResponseRenter);
+      }
 
       // Check if renter is lessor
       const { isLessor } = renterData;
       if (isLessor !== true) {
         const response = badResponse(403, `User '${username}' is not a lessor`);
-        return res.status(403).json(response);
-      }
-
-      // Check auth token
-      if (renterData.renter_id !== uid) {
-        const response = badResponse(403, 'Not allowed');
         return res.status(403).json(response);
       }
 
@@ -328,34 +333,31 @@ const updateProductById = async (req, res) => {
         quantity,
       } = req.body;
 
-      // Cek apakah item ID dan username valid
+      // Cek apakah product ID dan username valid
       if (!productId || !username) {
         const response = badResponse(400, 'Product or username not valid');
         return res.status(400).json(response);
       }
 
-      // Periksa apakah item dengan ID dan username tersebut ada
+      // Periksa apakah product dengan ID dan username tersebut ada
       const productSnapshot = db.collection('products').doc(productId);
       const productDoc = await productSnapshot.get();
 
       if (!productDoc.exists) {
-        const response = badResponse(404, 'Item not Found');
+        const response = badResponse(404, 'product not Found');
         return res.status(404).json(response);
       }
 
-      const itemData = productDoc.data();
+      const productData = productDoc.data();
+      const {
+        errorRenter,
+        statusRenter,
+        checkResponseRenter,
+      } = await verifyRenter(username, uid);
 
-      const renterSnapshot = await db
-        .collection('renters')
-        .where('username', '==', username)
-        .get();
-
-      if (renterSnapshot.empty) {
-        const response = badResponse(404, `User '${username}' not found`);
-        return res.status(404).json(response);
+      if (errorRenter) {
+        return res.status(statusRenter).json(checkResponseRenter);
       }
-
-      const renterData = renterSnapshot.docs[0].data();
 
       const lessorSnapshot = await db
         .collection('lessors')
@@ -364,16 +366,7 @@ const updateProductById = async (req, res) => {
 
       const lessorData = lessorSnapshot.docs[0].data();
 
-      // Pastikan lessor_id pada product sesuai dengan lessor yang mengirim permintaan
-      if (itemData.username !== username || renterData.renter_id !== uid) {
-        const response = badResponse(
-          403,
-          'Not allowed to modify antoher lessor product',
-        );
-        return res.status(403).json(response);
-      }
-
-      const { imageUrl } = itemData;
+      const { imageUrl } = productData;
 
       // Jika ada file gambar yang diunggah, lakukan update gambar
       if (file) {
@@ -384,8 +377,8 @@ const updateProductById = async (req, res) => {
           return res.status(413).json(response);
         }
 
-        const { category } = itemData;
-        const subCategory = itemData.sub_category;
+        const { category } = productData;
+        const subCategory = productData.sub_category;
 
         const predictionResult = await predictionModel(file, subCategory);
 
@@ -447,10 +440,10 @@ const updateProductById = async (req, res) => {
 
             // Update data produk dengan data yang diberikan
             const updateData = {
-              title: title || itemData.title,
-              description: description || itemData.description,
-              price: price || itemData.price,
-              quantity: quantity || itemData.quantity,
+              title: title || productData.title,
+              description: description || productData.description,
+              price: price || productData.price,
+              quantity: quantity || productData.quantity,
               imageUrl: publicUrl,
               update_at: formattedTimestamp,
             };
@@ -462,11 +455,11 @@ const updateProductById = async (req, res) => {
             }
 
             await productSnapshot.update(updateData);
-            const updatedproductDoc = await productSnapshot.get();
-            const updatedItemData = updatedproductDoc.data();
+            const updatedProductDoc = await productSnapshot.get();
+            const updatedProductData = updatedProductDoc.data();
 
             const responseData = {
-              ...updatedItemData,
+              ...updatedProductData,
               lessor: lessorData,
             };
             const response = successResponse(
@@ -491,20 +484,20 @@ const updateProductById = async (req, res) => {
       } else {
         // Jika tidak ada file gambar yang diunggah, hanya lakukan update data produk
         const updateData = {
-          title: title || itemData.title,
-          description: description || itemData.description,
-          price: price || itemData.price,
-          quantity: quantity || itemData.quantity,
+          title: title || productData.title,
+          description: description || productData.description,
+          price: price || productData.price,
+          quantity: quantity || productData.quantity,
           imageUrl,
         };
 
         await productSnapshot.update(updateData);
 
-        const updatedproductDoc = await productSnapshot.get();
-        const updatedItemData = updatedproductDoc.data();
+        const updatedProductDoc = await productSnapshot.get();
+        const updatedProductData = updatedProductDoc.data();
 
         const responseData = {
-          ...updatedItemData,
+          ...updatedProductData,
           lessor: lessorData,
         };
         const response = successResponse(
@@ -535,41 +528,30 @@ const deleteProductById = async (req, res) => {
 
   try {
     // Cek apakah produk dengan ID yang diberikan ada di database
-    const productRef = db.collection('products').doc(productId);
-    const productDoc = await productRef.get();
+    const {
+      errorProduct,
+      statusProduct,
+      checkResponseProduct,
+      productRef,
+    } = await checkProduct(productId);
 
-    if (!productDoc.exists) {
-      const response = badResponse(404, 'Product not found');
-      return res.status(404).json(response);
+    if (errorProduct) {
+      return res.status(statusProduct).json(checkResponseProduct);
     }
 
-    const productData = productDoc.data();
+    const {
+      errorRenter,
+      statusRenter,
+      checkResponseRenter,
+    } = await verifyRenter(username, uid);
 
-    const renterSnapshot = await db
-      .collection('renters')
-      .where('username', '==', username)
-      .get();
-    if (renterSnapshot.empty) {
-      const response = badResponse(404, `User '${username}' not found`);
-      return res.status(404).json(response);
+    if (errorRenter) {
+      return res.status(statusRenter).json(checkResponseRenter);
     }
-
-    const renterData = renterSnapshot.docs[0].data();
-
-    // Cek apakah lessor yang menghapus produk adalah lessor yang mengunggah produk
-    if (productData.username !== username || renterData.renter_id !== uid) {
-      const response = badResponse(
-        403,
-        'Access denied. Only the lessor who uploaded the product can delete it',
-      );
-
-      return res.status(403).json(response);
-    }
-
     // Hapus produk dari database
     await productRef.delete();
 
-    const response = successResponse(200, 'Product deleted successfully', null);
+    const response = successResponse(200, 'Product deleted successfully');
     return res.status(200).json(response);
   } catch (error) {
     console.error('Error deleting product:', error);
@@ -584,41 +566,42 @@ const addProductToCart = async (req, res) => {
     const { username, productId } = req.params;
     const { cartQuantity } = req.body;
     // Check Renter
-    const renterSnapshot = await db
-      .collection('renters')
-      .where('username', '==', username)
-      .get();
+    const {
+      errorRenter,
+      statusRenter,
+      checkResponseRenter,
+      renterData,
+    } = await verifyRenter(username, uid);
 
-    if (renterSnapshot.empty) {
-      const response = badResponse(404, 'Renter not found');
-      return res.status(404).json(response);
-    }
-    const renterData = renterSnapshot.docs[0].data();
-    const renterId = renterData.renter_id;
-
-    // Check Auth Token
-    if (renterId !== uid) {
-      const response = badResponse(403, 'Not allowed');
-      return res.status(403).json(response);
+    if (errorRenter) {
+      return res.status(statusRenter).json(checkResponseRenter);
     }
 
     // Check if product exists
-    const productSnapshot = await db
-      .collection('products')
-      .doc(productId)
-      .get();
-    if (!productSnapshot.exists) {
-      const response = badResponse(404, `Product '${productId}' not found`);
-      return res.status(404).json(response);
+    const {
+      errorProduct,
+      statusProduct,
+      checkResponseProduct,
+      productData,
+    } = await checkProduct(productId);
+
+    if (errorProduct) {
+      return res.status(statusProduct).json(checkResponseProduct);
     }
 
     // Get product data & Lessor data
-    const productData = productSnapshot.data();
     const lessorId = productData.lessor_id;
 
-    const lessorSnapshot = await db.collection('lessors').doc(lessorId).get();
+    const {
+      errorLessor,
+      statusLessor,
+      checkResponseLessor,
+      lessorData,
+    } = await checkLessor(lessorId);
 
-    const lessorData = lessorSnapshot.data();
+    if (errorLessor) {
+      return res.status(statusLessor).json(checkResponseLessor);
+    }
 
     if (lessorData.username === username) {
       const response = badResponse(403, 'You cant cart your own product');
@@ -649,9 +632,17 @@ const addProductToCart = async (req, res) => {
     }
 
     // Create or get user's cart
-    const cartRef = db.collection('carts').doc(uid);
-    const cartSnapshot = await cartRef.get();
-    const cartData = cartSnapshot.data();
+    const {
+      errorCart,
+      statusCart,
+      checkResponseCart,
+      cartData,
+      cartRef,
+    } = await checkCart(username, uid);
+
+    if (errorCart) {
+      return res.status(statusCart).json(checkResponseCart);
+    }
 
     let updatedCart = [];
     if (cartData && cartData.cart_products) {
@@ -659,31 +650,35 @@ const addProductToCart = async (req, res) => {
     }
 
     const existingProductIndex = updatedCart.findIndex(
-      (item) => item.product_id === productId,
+      (product) => product.product_id === productId,
     );
 
     if (existingProductIndex !== -1) {
       // Product already exists in cart, update quantity and total price
       const existingQuantity = updatedCart[existingProductIndex].quantity;
-
       const quantityNow = productData.quantity - existingQuantity;
       if (quantityNow < cartQuantity) {
         const response = badResponse(
           400,
-          `You already cart ${existingQuantity} for this product, the avalable quantity is ${quantityNow}`,
+          `You already have ${existingQuantity} in your cart for this product. The available quantity is ${quantityNow}`,
         );
         return res.status(400).json(response);
       }
+
+      const priceString = productData.price.replace(/[^0-9.-]+/g, '');
+      const priceNumber = parseFloat(priceString.replace('.', ''));
       updatedCart[existingProductIndex].quantity += cartQuantity;
-      updatedCart[existingProductIndex].total_price += productData.price * cartQuantity;
+      updatedCart[existingProductIndex].total_price = (priceNumber * updatedCart[existingProductIndex].quantity).toLocaleString('id-ID');
     } else {
       // Add new product to cart
-
+      const priceString = productData.price.replace(/[^0-9.-]+/g, '');
+      const priceNumber = parseFloat(priceString.replace('.', ''));
+      const totalPrice = priceNumber * cartQuantity;
       updatedCart.push({
         product_id: productId,
         lessor_id: lessorId,
         quantity: cartQuantity,
-        total_price: productData.price * cartQuantity,
+        total_price: totalPrice.toLocaleString('id-ID'),
       });
     }
 
@@ -692,7 +687,7 @@ const addProductToCart = async (req, res) => {
     const addCart = {
       cart_id: uid,
       cart_products: updatedCart,
-      renter_id: renterId,
+      renter_id: renterData.renter_id,
       username,
     };
 
@@ -734,24 +729,17 @@ const getCartProductsByRenter = async (req, res) => {
     const { uid } = req.user;
 
     // Get Renter ID
-    const renterSnapshot = await db
-      .collection('renters')
-      .where('username', '==', username)
-      .get();
+    const {
+      errorRenter,
+      statusRenter,
+      checkResponseRenter,
+      renterData,
+    } = await verifyRenter(username, uid);
 
-    if (renterSnapshot.empty) {
-      const response = badResponse(404, 'Renter not found');
-      return res.status(404).json(response);
+    if (errorRenter) {
+      return res.status(statusRenter).json(checkResponseRenter);
     }
-
-    const renterData = renterSnapshot.docs[0].data();
     const renterId = renterData.renter_id;
-
-    // Check Auth Token
-    if (renterId !== uid) {
-      const response = badResponse(403, 'Not allowed');
-      return res.status(403).json(response);
-    }
 
     // Get Cart Data
     const cartSnapshot = await db
@@ -794,14 +782,14 @@ const getCartProductsByRenter = async (req, res) => {
     });
 
     const resultCart = cartProductsMap.map((cartProduct) => {
-      const matchingCartItem = cartProductsData.find(
-        (item) => item.product_id === cartProduct.product_id,
+      const matchingCartProduct = cartProductsData.find(
+        (product) => product.product_id === cartProduct.product_id,
       );
 
-      if (matchingCartItem) {
+      if (matchingCartProduct) {
         return {
           ...cartProduct,
-          ...matchingCartItem,
+          ...matchingCartProduct,
         };
       }
 
@@ -839,46 +827,38 @@ const updateCartProductQuantity = async (req, res) => {
     const { cartQuantity } = req.body;
 
     // Check if product exists
-    const productSnapshot = await db
-      .collection('products')
-      .doc(productId)
-      .get();
-    if (!productSnapshot.exists) {
-      const response = badResponse(404, `Product '${productId}' not found`);
-      return res.status(404).json(response);
+    const {
+      errorProduct,
+      statusProduct,
+      checkResponseProduct,
+      productData,
+    } = await checkProduct(productId);
+
+    if (errorProduct) {
+      return res.status(statusProduct).json(checkResponseProduct);
     }
 
-    const renterSnapshot = await db
-      .collection('renters')
-      .where('username', '==', username)
-      .get();
-    if (renterSnapshot.empty) {
-      const response = badResponse(404, `User '${username}' not found`);
-      return res.status(404).json(response);
+    const {
+      errorRenter,
+      statusRenter,
+      checkResponseRenter,
+    } = await verifyRenter(username, uid);
+
+    if (errorRenter) {
+      return res.status(statusRenter).json(checkResponseRenter);
     }
-    const renterData = renterSnapshot.docs[0].data();
-
-    const renterId = renterData.renter_id;
-
-    // Check Auth Token
-    if (renterId !== uid) {
-      const response = badResponse(403, 'Not allowed');
-      return res.status(403).json(response);
-    }
-
-    const productData = productSnapshot.data();
-
     // Get user's cart
-    const cartRef = db.collection('carts').doc(uid);
-    const cartSnapshot = await cartRef.get();
-    const cartData = cartSnapshot.data();
+    const {
+      errorCart,
+      statusCart,
+      checkResponseCart,
+      cartData,
+      cartRef,
+    } = await checkCart(username, uid);
 
-    // Check if cart exists
-    if (!cartData) {
-      const response = badResponse(404, 'Cart not found');
-      return res.status(404).json(response);
+    if (errorCart) {
+      return res.status(statusCart).json(checkResponseCart);
     }
-
     // Find the product in the cart
     const existingProductIndex = cartData.cart_products.findIndex(
       (product) => product.product_id === productId,
@@ -903,10 +883,14 @@ const updateCartProductQuantity = async (req, res) => {
       return res.status(400).json(response);
     }
 
+    const priceString = productData.price.replace(/[^0-9.-]+/g, '');
+    const priceNumber = parseFloat(priceString.replace('.', ''));
+    const totalPrice = priceNumber * cartQuantity;
+
     const updatedProduct = {
       ...existingProduct,
       quantity: cartQuantity,
-      total_price: productSnapshot.data().price * cartQuantity,
+      total_price: totalPrice.toLocaleString('id-ID'),
     };
 
     // Update cart cart_products array
@@ -964,33 +948,31 @@ const deleteCartProduct = async (req, res) => {
     const { uid } = req.user;
     const { productId, username } = req.params;
 
-    // Get user's cart
-    const cartRef = db.collection('carts').doc(uid);
-    const cartSnapshot = await cartRef.get();
-    const cartData = cartSnapshot.data();
+    const {
+      errorCart,
+      statusCart,
+      checkResponseCart,
+      cartData,
+      cartRef,
+    } = await checkCart(uid);
+
+    if (errorCart) {
+      return res.status(statusCart).json(checkResponseCart);
+    }
 
     // Check if cart exists
     if (!cartData) {
       const response = badResponse(404, 'Cart not found');
       return res.status(404).json(response);
     }
-    const renterSnapshot = await db
-      .collection('renters')
-      .where('username', '==', username)
-      .get();
+    const {
+      errorRenter,
+      statusRenter,
+      checkResponseRenter,
+    } = await verifyRenter(username, uid);
 
-    if (renterSnapshot.empty) {
-      const response = badResponse(404, `User '${username}' not found`);
-      return res.status(404).json(response);
-    }
-    const renterData = renterSnapshot.docs[0].data();
-
-    const renterId = renterData.renter_id;
-
-    // Check Auth Token
-    if (renterId !== uid) {
-      const response = badResponse(403, 'Not allowed');
-      return res.status(403).json(response);
+    if (errorRenter) {
+      return res.status(statusRenter).json(checkResponseRenter);
     }
 
     // Find the product in the cart

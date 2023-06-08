@@ -12,10 +12,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use(authRouter);
-app.use(adminRouter);
-app.use(generalRouter);
 app.use(renterRouter);
+app.use(generalRouter);
 app.use(lessorRouter);
+app.use(adminRouter);
 
 app.listen(port, () => {
   console.log(`BarKit App listening on port ${port}`);

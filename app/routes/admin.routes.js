@@ -21,25 +21,27 @@ import {
 
 const router = express.Router();
 
-// User Routers
-router.get('/admin/lessors', adminMiddleware, getAllLessors);
-router.get('/admin/lessors/:lessorId', adminMiddleware, getLessorById);
+router.use(adminMiddleware);
 
-router.get('/admin/renters', adminMiddleware, getAllRenters);
-router.get('/admin/renters/:renterId', adminMiddleware, getRenterById);
+// User Routers
+router.get('/admin/lessors', getAllLessors);
+router.get('/admin/lessors/:lessorId', getLessorById);
+
+router.get('/admin/renters', getAllRenters);
+router.get('/admin/renters/:renterId', getRenterById);
 
 // Product Routers
-router.get('/admin/products', adminMiddleware, getAllProduct);
-router.get('/admin/products/:productId', adminMiddleware, getProductById);
-router.delete('/admin/products/:productId', adminMiddleware, deleteProductById);
+router.get('/admin/products', getAllProduct);
+router.get('/admin/products/:productId', getProductById);
+router.delete('/admin/products/:productId', deleteProductById);
 
-router.post('/admin/category', adminMiddleware, addCategory);
-router.post('/admin/category/:categoryId/subcategory', adminMiddleware, addSubCategory);
+router.post('/admin/category', addCategory);
+router.post('/admin/category/:categoryId/subcategory', addSubCategory);
 
 // Order Routers
-router.get('/admin/orders', adminMiddleware, getAllOrders);
-router.get('/admin/orders/:orderId', adminMiddleware, getOrderById);
+router.get('/admin/orders', getAllOrders);
+router.get('/admin/orders/:orderId', getOrderById);
 
-router.get('/admin/images', adminMiddleware, getAllImages);
+router.get('/admin/images', getAllImages);
 
 export default router;

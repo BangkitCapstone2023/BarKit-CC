@@ -9,6 +9,8 @@ import {
 import {
   checkLessor,
   checkOrder,
+  checkRenter,
+  checkProduct,
 } from '../utils/snapshot.js';
 
 // Register Lessor Handler
@@ -339,6 +341,17 @@ const getLessorOrderById = async (req, res) => {
     }
     const lessorId = lessorData.lessor_id;
 
+    const {
+      errorRenter,
+      statusRenter,
+      checkResponseRenter,
+      renterData,
+    } = await checkRenter(lessorData.renter_id);
+
+    if (errorRenter) {
+      return res.status(statusRenter).json(checkResponseRenter);
+    }
+
     // Mencari order berdasarkan lessor_id dan order_id
     const orderSnapshot = await db
       .collection('orders')
@@ -353,7 +366,20 @@ const getLessorOrderById = async (req, res) => {
 
     const orderData = orderSnapshot.docs[0].data();
 
-    const resposeData = { ...orderData };
+    const {
+      errorProduct,
+      statusProduct,
+      checkResponseProduct,
+      productData,
+    } = await checkProduct(orderData.product_id);
+
+    if (errorProduct) {
+      return res.status(statusProduct).json(checkResponseProduct);
+    }
+
+    delete renterData.renter_id;
+
+    const resposeData = { ...orderData, product: productData, renter: renterData };
     const response = successResponse(
       200,
       'Order retrieved successfully',

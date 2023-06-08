@@ -179,10 +179,10 @@ const getAllCategories = async (req, res) => {
 
     allCategory.forEach((doc) => {
       const data = doc.data();
-      categories.push({ id: doc.id, name: data.name });
+      categories.push({ id: doc.id, name: data.name, iconUrl: data.iconUrl });
     });
 
-    console.log('Working update to node version 18');
+    console.log('Working update 9 Juni ');
 
     return res.status(200).json(categories);
   } catch (error) {
@@ -217,7 +217,7 @@ const getSubCategoriesByCategory = async (req, res) => {
 
     subCategoriesSnapshot.forEach((doc) => {
       const data = doc.data();
-      subCategories.push({ id: doc.id, name: data.name });
+      subCategories.push({ id: doc.id, name: data.name, iconUrl: data.iconUrl });
     });
 
     return res.status(200).json(subCategories);
@@ -248,7 +248,12 @@ const getProductsBySubCategory = async (req, res) => {
 
       const { lessorData } = await checkLessor(productData.lessor_id);
 
-      const { storeFullName, storeAddress, storePhone } = lessorData;
+      const {
+        storeFullName,
+        storeAddress,
+        storePhone,
+        storeEmail,
+      } = lessorData;
 
       products.push({
         product_id: productData.product_id,
@@ -258,9 +263,11 @@ const getProductsBySubCategory = async (req, res) => {
         quantity: productData.quantity,
         price: productData.price,
         imageUrl: productData.imageUrl,
+        lessor_id: productData.lessor_id,
         storeFullName,
         storeAddress,
         storePhone,
+        storeEmail,
       });
     };
 
@@ -525,19 +532,16 @@ const createOrder = async (req, res) => {
       kurir,
     } = req.body;
 
-    // Check Renter
     const {
-      renterError,
-      renterStatus,
+      errorRenter,
+      statusRenter,
       checkResponseRenter,
       renterData,
     } = await verifyRenter(username, uid);
 
-    if (renterError) {
-      return res.status(renterStatus).json(checkResponseRenter);
+    if (errorRenter) {
+      return res.status(statusRenter).json(checkResponseRenter);
     }
-
-    const renterId = renterData.renter_id;
 
     // Check Product
     const {
@@ -546,7 +550,7 @@ const createOrder = async (req, res) => {
       checkResponseProduct,
       productData,
     } = await checkProduct(productId);
-
+    const renterId = renterData.renter_id;
     if (errorProduct) {
       return res.status(statusProduct).json(checkResponseProduct);
     }
@@ -585,6 +589,22 @@ const createOrder = async (req, res) => {
       return res.status(400).json(response);
     }
 
+    // Check Existing Orders
+    const existingOrders = await db
+      .collection('orders')
+      .where('renter_id', '==', renterId)
+      .where('product_id', '==', productId)
+      .where('status', 'in', ['pending', 'progress'])
+      .get();
+
+    if (!existingOrders.empty) {
+      const response = badResponse(
+        400,
+        'You already have a pending/progress order for this product. Please edit your existing order.',
+      );
+      return res.status(400).json(response);
+    }
+
     // Generate document reference baru
     const orderRef = db.collection('orders').doc();
 
@@ -605,6 +625,13 @@ const createOrder = async (req, res) => {
 
     // Insert order baru ke database
     await orderRef.set(newOrder);
+    delete lessorData.username;
+    delete lessorData.lessor_id;
+    delete lessorData.renter_id;
+    delete productData.username;
+    delete productData.product_id;
+    delete productData.lessor_id;
+    delete renterData.renter_id;
 
     const responseData = {
       ...newOrder,
@@ -640,14 +667,14 @@ const getOrdersByRenter = async (req, res) => {
     const { uid } = req.user;
 
     const {
-      renterError,
-      renterStatus,
+      errorRenter,
+      statusRenter,
       checkResponseRenter,
       renterData,
     } = await verifyRenter(username, uid);
 
-    if (renterError) {
-      return res.status(renterStatus).json(checkResponseRenter);
+    if (errorRenter) {
+      return res.status(statusRenter).json(checkResponseRenter);
     }
 
     const renterId = renterData.renter_id;
@@ -698,10 +725,14 @@ const getOrdersByRenter = async (req, res) => {
 
     const orders = await Promise.all(ordersPromises);
 
+    const ordersData = orders.filter((order) => order !== undefined);
+
+    const responseData = { ordersData, renter: renterData };
+
     const response = successResponse(
       200,
       'Orders retrieved successfully',
-      orders.filter((order) => order !== undefined),
+      responseData,
     );
 
     return res.status(200).json(response);
@@ -864,6 +895,10 @@ const getDetailOrdersByRenter = async (req, res) => {
     if (errorLessor) {
       return res.status(statusLessor).json(checkResponseLessor);
     }
+    delete productData.username;
+    delete productData.lessor_id;
+    delete lessorData.renter_id;
+    delete lessorData.lessr_id;
 
     const reponseData = {
       ...orderData,

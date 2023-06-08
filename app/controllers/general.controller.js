@@ -8,6 +8,7 @@ import {
   checkLessor,
   checkOrder,
   checkProduct,
+  checkRenter,
 } from '../utils/snapshot.js';
 
 // Get Renter Details
@@ -21,7 +22,7 @@ const getRenterById = async (req, res) => {
       statusRenter,
       checkRespponseRenter,
       renterData,
-    } = await checkLessor(renterId);
+    } = await checkRenter(renterId);
 
     if (errorRenter) {
       return res.status(statusRenter).json(checkRespponseRenter);

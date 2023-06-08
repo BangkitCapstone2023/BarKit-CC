@@ -7,6 +7,7 @@ import db from '../config/firebase.config.js';
 
 import {
   verifyRenter,
+  verifyLessor,
 } from '../middlewares/authorization.middleware.js';
 
 import predictionModel from '../models/image.model.js';
@@ -150,13 +151,17 @@ const addProduct = async (req, res) => {
 
           try {
             // Check Lessor
-            const lessorSnapshot = await db
-              .collection('lessors')
-              .where('username', '==', username)
-              .get();
+            const {
+              errorLessor,
+              statusLessor,
+              checkResponseLessor,
+              lessorData,
+            } = await verifyLessor(username, uid);
 
-            const lessorId = lessorSnapshot.docs[0].id;
-            const lessorData = lessorSnapshot.docs[0].data();
+            if (errorLessor) {
+              return res.status(statusLessor).json(checkResponseLessor);
+            }
+            const lessorId = lessorData.lessor_id;
 
             // Check title duplicate
             const existingProductSnapshot = await db
@@ -189,6 +194,7 @@ const addProduct = async (req, res) => {
             }
 
             const productData = {
+              product_id: productId,
               title,
               description,
               price,
@@ -196,11 +202,10 @@ const addProduct = async (req, res) => {
               category,
               sub_category: subCategory,
               quantity,
-              username,
+              create_at: formattedTimestamp,
               lessor_id: lessorId,
               image_id: imageId,
-              product_id: productId,
-              create_at: formattedTimestamp,
+              username,
             };
 
             // Simpan data produk ke koleksi produk di Firestore
@@ -209,7 +214,10 @@ const addProduct = async (req, res) => {
               .doc(productData.product_id)
               .set(productData);
 
+            delete productData.lessor_id;
+
             const responseData = { ...productData, lessor: lessorData };
+            delete responseData.username;
 
             const response = successResponse(
               200,
@@ -233,11 +241,11 @@ const addProduct = async (req, res) => {
         const { errorMessage } = predictionResult;
         console.error('Error :', errorMessage);
         const response = badResponse(
-          403,
+          400,
           'Category dan gambar yang di input tidak sesuai',
           errorMessage,
         );
-        return res.status(403).json(response);
+        return res.status(400).json(response);
       }
       return null;
     });
@@ -259,22 +267,17 @@ const getAllProductsByLessor = async (req, res) => {
     const { username } = req.params;
     const { uid } = req.user;
     // Get the lessor document by username
-    const lessorSnapshot = await db
-      .collection('lessors')
-      .where('username', '==', username)
-      .get();
+    const {
+      errorLessor,
+      statusLessor,
+      checkResponseLessor,
+      lessorData,
+    } = await verifyLessor(username, uid);
 
-    if (lessorSnapshot.empty) {
-      const response = badResponse(404, `Lessor '${username}' not found`);
-      return res.status(404).json(response);
+    if (errorLessor) {
+      return res.status(statusLessor).json(checkResponseLessor);
     }
-    const lessorId = lessorSnapshot.docs[0].id;
-    const lessorData = lessorSnapshot.docs[0].data();
-
-    if (lessorData.renter_id !== uid) {
-      const response = badResponse(403, 'Not allowed');
-      return res.status(403).json(response);
-    }
+    const lessorId = lessorData.lessor_id;
     // Get all products by lessor ID
     const productsSnapshot = await db
       .collection('products')
@@ -288,7 +291,7 @@ const getAllProductsByLessor = async (req, res) => {
       productsData.push(productData);
     });
 
-    const responseData = { ...productsData, lessor: lessorData };
+    const responseData = { productsData, lessor: lessorData };
 
     const response = successResponse(200, 'Success Get Product', responseData);
 
@@ -359,12 +362,16 @@ const updateProductById = async (req, res) => {
         return res.status(statusRenter).json(checkResponseRenter);
       }
 
-      const lessorSnapshot = await db
-        .collection('lessors')
-        .where('username', '==', username)
-        .get();
+      const {
+        errorLessor,
+        statusLessor,
+        checkResponseLessor,
+        lessorData,
+      } = await checkLessor(productData.lessor_id);
 
-      const lessorData = lessorSnapshot.docs[0].data();
+      if (errorLessor) {
+        return res.status(statusLessor).json(checkResponseLessor);
+      }
 
       const { imageUrl } = productData;
 
@@ -475,11 +482,11 @@ const updateProductById = async (req, res) => {
           const { errorMessage } = predictionResult;
           console.error('Error :', errorMessage);
           const response = badResponse(
-            403,
+            400,
             'Category dan gambar yang di input tidak sesuai',
             errorMessage,
           );
-          return res.status(403).json(response);
+          return res.status(400).json(response);
         }
       } else {
         // Jika tidak ada file gambar yang diunggah, hanya lakukan update data produk
@@ -500,6 +507,7 @@ const updateProductById = async (req, res) => {
           ...updatedProductData,
           lessor: lessorData,
         };
+
         const response = successResponse(
           200,
           'Success update product data tanpa image',
@@ -638,7 +646,7 @@ const addProductToCart = async (req, res) => {
       checkResponseCart,
       cartData,
       cartRef,
-    } = await checkCart(username, uid);
+    } = await checkCart(uid);
 
     if (errorCart) {
       return res.status(statusCart).json(checkResponseCart);
@@ -721,7 +729,6 @@ const addProductToCart = async (req, res) => {
     return res.status(500).json(response);
   }
 };
-
 // Get Cart Product Handler
 const getCartProductsByRenter = async (req, res) => {
   try {
@@ -854,7 +861,7 @@ const updateCartProductQuantity = async (req, res) => {
       checkResponseCart,
       cartData,
       cartRef,
-    } = await checkCart(username, uid);
+    } = await checkCart(uid);
 
     if (errorCart) {
       return res.status(statusCart).json(checkResponseCart);
@@ -867,7 +874,7 @@ const updateCartProductQuantity = async (req, res) => {
     if (existingProductIndex === -1) {
       const response = badResponse(
         404,
-        `Product '${productId}' not found in the cart`,
+        'Product not found in renter cart',
       );
       return res.status(404).json(response);
     }
@@ -965,6 +972,7 @@ const deleteCartProduct = async (req, res) => {
       const response = badResponse(404, 'Cart not found');
       return res.status(404).json(response);
     }
+
     const {
       errorRenter,
       statusRenter,
@@ -980,19 +988,19 @@ const deleteCartProduct = async (req, res) => {
       (product) => product.product_id === productId,
     );
 
+    if (existingProductIndex === -1) {
+      const response = badResponse(
+        404,
+        'Product not found in the cart',
+      );
+      return res.status(404).json(response);
+    }
+
     const productSnapshot = await db
       .collection('products')
       .where('product_id', '==', productId)
       .get();
     const productData = productSnapshot.docs[0].data();
-
-    if (existingProductIndex === -1) {
-      const response = badResponse(
-        404,
-        `Product '${productData.title}' not found in the cart`,
-      );
-      return res.status(404).json(response);
-    }
 
     // Remove the product from the cart
     cartData.cart_products.splice(existingProductIndex, 1);

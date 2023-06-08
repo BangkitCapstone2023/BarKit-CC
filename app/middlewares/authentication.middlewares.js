@@ -12,14 +12,15 @@ const authMiddleware = async (req, res, next) => {
     const token = authorization.split('Bearer ')[1];
 
     // Periksa apakah renter sudah logout
-    const tokenSnapshoot = db.collection('tokens').doc(token);
-    const tokenRef = await tokenSnapshoot.get();
+    const tokenSnapshot = db.collection('tokens').doc(token);
+    const tokenRef = await tokenSnapshot.get();
     if (tokenRef.exists && tokenRef.data().invalid) {
       throw new Error('Unauthorized');
     }
 
     const decodedToken = await admin.auth().verifyIdToken(token);
     req.user = decodedToken;
+    console.log(decodedToken);
 
     const docRef = db.collection('tokens').doc(token);
     const doc = await docRef.get();
@@ -37,8 +38,8 @@ const authMiddleware = async (req, res, next) => {
 const adminMiddleware = async (req, res, next) => {
   const { authorization } = req.headers;
   try {
-    if (!authorization) {
-      res.status(403).json({ status: 403, message: 'Forbidden' });
+    if (!authorization || !authorization.startsWith('Bearer ')) {
+      res.status(401).json({ status: 401, message: 'Unauthorized' });
       return;
     }
     const token = authorization.split('Bearer ')[1];

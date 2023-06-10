@@ -6,7 +6,8 @@ import {
   getRenterById,
   getLessorById,
   getProductById,
-  getOrderById,
+  getRenterOrderById,
+  getLessorOrderById,
 } from '../controllers/general.controller.js';
 
 const router = express.Router();
@@ -23,6 +24,7 @@ router.get('/lessors/:lessorId', getLessorById);
 router.get('/products/:productId', getProductById);
 
 // Get Order Details
-router.get('/orders/:orderId', getOrderById);
+router.get('/orders/:orderId', getRenterOrderById);
+router.get('/orders/lessors/:orderId', getLessorOrderById);
 
 export default router;

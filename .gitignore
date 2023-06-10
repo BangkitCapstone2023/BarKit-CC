@@ -3,3 +3,4 @@ app/config/*
 !app/config/firebase.config.js
 !app/config/storage.config.js
 !app/config/config.sample.json
+.vscode

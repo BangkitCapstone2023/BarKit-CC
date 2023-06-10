@@ -2,7 +2,7 @@ import express from 'express';
 import { authMiddleware } from '../middlewares/authentication.middlewares.js';
 
 import {
-  getDashboardData,
+  getHomeData,
   searchProduct,
   getAllCategories,
   getSubCategoriesByCategory,
@@ -27,7 +27,7 @@ import {
 const router = express.Router();
 // Rute-rute yang tidak membutuhkan otentikasi
 // Explore Product Routes
-router.get('/', getDashboardData);
+router.get('/home', getHomeData);
 router.get('/search', searchProduct);
 router.get('/category', getAllCategories);
 router.get('/category/:name', getSubCategoriesByCategory);

@@ -15,8 +15,8 @@ import {
   checkAllCategory,
 } from '../utils/snapshot.js';
 
-// Dashboard Handler
-const getDashboardData = async (req, res) => {
+// Home Handler
+const getHomeData = async (req, res) => {
   try {
     const allProduct = await checkAllProduct();
 
@@ -41,8 +41,8 @@ const getDashboardData = async (req, res) => {
       }),
     );
 
-    // Randomly select 10 products
-    const randomProducts = getRandomElements(products, 10);
+    // Randomly select 20 products
+    const randomProducts = getRandomElements(products, 20);
 
     const responseData = {
       products: randomProducts,
@@ -182,7 +182,7 @@ const getAllCategories = async (req, res) => {
       categories.push({ id: doc.id, name: data.name, iconUrl: data.iconUrl });
     });
 
-    console.log('Working update 9 Juni ');
+    console.log('Working update 10 Juni');
 
     return res.status(200).json(categories);
   } catch (error) {
@@ -926,7 +926,7 @@ const getDetailOrdersByRenter = async (req, res) => {
 };
 
 export {
-  getDashboardData,
+  getHomeData,
   searchProduct,
   getAllCategories,
   getSubCategoriesByCategory,

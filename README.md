@@ -50,6 +50,7 @@
   * [Prerequisites](#bangbang-prerequisites)
   * [Run Locally With NPM](#running-run-locally-with-npm)
   * [Run Locally With Docker](#whale2-run-locally-with-docker) (Recommended)
+  * [Handle Error](#wrench-handle-error)
   * [Deployment](#cloud-deployment)
 - [Usage](#eyes-usage)
 - [Contributing](#wave-contributing)
@@ -95,7 +96,7 @@ You can see all api feature at our [API documentation](https://documenter.getpos
 To run this project, you will need the following credential file:
   <ul>
     <li><a href="https://firebase.google.com/docs/admin/setup">Firebase Admin SDK</a> <br /> Go to firebase console -> pick your project -> project setting -> service account tab -> genereate new private key</li>
-    <li><a href="https://firebase.google.com/docs/web/setup">Firebase Config/Client</a> <br /> Go to firebase console -> pick your project -> project setting -> in general tab scroll down -> click add app button -> pick web logo "<\>" -> fill app nickname & click register app -> copy all <em>const firebaseConfig</em> variabel value -> make a new notepad -> paste value from firebaseConfig variabel before</li>
+    <li><a href="https://firebase.google.com/docs/web/setup">Firebase Config/Client</a> <br /> Go to firebase console -> pick your project -> project setting -> in general tab scroll down -> click add app button -> pick web logo "<\>" -> fill app nickname & click register app -> copy all <em>const firebaseConfig</em> variabel value -> make a new json file -> paste value from firebaseConfig variabel before and save the json file</li>
     <li><a href="https://cloud.google.com/storage/docs/apis">Cloud Storage Credential</a> <br /> Go to google cloud console -> go to IAM & Admin tab -> service account -> create service account -> fill service account name (ex: cloud-storage-barkit-admin) -> select the role to cloud storage admin -> click done -> click your service account you already created -> go to KEYS tab -> click add key -> create new key -> pick json -> create </li>
   </ul>
   
@@ -108,34 +109,15 @@ _Note:_
 <!-- Prerequisites -->
 ### :bangbang: Prerequisites
 
-This project uses NPM as package manager
-
-* Install node.js version 14.21.3 <a href="https://nodejs.org/en/blog/release/v14.21.3">*here*<a/> <br />
+* Install node.js version 18.16.0 <a href="https://nodejs.org/en/download">*here*<a/> <br />
   Make sure your node.js and npm already install in your device using, open cmd and run:
   ```bash
   node -v
   npm -v
   ```
-   _**Note: In development we are using `Windows 10 pro`, `Visual Studio Code`, `node version 14.21.3`, and `npm version 6.14.18`.**_
-  
- * If there are **any error with tfjs-node** when running at local using NPM **(if you are not clone/run the server yet,ignore this step)**, try this step 1 by 1: <a name="tfjs-node-error"></a>
-    1. `npm install -g node-gyp`
-    2. Go to powershell -> Run as administrator -> `npm install -g --production windows-build-tools`
-    3. `Install the current version of Python` from the [Microsoft Store package](https://www.microsoft.com/en-us/p/python-310/9pjpw5ldxlz5).
-    4. `Install Visual C++ Build Environment`: [Visual Studio Build Tools](https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=BuildTools)
-    (using "Visual C++ build tools" workload) or [Visual Studio Community](https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=Community)
-   (using the "Desktop development with C++" workload)
-  
-     _Note_ : **For TFJS-Node Error**
-    1. If you _already done with 1 step (ex: install node-gcp), try running the server again_. If the error persists, move on to the next step.
-    2. If there is any error with node-gyp, try going [here](https://github.com/nodejs/node-gyp/issues/809).
-    3. If there is any error with step 2 (install windows-build-tools), check [here](https://github.com/tensorflow/tfjs/blob/master/tfjs-node/WINDOWS_TROUBLESHOOTING.md#msbuildexe-exceptions).
-    4. If there is any error when trying steps 3-4 (install Python & Visual C++ build tools), check [here](https://github.com/nodejs/node-gyp#on-windows).
-    
-* [Docker](https://www.docker.com/) (if you want to run this repostory with docker)
+   _**Note: In development we are using `Windows 10 Pro`, `Visual Studio Code`, `node version 18.16.0`, and `npm version 9.5.1`.**_
+* [Docker](https://www.docker.com/), if you want to run this repostory with docker (recommended) and deploy to cloud run
 * Google Cloud Platform Account (If You want to to deploy it in GCP)
-  
-  _Note: We already deploy our API but the database we are using is still free tier (firebase spark), not the final delivery databases, and for cloud run we are setting to maximun 2 instances, this for saving GCP money, we will update the credetail to "real credential" and higher cloud run instaces and cpu capacity , no later than 11 June 2023_
 
 <!-- Installation -->
 ### :running: Run Locally With NPM
@@ -197,6 +179,21 @@ Follow this step to run this repostory code in your local device:
    _Note:_
   1. Steps 4-6 are only performed if you do not have access to [Our Credential](https://drive.google.com/drive/folders/1nNdzHuIT3-UUD0rRbfC111-mpkefqcfc?usp=share_link). If you are someone we know, please request to obtain our credentials and config file. After you download our credential make sure to store it at app/config folder.
   2. You can use another name & add tag for the image
+
+### :wrench: Handle Error
+  You can ask us about your error [here](https://github.com/BangkitCapstone2023/BarKit-CC/issues) ,but If you have a problem with `tensforflow.js` when run locally with NPM, here some tips:
+   <a name="tfjs-node-error"></a>
+  1. `npm install -g node-gyp`
+  2.  `Install the current version of Python` [here](https://www.python.org/downloads/) or from the [Microsoft Store package](https://www.microsoft.com/en-us/p/python-310/9pjpw5ldxlz5) in our development we are suing [python 3.9.6](https://www.python.org/downloads/release/python-396/).
+  3. `Install Visual C++ Build Environment`: [Visual Studio Build Tools](https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=BuildTools) (using "Visual C++ build tools" workload) or [Visual Studio Community](https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=Community) (using the "Desktop development with C++" workload)
+   4. Go to powershell -> Run as administrator -> `npm install -g --production windows-build-tools`
+  
+  <em>Note: For TFJS-Node Error</em>
+   1. If you _already done with 1 step (ex: install node-gcp), try running the server again_. If the error persists, move on to the next step.
+   2. If there is any error with node-gyp, try going [here](https://github.com/nodejs/node-gyp/issues/809).
+   3. If there is any error when trying steps 3 (install Python & Visual C++ build tools), check [here](https://github.com/nodejs/node-gyp#on-windows).
+   4. If there is any error with step 4 (install windows-build-tools), check [here](https://github.com/tensorflow/tfjs/blob/master/tfjs-node/WINDOWS_TROUBLESHOOTING.md#msbuildexe-exceptions).
+  
 
 <!-- Deployment -->
 ### :cloud: Deployment

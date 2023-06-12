@@ -3,6 +3,7 @@ import express from 'express';
 import { authMiddleware } from '../middlewares/authentication.middlewares.js';
 
 import {
+  mainPath,
   getRenterById,
   getLessorById,
   getProductById,
@@ -12,7 +13,7 @@ import {
 
 const router = express.Router();
 
-router.use(authMiddleware);
+router.get('/', mainPath);
 
 // Get Renter Details
 router.get('/renters/:renterId', getRenterById);
@@ -21,10 +22,10 @@ router.get('/renters/:renterId', getRenterById);
 router.get('/lessors/:lessorId', getLessorById);
 
 // Get Product Details
-router.get('/products/:productId', getProductById);
+router.get('/products/:productId', authMiddleware, getProductById);
 
 // Get Order Details
-router.get('/orders/:orderId', getRenterOrderById);
-router.get('/orders/lessors/:orderId', getLessorOrderById);
+router.get('/orders/:orderId', authMiddleware, getRenterOrderById);
+router.get('/orders/lessors/:orderId', authMiddleware, getLessorOrderById);
 
 export default router;

@@ -12,8 +12,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use(authRouter);
-app.use(renterRouter);
 app.use(generalRouter);
+app.use(renterRouter);
 app.use(lessorRouter);
 app.use(adminRouter);
 

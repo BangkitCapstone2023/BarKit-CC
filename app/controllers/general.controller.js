@@ -214,7 +214,21 @@ const getLessorOrderById = async (req, res) => {
   }
 };
 
+const mainPath = async (req, res) => {
+  try {
+    return res.status(200).send('<h1><center>This is main link try to go another path <br>click <a href=/home>here to go home path</a></center></h1> ');
+  } catch (error) {
+    const response = badResponse(
+      500,
+      'Something went wrong',
+      error.message,
+    );
+    return res.status(500).json(response);
+  }
+};
+
 export {
+  mainPath,
   getRenterById,
   getLessorById,
   getProductById,

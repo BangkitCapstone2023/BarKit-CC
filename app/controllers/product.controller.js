@@ -642,17 +642,43 @@ const addProductToCart = async (req, res) => {
     // Create or get user's cart
     const {
       errorCart,
-      statusCart,
-      checkResponseCart,
       cartData,
       cartRef,
     } = await checkCart(uid);
 
+    let updatedCart = [];
     if (errorCart) {
-      return res.status(statusCart).json(checkResponseCart);
+      const newCartRef = db.collection('carts').doc(renterData.renter_id);
+
+      // Create new cart if there's an error with the existing cart
+      const priceString = productData.price.replace(/[^0-9.-]+/g, '');
+      const priceNumber = parseFloat(priceString.replace('.', ''));
+      const totalPrice = priceNumber * cartQuantity;
+      const newCart = {
+        cart_id: renterData.renter_id,
+        cart_products: [
+          {
+            product_id: productId,
+            lessor_id: lessorId,
+            quantity: cartQuantity,
+            total_price: totalPrice.toLocaleString('id-ID'),
+          },
+        ],
+        renter_id: renterData.renter_id,
+        username,
+      };
+      updatedCart = newCart.cart_products;
+      await newCartRef.set(newCart);
+      const response = successResponse(
+        200,
+        'Success added Product to the cart',
+        newCart,
+      );
+      return res.status(200).json(response);
     }
 
-    let updatedCart = [];
+    updatedCart = cartData.cart_products;
+
     if (cartData && cartData.cart_products) {
       updatedCart = cartData.cart_products;
     }
@@ -903,8 +929,7 @@ const updateCartProductQuantity = async (req, res) => {
     // Update cart cart_products array
     cartData.cart_products[existingProductIndex] = updatedProduct;
 
-    // If quantity is 0, remove the product from the cart
-    if (cartQuantity === 0) {
+    if (cartQuantity < 1) {
       cartData.cart_products.splice(existingProductIndex, 1);
       await cartRef.update({
         cart_products: cartData.cart_products,

@@ -59,6 +59,14 @@ const registerLessor = async (req, res) => {
     if (errorRenter) {
       return res.status(statusRenter).json(checkResponseRenter);
     }
+
+    if (renterData.email_verified === false) {
+      const response = badResponse(
+        403,
+        'Your Email is not verified yet, please cek your email for verification, if you already verified and cant become lessor try re-login',
+      );
+      return res.status(403).json(response);
+    }
     const { fullName, username, email } = renterData;
     const renterId = renterData.renter_id;
     const lessorSnapshot = await db

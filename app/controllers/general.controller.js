@@ -16,7 +16,6 @@ import {
 const getRenterById = async (req, res) => {
   try {
     const { renterId } = req.params;
-    const { uid } = req.user;
 
     const {
       errorRenter,
@@ -28,16 +27,8 @@ const getRenterById = async (req, res) => {
     if (errorRenter) {
       return res.status(statusRenter).json(checkRespponseRenter);
     }
-
-    const {
-      errorUID,
-      statusUID,
-      checkResponseUID,
-    } = await checkUID('renters', renterId, uid);
-
-    if (errorUID) {
-      return res.status(statusUID).json(checkResponseUID);
-    }
+    delete renterData.phone;
+    delete renterData.address;
 
     const response = successResponse(200, 'Renter details retrieved successfully', renterData);
     return res.status(200).json(response);
@@ -52,7 +43,6 @@ const getRenterById = async (req, res) => {
 const getLessorById = async (req, res) => {
   try {
     const { lessorId } = req.params;
-    const { uid } = req.user;
 
     const {
       errorLessor,
@@ -64,16 +54,9 @@ const getLessorById = async (req, res) => {
     if (errorLessor) {
       return res.status(statusLessor).json(checkResponseLessor);
     }
-
-    const {
-      errorUID,
-      statusUID,
-      checkResponseUID,
-    } = await checkUID('lessors', lessorId, uid);
-
-    if (errorUID) {
-      return res.status(statusUID).json(checkResponseUID);
-    }
+    delete lessorData.username;
+    delete lessorData.email;
+    delete lessorData.fullName;
 
     const response = successResponse(200, 'Lessor details retrieved successfully', lessorData);
     return res.status(200).json(response);

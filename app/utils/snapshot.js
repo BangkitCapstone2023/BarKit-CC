@@ -14,10 +14,12 @@ const checkRenter = async (renterId) => {
       };
     }
     const renterData = renterSnapshot.data();
+    const renterRef = renterData.ref;
 
     return {
       errorRenter: false,
       renterData,
+      renterRef,
     };
   } catch (error) {
     console.error('Error while checking renter:', error);

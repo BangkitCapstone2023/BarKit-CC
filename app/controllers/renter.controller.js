@@ -1,4 +1,9 @@
 import Fuse from 'fuse.js';
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/auth';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import { readFileSync } from 'fs';
 import db from '../config/firebase.config.js';
 
 import {
@@ -14,6 +19,22 @@ import {
   checkAllProduct,
   checkAllCategory,
 } from '../utils/snapshot.js';
+
+const filename = fileURLToPath(import.meta.url);
+const filedirname = dirname(filename);
+
+const configPath = join(filedirname, '../config/config.json');
+const config = JSON.parse(readFileSync(configPath));
+
+const firebaseConfigPath = join(
+  filedirname,
+  '../config/',
+  config.firebaseConfigCredentail,
+);
+const firebaseConfig = JSON.parse(readFileSync(firebaseConfigPath, 'utf8'));
+
+// Initialize Firebase app
+firebase.initializeApp(firebaseConfig);
 
 // Home Handler
 const getHomeData = async (req, res) => {
@@ -398,6 +419,7 @@ const updateProfile = async (req, res) => {
       address,
       phone,
       gender,
+      email,
     } = req.body;
 
     const {
@@ -439,6 +461,18 @@ const updateProfile = async (req, res) => {
       return res.status(200).json(response);
     }
 
+    // Periksa apakah ada perubahan email
+    if (email && email !== renterData.email) {
+      // Perbarui alamat email pada data profil renter
+      renterUpdateData.email = email;
+
+      // Update email di Firebase Authentication
+      await firebase.auth().currentUser.updateEmail(email);
+
+      // Kirim ulang email verifikasi ke alamat email baru
+      await firebase.auth().currentUser.sendEmailVerification();
+    }
+
     // Perbarui data profile renter pada database
     await renterRef.update(renterUpdateData);
 
@@ -447,6 +481,14 @@ const updateProfile = async (req, res) => {
     const updatedProfileData = updatedProfileSnapshot.data();
 
     delete updatedProfileData.userRecordData;
+    if (email && email !== renterData.email) {
+      const response = successResponse(
+        200,
+        'Profile updated successfully, check your email to verify',
+        updatedProfileData,
+      );
+      return res.status(200).json(response);
+    }
 
     const response = successResponse(
       200,
@@ -553,6 +595,14 @@ const createOrder = async (req, res) => {
     const renterId = renterData.renter_id;
     if (errorProduct) {
       return res.status(statusProduct).json(checkResponseProduct);
+    }
+
+    if (renterData.email_verified === false) {
+      const response = badResponse(
+        403,
+        'Your Email is not verified yet, please cek your email for verification, if you already verified and cant order product,try re-login',
+      );
+      return res.status(403).json(response);
     }
 
     const lessorId = productData.lessor_id;

@@ -6,7 +6,7 @@ import { dirname, join } from 'path';
 import { readFileSync } from 'fs';
 import db from '../config/firebase.config.js';
 import { badResponse, successResponse } from '../utils/response.js';
-import formattedTimestamp from '../utils/time.js';
+import { dateTimeNow } from '../utils/time.js';
 
 const filename = fileURLToPath(import.meta.url);
 const filedirname = dirname(filename);
@@ -14,13 +14,15 @@ const filedirname = dirname(filename);
 const configPath = join(filedirname, '../config/config.json');
 const config = JSON.parse(readFileSync(configPath));
 
-const clientConfigPath = join(
+const firebaseConfigPath = join(
   filedirname,
   '../config/',
   config.firebaseConfigCredentail,
 );
-const clientConfig = JSON.parse(readFileSync(clientConfigPath, 'utf8'));
-firebase.initializeApp(clientConfig);
+const firebaseConfig = JSON.parse(readFileSync(firebaseConfigPath, 'utf8'));
+
+// Initialize Firebase app
+firebase.initializeApp(firebaseConfig);
 
 // Register Renters Handler
 const createUser = async (
@@ -68,11 +70,8 @@ const createUser = async (
       throw error;
     }
 
-    const userRecord = await admin.auth().createUser({ email, password });
-
-    const userRecordData = {
-      creationTime: userRecord.metadata.creationTime,
-    };
+    const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
+    const userRecord = userCredential.user;
 
     const userDocRef = db.collection('renters').doc(userRecord.uid);
     const userData = {
@@ -85,11 +84,21 @@ const createUser = async (
       address,
       gender,
       isLessor,
+      email_verified: userRecord.emailVerified,
     };
 
     delete userData.password;
     await userDocRef.set(userData);
-    const responseData = { ...userData, userRecordDatas: userRecordData };
+
+    await userRecord.sendEmailVerification();
+
+    const userRecordResponse = {
+      emailVerified: userRecord.emailVerified,
+      isAnonymous: userRecord.isAnonymous,
+      createAt: dateTimeNow(),
+    };
+
+    const responseData = { ...userData, userRecordResponse };
     return responseData;
   } catch (error) {
     console.error('Error creating user', error.message);
@@ -123,7 +132,7 @@ const register = async (req, res) => {
 
     const response = successResponse(
       201,
-      'User Success Register',
+      'User Success Register, Check your email for verification',
       userResponse,
     );
     res.status(201).json(response);
@@ -143,15 +152,15 @@ const loginUser = async (email, password) => {
     const userCredential = await firebase
       .auth()
       .signInWithEmailAndPassword(email, password);
-    // eslint-disable-next-line no-unused-vars
-    const { uid } = userCredential.user;
 
     // Generate JWT Token
-    const token = await firebase.auth().currentUser.getIdToken();
+    const token = await userCredential.user.getIdToken();
+    const userRecord = await userCredential.user.getIdTokenResult();
 
     return {
       token,
-      loginTime: formattedTimestamp,
+      loginTime: dateTimeNow(),
+      userRecord,
     };
   } catch (error) {
     console.error('Error logging in user:', error);
@@ -159,51 +168,60 @@ const loginUser = async (email, password) => {
   }
 };
 
-// Login Renters Handler
 const login = async (req, res) => {
-  const { email, password } = req.body;
+  const { identifier, password } = req.body;
 
   try {
-    if (email.length === 0) {
-      const response = badResponse(400, 'Email is required');
+    if (identifier.length === 0) {
+      const response = badResponse(400, 'Email or username is required');
       return res.status(400).json(response);
     }
 
     if (password.length === 0) {
-      const response = badResponse(400, 'Passord is required');
+      const response = badResponse(400, 'Password is required');
       return res.status(400).json(response);
     }
-    const { token, loginTime } = await loginUser(email, password);
-    const renterSnapshot = await db
-      .collection('renters')
-      .where('email', '==', email)
-      .get();
+
+    // Cek apakah identifier merupakan email atau username
+    let renterSnapshot;
+    if (identifier.includes('@')) {
+      // Jika identifier mengandung karakter '@', maka dianggap sebagai email
+      renterSnapshot = await db
+        .collection('renters')
+        .where('email', '==', identifier)
+        .get();
+    } else {
+      // Jika tidak mengandung karakter '@', maka dianggap sebagai username
+      renterSnapshot = await db
+        .collection('renters')
+        .where('username', '==', identifier)
+        .get();
+    }
+
+    if (renterSnapshot.empty) {
+      // Jika tidak ada renter dengan email atau username yang sesuai
+      const response = badResponse(404, 'User not found, please make sure your email format or username is correct');
+      return res.status(404).json(response);
+    }
 
     const renterData = renterSnapshot.docs[0].data();
+    const renterRef = db.collection('renters').doc(renterData.renter_id);
 
-    const renterDocRef = renterSnapshot.docs[0].ref;
-    // Update Last Sign Time
-    await renterDocRef.update({
-      'userRecordData.lastSignInTime': loginTime,
-    });
-    const userLoginData = {
-      renter_id: renterData.renter_id,
-      email,
+    const { token, userRecord } = await loginUser(renterData.email, password);
+
+    const verifiedData = await userRecord.claims.email_verified;
+    if (verifiedData === true) {
+      await renterRef.update({ email_verified: true });
+    }
+
+    const responseData = {
       token,
-    };
-
-    const resposeData = {
-      ...userLoginData,
       renter: {
         ...renterData,
-        userRecordData: {
-          ...renterData.userRecordData,
-          lastSignInTime: loginTime,
-        },
       },
     };
 
-    const response = successResponse(200, 'User Success Login', resposeData);
+    const response = successResponse(200, 'User Success Login', responseData);
     return res.status(200).json(response);
   } catch (error) {
     let errorMessage = '';
@@ -211,13 +229,13 @@ const login = async (req, res) => {
 
     if (error.code === 'auth/wrong-password') {
       status = 400;
-      errorMessage = 'Password yang dimasukkan salah';
+      errorMessage = 'Incorrect password';
     } else if (error.code === 'auth/invalid-email') {
       status = 400;
-      errorMessage = 'Email pengguna tidak valid';
+      errorMessage = 'Invalid email address';
     } else if (error.code === 'auth/user-not-found') {
       status = 404;
-      errorMessage = 'User tidak ditemukan';
+      errorMessage = 'User not found';
     } else {
       status = 500;
       errorMessage = `Error logging in user: ${error}`;
@@ -231,26 +249,30 @@ const login = async (req, res) => {
 const logout = async (req, res) => {
   try {
     const { authorization } = req.headers;
-    const { uid } = req.user;
+    const { uid, email } = req.user;
     if (!authorization || !authorization.startsWith('Bearer ')) {
       throw new Error('Unauthorized');
     }
 
     const token = authorization.split('Bearer ')[1];
 
-    // Tandai token sebagai tidak valid di Firestore
     await db.collection('tokens').doc(token).set({ invalid: true });
 
     await admin.auth().revokeRefreshTokens(uid);
 
-    const logoutTime = formattedTimestamp;
+    const logoutTime = dateTimeNow();
+
     // Tandai token sebagai tidak valid di Firestore
     await db
       .collection('tokens')
       .doc(token)
-      .set({ invalid: true, time: logoutTime, type: 'logout tokens' });
+      .set({
+        email, uid, invalid: true, time: logoutTime, type: 'logout tokens', token,
+      });
 
-    const response = successResponse(200, 'User logged out successfully');
+    const responseData = { email, time: logoutTime };
+
+    const response = successResponse(200, 'User logged out successfully', responseData);
     res.status(200).json(response);
   } catch (error) {
     console.error(error);
@@ -259,4 +281,25 @@ const logout = async (req, res) => {
   }
 };
 
-export { login, register, logout };
+const forgetPassword = async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    // Kirim email reset password
+    await firebase.auth().sendPasswordResetEmail(email);
+
+    const response = successResponse(200, 'Reset password email has been sent');
+    return res.status(200).json(response);
+  } catch (error) {
+    console.error('Error sending password reset email:', error);
+    const response = badResponse(500, 'Failed to send password reset email');
+    return res.status(500).json(response);
+  }
+};
+
+export {
+  login,
+  register,
+  logout,
+  forgetPassword,
+};

@@ -1,8 +1,18 @@
 import moment from 'moment';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import 'moment-timezone';
 import admin from 'firebase-admin';
 
-const timestamp = admin.firestore.Timestamp.now();
-const date = timestamp.toDate();
-const formattedTimestamp = moment(date).format('YYYY-MM-DD HH:mm:ss');
+const dateTimeNow = () => {
+  const timestamp = admin.firestore.Timestamp.now();
+  const date = timestamp.toDate();
+  const formattedTimestamp = moment(date).tz('Asia/Makassar').format('YYYY-MM-DD HH:mm:ss');
+  return formattedTimestamp;
+};
 
-export default formattedTimestamp;
+const formatDateTime = async (dateTime) => {
+  const time = moment(dateTime).tz('Asia/Makassar').format('YYYY-MM-DD HH:mm:ss');
+  return time;
+};
+
+export { formatDateTime, dateTimeNow };

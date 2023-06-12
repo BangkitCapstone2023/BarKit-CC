@@ -13,7 +13,7 @@ import {
 import predictionModel from '../models/image.model.js';
 import { badResponse, successResponse } from '../utils/response.js';
 
-import formattedTimestamp from '../utils/time.js';
+import { dateTimeNow } from '../utils/time.js';
 
 import {
   checkLessor,
@@ -202,7 +202,7 @@ const addProduct = async (req, res) => {
               category,
               sub_category: subCategory,
               quantity,
-              create_at: formattedTimestamp,
+              create_at: dateTimeNow(),
               lessor_id: lessorId,
               image_id: imageId,
               username,
@@ -452,7 +452,7 @@ const updateProductById = async (req, res) => {
               price: price || productData.price,
               quantity: quantity || productData.quantity,
               imageUrl: publicUrl,
-              update_at: formattedTimestamp,
+              update_at: dateTimeNow(),
             };
 
             if (imageUrl && imageUrl !== publicUrl) {

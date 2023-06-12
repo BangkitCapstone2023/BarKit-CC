@@ -67,42 +67,6 @@ const getLessorById = async (req, res) => {
   }
 };
 
-// Get Product Details
-const getProductById = async (req, res) => {
-  try {
-    const { productId } = req.params;
-    const { uid } = req.user;
-
-    const {
-      errorProduct,
-      statusProduct,
-      checkResponseProduct,
-      productData,
-    } = await checkProduct(productId);
-
-    if (errorProduct) {
-      return res.status(statusProduct).json(checkResponseProduct);
-    }
-
-    const {
-      errorUID,
-      statusUID,
-      checkResponseUID,
-    } = await checkUID('products', productId, uid);
-
-    if (errorUID) {
-      return res.status(statusUID).json(checkResponseUID);
-    }
-
-    const response = successResponse(200, 'Product details retrieved successfully', productData);
-    return res.status(200).json(response);
-  } catch (error) {
-    console.error('Error while getting product details:', error);
-    const response = badResponse(500, 'An error occurred while getting product details');
-    return res.status(500).json(response);
-  }
-};
-
 // Get Order Details
 const getRenterOrderById = async (req, res) => {
   try {
@@ -231,7 +195,6 @@ export {
   mainPath,
   getRenterById,
   getLessorById,
-  getProductById,
   getRenterOrderById,
   getLessorOrderById,
 };

@@ -6,7 +6,6 @@ import {
   mainPath,
   getRenterById,
   getLessorById,
-  getProductById,
   getRenterOrderById,
   getLessorOrderById,
 } from '../controllers/general.controller.js';
@@ -20,9 +19,6 @@ router.get('/renters/:renterId', getRenterById);
 
 // Get Lessor Details
 router.get('/lessors/:lessorId', getLessorById);
-
-// Get Product Details
-router.get('/products/:productId', authMiddleware, getProductById);
 
 // Get Order Details
 router.get('/orders/:orderId', authMiddleware, getRenterOrderById);

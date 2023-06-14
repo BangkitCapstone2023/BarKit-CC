@@ -415,7 +415,7 @@ const updateProfile = async (req, res) => {
     const { username } = req.params;
     const { uid } = req.user;
     const {
-      name,
+      fullName,
       address,
       phone,
       gender,
@@ -436,8 +436,8 @@ const updateProfile = async (req, res) => {
     // Check Input Data For Edit
     const renterUpdateData = {};
 
-    if (name !== undefined && name !== '') {
-      renterUpdateData.name = name;
+    if (fullName !== undefined && fullName !== '') {
+      renterUpdateData.name = fullName;
     }
 
     if (address !== undefined && address !== '') {
@@ -753,6 +753,7 @@ const getOrdersByRenter = async (req, res) => {
       // Memastikan produk tersedia
       if (productSnapshot.exists) {
         const productData = productSnapshot.data();
+        delete productData.username;
 
         return {
           order_id: doc.id,
@@ -764,6 +765,7 @@ const getOrdersByRenter = async (req, res) => {
           kurir: orderData.kurir,
           status: orderData.status,
           product_id: productData.product_id,
+          product: productData,
         };
       }
       const response = badResponse(

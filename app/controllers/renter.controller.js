@@ -87,7 +87,6 @@ const getHomeData = async (req, res) => {
     return res.status(500).json(response);
   }
 };
-
 // Search Products Handler
 const searchProduct = async (req, res) => {
   try {
@@ -115,25 +114,21 @@ const searchProduct = async (req, res) => {
     const fuse = new Fuse(products, fuseOptions);
 
     // Perform search using Fuse.js
-    const searchResults = fuse.search(title);
+    let searchResults = fuse.search(title);
 
     // Filter by category and subCategory
-    const filteredResults = searchResults.filter((result) => {
-      if (category && subCategory) {
-        return result.item.category === category && result.item.sub_category === subCategory;
-      }
-      if (category) {
-        return result.item.category === category;
-      }
-      if (subCategory) {
-        return result.item.sub_category === subCategory;
-      }
-      return null;
-    });
+    if (category && subCategory) {
+      // eslint-disable-next-line max-len
+      searchResults = searchResults.filter((result) => result.item.category === category && result.item.sub_category === subCategory);
+    } else if (category) {
+      searchResults = searchResults.filter((result) => result.item.category === category);
+    } else if (subCategory) {
+      searchResults = searchResults.filter((result) => result.item.sub_category === subCategory);
+    }
 
     // Retrieve only the necessary properties from the search results
     const formattedResults = await Promise.all(
-      filteredResults.map(async (result) => {
+      searchResults.map(async (result) => {
         const {
           errorLessor,
           statusLessor,

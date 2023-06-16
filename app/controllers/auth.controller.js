@@ -147,6 +147,7 @@ const register = async (req, res) => {
   }
 };
 
+// Login Renter Handler
 const loginUser = async (email, password) => {
   try {
     const userCredential = await firebase

@@ -1,6 +1,7 @@
 import admin from 'firebase-admin';
 import db from '../config/firebase.config.js';
 
+// Auth Middleware
 const authMiddleware = async (req, res, next) => {
   const { authorization } = req.headers;
 
@@ -34,6 +35,7 @@ const authMiddleware = async (req, res, next) => {
   }
 };
 
+// Admin Middleware
 const adminMiddleware = async (req, res, next) => {
   const { authorization } = req.headers;
   try {

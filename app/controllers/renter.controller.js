@@ -198,8 +198,6 @@ const getAllCategories = async (req, res) => {
       categories.push({ id: doc.id, name: data.name, iconUrl: data.iconUrl });
     });
 
-    console.log('Working update 10 Juni');
-
     return res.status(200).json(categories);
   } catch (error) {
     console.error('Error getting categories', error);

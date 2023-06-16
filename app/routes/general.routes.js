@@ -12,6 +12,7 @@ import {
 
 const router = express.Router();
 
+// Main Path Info
 router.get('/', mainPath);
 
 // Get Renter Details

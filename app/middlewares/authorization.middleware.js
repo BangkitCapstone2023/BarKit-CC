@@ -96,6 +96,7 @@ const verifyLessor = async (username, uid) => {
   }
 };
 
+// Check UID
 const checkUID = async (collection, id, uid) => {
   const snapshot = await db.collection(`${collection}`).doc(id).get();
 

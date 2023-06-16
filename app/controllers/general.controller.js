@@ -180,7 +180,7 @@ const getLessorOrderById = async (req, res) => {
 
 const mainPath = async (req, res) => {
   try {
-    return res.status(200).send('<h1><center>This is main link try to go another path <br>click <a href=/home>here to go home path</a></center></h1> ');
+    return res.status(200).send('<h1><center>This is main link of BarKit API, try to go another path<br>click <a href=/home>here to go home path</a></center></h1> ');
   } catch (error) {
     const response = badResponse(
       500,

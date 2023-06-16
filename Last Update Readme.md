@@ -231,10 +231,7 @@ To deploy this project we are using cloud run at GCP (you can use another servic
 ## :wave: Contributing
 
 <h5>Contributtor in this repostory:</h5>
-<a href="https://github.com/BangkitCapstone2023/BarKit-CC/contributors">
-  <img src="https://contrib.rocks/image?repo=BangkitCapstone2023/BarKit-CC" />
-</a>
-
+  
 Contributions are always welcome!
 See [CONTRIBUTING.md](https://github.com/BangkitCapstone2023/BarKit-CC/blob/main/CONTRIBUTING.md) for ways to get started.
 

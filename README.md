@@ -1,6 +1,6 @@
 <div align="center">
 
-  <img src="https://github.com/BangkitCapstone2023/BarKit-CC/assets/72277295/2336c3c0-b237-4a17-8cd4-f66502d25547" alt="logo" width="200" height="auto" />
+  <img src="https://github.com/BangkitCapstone2023/BarKit-CC/assets/72277295/a087bf66-71cf-4e87-aa10-ef47b1e23163" alt="logo" width="200" height="auto" />
   <h1>BarKit (Barang Kita) Backend</h1>
   
   <p>

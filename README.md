@@ -116,8 +116,9 @@ _Note:_
   npm -v
   ```
    _**Note: In development we are using `Windows 10 Pro`, `Visual Studio Code`, `node version 18.16.0`, and `npm version 9.5.1`.**_
+* [Credential File](#key-credential-file)
 * [Docker](https://www.docker.com/), if you want to run this repostory with docker (recommended) and deploy to cloud run
-* Google Cloud Platform Account (If You want to to deploy it in GCP)
+* Google Cloud Platform Account & Cloud Storage [Bucket](https://cloud.google.com/storage/docs/creating-buckets) 
 
 <!-- Installation -->
 ### :running: Run Locally With NPM

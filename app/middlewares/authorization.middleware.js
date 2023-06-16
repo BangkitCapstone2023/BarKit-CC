@@ -52,7 +52,7 @@ const verifyRenter = async (username, uid) => {
 // Verify Lessor
 const verifyLessor = async (username, uid) => {
   try {
-    // Check Renter
+    // Check Lessor
     const lessorSnapshot = await db
       .collection('lessors')
       .where('username', '==', username)

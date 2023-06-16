@@ -25,6 +25,7 @@ import {
 } from '../controllers/product.controller.js';
 
 const router = express.Router();
+
 // Rute-rute yang tidak membutuhkan otentikasi
 // Explore Product Routes
 router.get('/home', getHomeData);

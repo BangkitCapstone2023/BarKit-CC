@@ -42,6 +42,7 @@ router.post('/admin/category/:categoryId/subcategory', addSubCategory);
 router.get('/admin/orders', getAllOrders);
 router.get('/admin/orders/:orderId', getOrderById);
 
+// Image Routers
 router.get('/admin/images', getAllImages);
 
 export default router;

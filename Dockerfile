@@ -10,4 +10,5 @@ COPY . .
 
 COPY app/config/ app/config/
 
+
 CMD [ "npm", "start" ]
